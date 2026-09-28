@@ -13,19 +13,19 @@ Tick each box when it's done and checked in the game.
 
 Guide and ready-made diff: `PATCH_0.2a_PORTRAITS.md` and `patches/patch-0.2a-portraits.diff`.
 
-- [ ] Add `js/portraits.js` (visual only, own random stream; never called from the simulation) [K].
-- [ ] "Your army" picker in the start menu; the AI gets a different random army; neutrals stay
+- [x] Add `js/portraits.js` (visual only, own random stream; never called from the simulation) [K].
+- [x] "Your army" picker in the start menu; the AI gets a different random army; neutrals stay
       mixed [K].
-- [ ] `faction` and `kitEra` stored on each unit when it is trained; `kitEra` stays `'ww2'` until
+- [x] `faction` and `kitEra` stored on each unit when it is trained; `kitEra` stays `'ww2'` until
       the era triggers exist [K].
-- [ ] Selection panel shows the portrait and name; garrison icons show the short name. Nothing
+- [x] Selection panel shows the portrait and name; garrison icons show the short name. Nothing
       else in the UI changes.
 
 **Done when**
-- [ ] Tested in the browser with no console errors; headless run still works.
-- [ ] `grep Portraits` finds nothing in the simulation files.
-- [ ] Repo docs updated (`CLAUDE.md`, `DEVELOPMENT.md`, `GAME_DESIGN.md`, `README.md`, `ROADMAP.md`).
-- [ ] `patches/patch-0.2a-portraits.diff` deleted once the code is in.
+- [x] Tested in the browser with no console errors; headless run still works.
+- [x] `grep Portraits` finds nothing in the simulation files.
+- [x] Repo docs updated (`CLAUDE.md`, `DEVELOPMENT.md`, `GAME_DESIGN.md`, `README.md`, `ROADMAP.md`).
+- [x] `patches/patch-0.2a-portraits.diff` deleted once the code is in.
 
 ---
 
@@ -34,8 +34,9 @@ Guide and ready-made diff: `PATCH_0.2a_PORTRAITS.md` and `patches/patch-0.2a-por
 The menu and loading screens are designed and their art is on `main`; the rest of the layout is
 not designed yet. Read `assets/paintings/README.md` before starting.
 
-- [ ] Main menu over *The calling* (`PaintingFx`): white serif buttons on the dark left 40%,
-      hover underline, click flash; stop the engine when a match starts.
+- [ ] Main menu over a random menu painting (`PaintingFx.pick('menu')`, three exist: *The
+      calling*, *The letter*, *The wounded*): white serif buttons on the dark left 40%, hover
+      underline, click flash; stop the engine when a match starts.
 - [ ] Loading screen: random loading painting, title plaque, gold progress bar from real loading
       progress, fade in from black.
 - [ ] Regenerate `06-the-light.jpg` without the cap eagle (section K marking rules).

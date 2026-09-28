@@ -2,7 +2,7 @@
 // Start menu: pick a map and a difficulty. Also reachable from the top bar to start a new game.
 // TODO(patch 0.8): save/load slots and a settings section (scroll speed, edge scrolling on/off, sound volume).
 const Menu = (() => {
-  let open = false, mapId = 'highland', diff = 'normal', root = null;
+  let open = false, mapId = 'highland', diff = 'normal', faction = 'british', root = null;
   const thumbs = {};
 
   // Builds every map once for its preview. Call before the real map is built (it reuses Terrain).
@@ -33,8 +33,13 @@ const Menu = (() => {
     for (const d of Data.DIFFICULTY_ORDER) { const b = btn(Data.DIFFICULTY[d].name, () => { diff = d; build(); }, Data.DIFFICULTY[d].desc); if (d === diff) b.classList.add('on'); if (!spec.ai) b.disabled = true; dr.appendChild(b); }
     box.appendChild(dr);
     box.appendChild(el('div', 'small', spec.ai ? Data.DIFFICULTY[diff].desc : 'Sandbox map: there is no enemy commander, only neutral guards.'));
+    // DD K: faction changes looks and names only; every army plays the same.
+    const fr = el('div', 'diffrow');
+    fr.appendChild(el('span', null, 'Your army'));
+    for (const f of Portraits.factions) { const b = btn(f.label, () => { faction = f.id; build(); }, 'Uniforms and names only; every army plays the same.'); if (f.id === faction) b.classList.add('on'); fr.appendChild(b); }
+    box.appendChild(fr);
     const row = el('div', 'row'); row.style.marginTop = '14px';
-    const start = btn('Start game', () => { hide(); Music.start(); Main.start(mapId, diff); }); start.classList.add('startbtn'); row.appendChild(start);
+    const start = btn('Start game', () => { hide(); Music.start(); Main.start(mapId, diff, faction); }); start.classList.add('startbtn'); row.appendChild(start);
     if (Main.started) row.appendChild(btn('Back to current game', () => { hide(); Music.start(); }));
     box.appendChild(row);
     const mus = el('label', 'ed'); mus.style.marginTop = '12px';

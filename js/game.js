@@ -17,7 +17,8 @@ const Game = (() => {
 
   function newPlayer(id, res) {
     const r = {}; for (const k of Data.RES) r[k] = res[k] || 0;
-    return { id, res: r, blueprints: JSON.parse(JSON.stringify(Data.UNITS)), unlocked: new Set(['musket']), done: new Set(), research: null, harvestMult: 1 };
+    return { id, res: r, blueprints: JSON.parse(JSON.stringify(Data.UNITS)), unlocked: new Set(['musket']), done: new Set(), research: null, harvestMult: 1,
+      faction: null, kitEra: 'ww2' };   // DD K: cosmetic only; set by Main.start, read by UI portraits
   }
   function init() {
     G.time = 0; G.speed = 1; G.lastSpeed = 1; G.over = false; G.winner = 0;
@@ -67,7 +68,12 @@ const Game = (() => {
   }
 
   // ---- spawning ----
-  function spawnUnit(type, owner, x, y) { const u = new Unit(type, owner, x, y, statsFor(owner, type)); G.units.push(u); G.unitById.set(u.id, u); return u; }
+  function spawnUnit(type, owner, x, y) {
+    const u = new Unit(type, owner, x, y, statsFor(owner, type));
+    // DD K: looks only. The kit era is fixed at training time, so veterans keep their old kit.
+    const p = G.players[owner]; u.faction = p.faction; u.kitEra = p.kitEra;
+    G.units.push(u); G.unitById.set(u.id, u); return u;
+  }
   function addBuilding(type, owner, x, y, built) {
     const b = new Building(type, owner, x, y, built);
     if (b.def.harvest === 'deposit') { const d = Terrain.depositNear(x, y, 60); b.depositType = d ? d.type : null; }

@@ -7,10 +7,16 @@ const Main = (() => {
   const TIME_SCALE = 0.5;   // 1x runs at half real time; 2x matches the original build's pace
   let last = 0, acc = 0, started = false, endShown = false;
 
-  function start(mapId, difficulty) {
+  function start(mapId, difficulty, faction) {
     const spec = MapGen.MAPS.find(m => m.id === mapId) || MapGen.MAPS[0];
     Game.init();
     G.difficulty = difficulty || 'normal'; G.mapId = spec.id; G.sandbox = !spec.ai;
+    // DD K: the player's faction, and a different random one for the AI. Neutrals stay mixed (null).
+    // TODO(patch 0.2.1): pick the AI faction from the match seed instead of Math.random.
+    const ids = Portraits.factions.map(f => f.id);
+    G.players[1].faction = ids.includes(faction) ? faction : ids[0];
+    const others = ids.filter(f => f !== G.players[1].faction);
+    G.players[2].faction = others[Math.floor(Math.random() * others.length)];
     MapGen.build(spec, Data.DIFFICULTY[G.difficulty]);
     Path.init(); Fog.init(); AI.reset();
     Terrain.flushDirty(); Fog.update(0, true);

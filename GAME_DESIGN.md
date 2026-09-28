@@ -218,7 +218,28 @@ white logo, player blue (#2458d6), enemy red (#c8302e), neutral grey. Yellow rin
 corpses persist (capped at 400 decals). Background music is a Grieg violin sonata with a toggle
 and volume.
 
-## 11. Planned patches (agreed order)
+## 10a. Factions and portraits (patch 0.2a)
+
+Nine armies to pick from in the menu: British, American, French, German, Italian, Polish,
+Soviet, Turkish and Spanish. A faction changes looks only: uniform, headgear, camouflage and
+soldiers' names. Stats, units and research are identical for every army, so sides stay
+symmetric. The enemy commander gets a different army at random; neutral guards keep a mixed look.
+
+Every soldier has a face and a name built from his unit id, so the same soldier keeps them for
+the whole match. About 85% of an army's soldiers carry names from their own nation; the rest are
+volunteers with names from neighbouring nations in the army's uniform. Nicknames sometimes come
+from the face ("Red", "Specs", "Smokes"). Kit comes in three eras, WW2, Cold War and Modern; the
+game is on WW2 for now, and later eras will unlock through research and apply to soldiers trained
+after that, so veterans keep their old kit. Rank titles (Pvt., Cpl., Sgt., Sgt. Maj.) will follow
+veterancy once it exists. Portraits show no national insignia yet; the only marking is the team
+colour on collar tabs and cap bands.
+
+## 11. Planned patches
+
+> Superseded: the agreed order is now in `IMPLEMENTATION_PLAN.md` (0.2a portraits, 0.2b UI
+> rework, 0.2.1 foundations, 0.3 squadrons, 0.4 fortifications, 0.5 vehicles and tech tree,
+> 0.6 weather, 0.7 big maps, 0.8 designer), with the decisions in `DESIGN_DECISIONS.md`. The
+> list below is the earlier plan, kept for its notes on what each feature touches.
 
 - **0.3 Vehicles and roads.** Trucks (rectangles, transport with capacity) and armoured cars
   (triangles). Vehicle move class: max grade 0.4, so roads and passes are the only way up hills.
@@ -268,9 +289,10 @@ a discussion can propose concrete replacements.
 
 8. Elevation bonuses: +30% range at 18 m and +20% damage at 20 m. Strong enough that the
    mountain matters, or so strong that the plateau is unassailable without mortars?
-9. Suppression thresholds: 0.6 suppressed, 0.95 panic, decay 0.09/s. A Machine Gunner adds
-   0.035 per shot at 5.5 shots per second, so it pins a target in about three seconds. Is panic too
-   frequent, too rare, or fine?
+9. Suppression thresholds: 0.6 suppressed, 0.95 panic, decay 0.09/s. Every shot fired at a unit
+   adds the weapon's suppress value, hit or miss, so a Machine Gunner adds about 0.19 per second
+   and pins a target in about six seconds against the decay; a lone Rifleman (0.053/s) can never
+   suppress anyone. Is panic too frequent, too rare, or fine?
 10. Suppressed units still obey move and Retreat orders, at 60% speed, but cannot pick targets
     and a forced attack turns into an attack-move. A panicking unit drops everything and flees
     for about three seconds. Should Retreat be special: full speed, faster stress decay, or

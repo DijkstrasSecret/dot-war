@@ -9,7 +9,7 @@ const UI = (() => {
   function el(tag, cls, text) { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
   function card(o) {
     const c = el('div', 'card' + (o.disabled ? ' disabled' : '') + (o.active ? ' active' : ''));
-    c.appendChild(Icons.makeCanvas(o.icon, 72, o.iconColor || '#fff', o.iconBg || '#2a2a2e', o.shape));
+    c.appendChild(o.img || Icons.makeCanvas(o.icon, 72, o.iconColor || '#fff', o.iconBg || '#2a2a2e', o.shape));
     const info = el('div', 'info'); info.appendChild(el('div', 'name', o.name));
     if (o.cost != null) info.appendChild(el('div', 'cost', o.cost));
     if (o.desc) info.appendChild(el('div', 'desc', o.desc));
@@ -17,6 +17,20 @@ const UI = (() => {
     c.appendChild(info);
     if (o.onclick && !o.disabled) c.onclick = o.onclick;
     return c;
+  }
+  // ---- portraits and names (DD K) ----
+  // Kept in one place on purpose: the panel layout will change, these helpers should not.
+  function soldierName(u) { return Portraits.name(u.id, { faction: u.faction, era: u.kitEra, rank: u.rank || 0 }); }
+  function portraitEl(u, size) {
+    const img = el('img', 'portrait');
+    img.width = img.height = size; img.alt = soldierName(u).full;
+    img.src = Portraits.dataURL(u.id, { team: Data.PLAYER_COLORS[u.owner], faction: u.faction, era: u.kitEra, size });
+    return img;
+  }
+  function armyLabel(owner) {
+    const f = Portraits.factions.find(x => x.id === G.players[owner].faction);
+    if (!f) return Data.PLAYER_NAMES[owner];
+    return f.label + ' army';
   }
   function bar(color) { const b = el('div', 'bar'); const f = el('div'); f.style.background = color; b.appendChild(f); b.fill = f; return b; }
   function btn(label, onclick, title) { const b = el('button', 'btn', label); b.onclick = onclick; if (title) b.title = title; return b; }
@@ -114,7 +128,7 @@ const UI = (() => {
   }
   function unitPanel(u) {
     const own = u.owner === 1;
-    content.appendChild(card({ icon: u.def.icon, iconBg: Data.PLAYER_COLORS[u.owner], shape: u.def.shape, name: u.def.name, cost: Data.PLAYER_NAMES[u.owner], desc: u.def.desc }));
+    content.appendChild(card({ img: portraitEl(u, 72), name: soldierName(u).full, cost: u.def.name + ' · ' + armyLabel(u.owner), desc: u.def.desc }));
     const hp = bar('#5ad65a'), st = bar('#ffb000');
     content.appendChild(el('div', 'small', 'Health')); content.appendChild(hp);
     content.appendChild(el('div', 'small', 'Stress')); content.appendChild(st);
@@ -187,7 +201,7 @@ const UI = (() => {
       const g = el('div', 'queue'); g.style.margin = '6px 0';
       for (const id of b.garrison) {
         const u = G.unitById.get(id); if (!u || u.dead) continue;
-        const q = el('div', 'q'); q.title = u.def.name + ' (click to unload)';
+        const q = el('div', 'q'); q.title = soldierName(u).short + ', ' + u.def.name + ' (click to unload)';
         q.appendChild(Icons.makeCanvas(u.def.icon, 60, '#fff', Data.PLAYER_COLORS[1], u.def.shape));
         q.onclick = () => { b.garrison = b.garrison.filter(x => x !== id); u.inside = null; u.hBonus = 0; const ang = Math.random() * Math.PI * 2; u.x = b.x + Math.cos(ang) * (b.size + 16); u.y = b.y + Math.sin(ang) * (b.size + 16); refresh(); };
         g.appendChild(q);

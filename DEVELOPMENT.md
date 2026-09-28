@@ -23,6 +23,7 @@ no module system and no framework, so the game runs from `file://` as well as fr
 | `AI` | ai.js | the enemy commander, parameterised by `Data.DIFFICULTY` |
 | `Render` | render.js | draws the world, decals and the minimap; owns the camera |
 | `Input` | input.js | mouse and keyboard, command modes, selection |
+| `Portraits` | portraits.js | soldier faces, faction kit per era and names from a unit id; visual only, own random stream, called by `UI`, `Menu` and `Main` only |
 | `UI` | ui.js | the side panel and top bar (DOM), rebuilt when a content signature changes |
 | `MapGen` | maps.js | builds terrain and entities from a spec; holds the four map specs |
 | `Music` | audio.js | background music with a remembered on/off and volume |
@@ -187,6 +188,13 @@ picks it up, including the thumbnail.
 
 **A difficulty**: `Data.DIFFICULTY` and `DIFFICULTY_ORDER`.
 
+**A faction (looks only)**: faction looks live in `FACTIONS` and names in `NAME_POOLS`, both in
+`portraits.js`; add a new army at the end of each table, never reorder them (reordering changes
+every soldier's face or name). `Main.start(mapId, difficulty, faction)` sets
+`G.players[n].faction`, `Game.spawnUnit` copies `faction` and `kitEra` onto each unit, and
+`UI.unitPanel` draws the portrait. Preview one in the console with
+`Portraits.svg(id, { faction: 'german', era: 'cold' })`.
+
 ## 10. Testing and debugging
 
 No test runner; use the browser console or the Claude preview's JavaScript tool. Always serve with
@@ -204,6 +212,11 @@ Render.draw(); UI.update(0.3);                                      // force a f
 
 Owner ids: 0 neutral, 1 human, 2 enemy AI. Keep console scripts under about two seconds of work
 or the preview tool times out.
+
+The simulation runs headless inside any browser page (the Balance Lab will rely on this), but
+not yet outside one: `Terrain.create` and `Fog.init` each make an off-screen canvas and
+`Terrain.flushDirty` draws icons. Running it in node needs a small `document.createElement`
+stub and skipping `flushDirty`.
 
 When something looks wrong in combat, check the terrain between the units first: forest blocks
 sight after three cells, and a rifle fires only every 1.5 game seconds.
