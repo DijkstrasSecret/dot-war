@@ -6,7 +6,9 @@ loaded in the order listed in `index.html`, each defining one global (`Util`, `D
 `Main`). The map editor lives in `attic/editor.js`, shelved but kept for a later patch.
 
 Read `DEVELOPMENT.md` before changing simulation code; `ROADMAP.md` lists the agreed next patches;
-`grep -rn "TODO(" js` lists the per-module reminders.
+`grep -rn "TODO(" js` lists the per-module reminders. `GAME_DESIGN.md` is the design summary the
+user discusses outside the code: when a balance number or rule changes, update it too. Decisions
+come back as a numbered list keyed to its section 12.
 
 ## Working rules
 
