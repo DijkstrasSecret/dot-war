@@ -26,7 +26,8 @@ const LabTests = (() => {
   // after a panic. Returns the winner (1 = A, 2 = B, 0 = draw), time, survivors and the time from the
   // first shot at B until B's first unit is suppressed. keepAliveB: B cannot die (for the pin test,
   // which measures stress alone; otherwise the MG kills the Rifleman before it is pinned).
-  function duel({ typeA, nA, typeB, nB, ground = 'flat', seed = 1, maxTime = 180, keepAliveB = false }) {
+  // squadA / squadB: that side fights as one squadron (DD E: cohesion, shared targets, halting on contact).
+  function duel({ typeA, nA, typeB, nB, ground = 'flat', seed = 1, maxTime = 180, keepAliveB = false, squadA = false, squadB = false }) {
     Game.init(seed); G.difficulty = 'normal';
     buildArena(ground);
     const place = (type, owner, n, x) => {
@@ -35,6 +36,8 @@ const LabTests = (() => {
       return out;
     };
     const A = place(typeA, 1, nA, AX), B = place(typeB, 2, nB, BX);
+    if (squadA && A.length >= 2) Game.setSquad(1, A);
+    if (squadB && B.length >= 2) Game.setSquad(2, B);
     Game.orderMove(A, BX, MIDY, 'attackmove'); Game.orderMove(B, AX, MIDY, 'attackmove');
     Fog.update(0, true);
     let firstShotB = null, firstSuppB = null;

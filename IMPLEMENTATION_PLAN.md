@@ -114,34 +114,37 @@ Goal: the game plays at the new core values, and every run can be repeated exact
 ## Patch 0.3: Squadrons and veterancy
 
 **Squadrons** [E]
-- [ ] Ctrl+number creates or replaces a squadron (2–12 units); Ctrl+number with nothing selected
+- [x] Ctrl+number creates or replaces a squadron (2–12 units); Ctrl+number with nothing selected
       clears it. Number selects; double-tap jumps the camera.
-- [ ] One squadron per unit. Auto-disband at 1 member. Box-selected members still move the
+- [x] One squadron per unit. Auto-disband at 1 member. Box-selected members still move the
       whole squad.
 - [ ] Formation:
-  - [ ] Column on roads and narrow passes, lines in the open, a line on arrival.
-  - [ ] Ranks by range.
-  - [ ] Right-drag sets width and facing.
-- [ ] Toggles `>` / `>>`, tight / loose, react / keep moving (defaults: `>`, loose, react).
-- [ ] Squad panel, squadron bar (size, health, stress, average rank), and the number drawn on
+  - [ ] Column on roads and narrow passes, lines in the open, a line on arrival. The arrival
+        line is built; on the way members follow the path in file, which gives a column on roads
+        but no open-ground line during travel yet.
+  - [x] Ranks by range.
+  - [x] Right-drag sets width and facing.
+- [x] Toggles `>` / `>>`, tight / loose, react / keep moving (defaults: `>`, loose, react).
+- [x] Squad panel, squadron bar (size, health, stress, average rank), and the number drawn on
       each member.
-- [ ] Combat and morale:
-  - [ ] Shared targets; Snipers pick their own; mortars follow the squad's fight.
-  - [ ] Cohesion decay 0.08/s within 40 m.
-  - [ ] Panic runs toward the squad's centre.
-  - [ ] Retreat is a fighting withdrawal.
-- [ ] Rally point on a squad member adds new units to that squadron.
+- [x] Combat and morale:
+  - [x] Shared targets; Snipers pick their own; mortars follow the squad's fight.
+  - [x] Cohesion decay 0.08/s within 40 m.
+  - [x] Panic runs toward the squad's centre.
+  - [x] Retreat is a fighting withdrawal.
+- [x] Rally point on a squad member adds new units to that squadron.
 
 **Veterancy** [H1, I]
-- [ ] XP sources (suppression XP at most once per target every 30 s).
-- [ ] Ranks 1–3 at 30, 80 and 160 XP, with chevrons. Set `u.rank` so portrait names show the
+- [x] XP sources (suppression XP at most once per target every 30 s). Medic XP waits for the
+      Medic (0.4), digging XP for trenches (0.4).
+- [x] Ranks 1–3 at 30, 80 and 160 XP, with chevrons. Set `u.rank` so portrait names show the
       title (Pvt., Cpl., Sgt., Sgt. Maj.) [K].
-- [ ] Leader: highest rank, star marker, aura ×1.2 decay within 60 m. Death shock +0.3 replaces
+- [x] Leader: highest rank, star marker, aura ×1.2 decay within 60 m. Death shock +0.3 replaces
       the normal +0.2.
 
 **Done when**
-- [ ] Balance Lab has a squad-vs-squad test.
-- [ ] `GAME_DESIGN.md` updated.
+- [x] Balance Lab has a squad-vs-squad test (either side of a duel can be a squadron).
+- [x] `GAME_DESIGN.md` updated.
 
 ---
 

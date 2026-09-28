@@ -941,6 +941,18 @@ Balance Lab results when 0.2.1 was finished (100 seeded runs each):
 | Group bar | One tile per group: its number, a **count per class** with the class icon (for example rifle ×5, machine gun ×2) instead of "8 units", and health and stress bars. The squadron bar of 0.3 takes over the same place and look. |
 | One group per soldier | Putting soldiers into a group takes them out of any other group (reported by Kaan in play: soldier 3 stayed in group 1 after joining group 2). Same rule as squadrons (E). |
 
+### Built in patch 0.3 (notes for Kaan)
+
+| Topic | What 0.3 does |
+| --- | --- |
+| Squadrons replace groups | The number keys now make and select squadrons; the old control groups are gone. |
+| Travel shape | The arrival line (ranks by range, facing, right-drag width) is built. On the way, members follow the path in file: a column on roads and passes, but no line across open ground while travelling. Kept for a later pass. |
+| React on contact | "Halts and faces the enemy": every member switches to Defend position, so the squadron stops and fires; the next order moves it on. |
+| Fighting withdrawal | Only when the squadron has a rear rank: an all-Rifleman squadron has nobody to cover, so all fall back together. |
+| Squad strength | In the Balance Lab a squadron of 6 Riflemen beats 6 loose Riflemen about 82% of the time (focused fire and cohesion). No target was set for this; say if it should be weaker. |
+| AI | The scripted AI does not use squadrons yet. |
+| Keep moving (Kaan, after play) | On "keep moving" members do not share the squad's target: each fires at the closest enemy he can hit, while walking at moving-fire accuracy. On "react" the shared target stays. |
+
 ---
 
 ## Still open

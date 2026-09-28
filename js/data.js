@@ -25,32 +25,32 @@ const Data = {
   UNITS: {
     // DD A: harvests and (from 0.4) digs; unarmed. Counts as a full worker at a camp, soldiers as half (DD Q4).
     worker: {
-      name: 'Worker', shape: 'circle', icon: 'worker', cls: 'infantry', size: 5.5, labour: 1,
+      name: 'Worker', shape: 'circle', icon: 'worker', cls: 'infantry', size: 5.5, labour: 1, role: 0,
       hp: 40, armor: 'none', speed: 50, vision: 120, cost: { wood: 25 }, time: 8, supply: 1,
       weapon: null,
       desc: 'Unarmed labourer. A full worker at a camp or mine, where soldiers count as half.',
     },
     rifle: {
-      name: 'Rifleman', shape: 'circle', icon: 'rifle', cls: 'infantry', size: 6,
+      name: 'Rifleman', shape: 'circle', icon: 'rifle', cls: 'infantry', size: 6, role: 1,
       hp: 70, armor: 'none', speed: 52, vision: 160, cost: { wood: 12, metal: 10 }, time: 10,
       weapon: { dmg: 20, dtype: 'ballistic', range: 170, minRange: 0, acc: 0.68, reload: 1.5, pspeed: 900, indirect: false, splash: 0, suppress: 0.08 },
       desc: 'Standard infantry. Good range and accuracy.',
     },
     hmg: {
-      name: 'Machine Gunner', shape: 'circle', icon: 'hmg', cls: 'infantry', size: 6.5,
+      name: 'Machine Gunner', shape: 'circle', icon: 'hmg', cls: 'infantry', size: 6.5, role: 2,
       hp: 80, armor: 'none', speed: 38, vision: 160, cost: { wood: 10, metal: 35 }, time: 14, requires: 'hmg', noMovingFire: true,   // DD Q11: cannot fire on the move
       weapon: { dmg: 11, dtype: 'ballistic', range: 200, minRange: 0, acc: 0.4, reload: 0.18, pspeed: 900, indirect: false, splash: 0, suppress: 0.035 },
       desc: 'Sustained fire. Pins enemies down and shreds infantry in the open.',
     },
     sniper: {
-      name: 'Sniper', shape: 'circle', icon: 'sniper', cls: 'infantry', size: 6,
+      name: 'Sniper', shape: 'circle', icon: 'sniper', cls: 'infantry', size: 6, role: 2,
       hp: 55, armor: 'none', speed: 48, vision: 230, cost: { wood: 10, metal: 25 }, time: 14, requires: 'sniper',
       stressTaken: 0.5, neverPanics: true, obeysWhenSuppressed: true,   // DD Q12, I: half stress, never panics, can be suppressed but keeps its orders
       weapon: { dmg: 65, dtype: 'ballistic', range: 300, minRange: 0, acc: 0.85, reload: 3.5, pspeed: 1300, indirect: false, splash: 0, suppress: 0.25 },
       desc: 'Long sight and reach. Takes half stress, never panics, keeps its target orders even when suppressed.',
     },
     mortar: {
-      name: 'Mortar Crew', shape: 'square', icon: 'mortar', cls: 'infantry', size: 7,
+      name: 'Mortar Crew', shape: 'square', icon: 'mortar', cls: 'infantry', size: 7, role: 3,
       hp: 70, armor: 'none', speed: 34, vision: 140, cost: { wood: 20, metal: 40 }, time: 16, requires: 'mortar',
       weapon: { dmg: 50, dtype: 'explosive', range: 380, minRange: 90, acc: 0.5, reload: 5, pspeed: 200, indirect: true, splash: 32, suppress: 0.35, ammo: { sulfur: 2 } },
       desc: 'Indirect fire over ridges. Costs sulfur per shell. Needs a spotter to be accurate.',
@@ -108,6 +108,22 @@ const Data = {
   // comes in 0.7): each raid sends raidGrow more of the army than the last, up to raidFracMax; once
   // the army is allInRatio times the enemy soldiers seen in the last `memory` seconds, everyone goes.
   AI_RAIDS: { raidGrow: 0.1, raidFracMax: 0.9, allInRatio: 2, memory: 120, minEnemy: 3 },
+
+  // Squadrons (DD E). role: 1 front rank, 2 second rank, 3 rear at a safe distance, 0 support in the
+  // centre. Spacing in metres; cohesion: stress decays faster within cohesionRadius of a squadmate.
+  SQUAD: {
+    min: 2, max: 12, spacing: { tight: 15, loose: 25 }, rearDepth: 60,
+    cohesionRadius: 40, cohesionDecay: 0.08,
+    leaderRadius: 60, leaderAura: 1.2, leaderDeathShock: 0.3,   // DD H1, I: replaces the normal +0.2 death shock
+    coverTime: 4,                                               // fighting withdrawal: the front rank covers this long
+    defaults: { move: 'slow', spacing: 'loose', contact: 'react' },
+  },
+  // Veterancy (DD H1, I; XP values proposed). Each rank stacks on the previous one.
+  VETERANCY: {
+    ranks: [30, 80, 160],
+    perRank: { acc: 1.05, stressTaken: 0.9, hp: 1.05, work: 1.1 }, rank3Reload: 0.9,
+    xp: { kill: 10, damagePer: 10, suppress: 5, suppressCooldown: 30, underFireEvery: 10, underFireStress: 0.3, workEvery: 60 },
+  },
 
   START: { units: ['rifle', 'rifle', 'rifle', 'rifle', 'rifle', 'rifle', 'worker', 'worker', 'worker', 'worker'] },   // DD Q15
 

@@ -9,14 +9,14 @@ const G = {
   time: 0, tick: 0, speed: 1, lastSpeed: 1, over: false, winner: 0, seed: 1,
   units: [], buildings: [], projectiles: [], effects: [],
   unitById: new Map(),
-  players: {}, selection: [], groups: {}, toasts: [], orders: [],
+  players: {}, selection: [], squads: {}, toasts: [], orders: [],
   cleanupT: 0,
   rng: Util.mulberry32(1), vrng: Util.mulberry32(2),
 };
 
 const Game = (() => {
   const { clamp, dist } = Util;
-  const C = Data.COMBAT;
+  const C = Data.COMBAT, SQ = Data.SQUAD, VET = Data.VETERANCY;
   const R = () => G.rng();    // simulation stream: anything that can change the outcome
   const V = () => G.vrng();   // visual stream: decals and other looks
 
@@ -31,7 +31,7 @@ const Game = (() => {
     G.seed = (seed == null ? 1 : seed) >>> 0; G.rng = Util.mulberry32(G.seed); G.vrng = Util.mulberry32(G.seed ^ 0x5bd1e995);
     _nextId = 1;
     G.time = 0; G.tick = 0; G.cleanupT = 0; G.speed = 1; G.lastSpeed = 1; G.over = false; G.winner = 0;
-    G.units = []; G.buildings = []; G.projectiles = []; G.effects = []; G.selection = []; G.groups = {}; G.toasts = []; G.orders = []; G.unitById = new Map();
+    G.units = []; G.buildings = []; G.projectiles = []; G.effects = []; G.selection = []; G.squads = {}; G.toasts = []; G.orders = []; G.unitById = new Map();
     G.stats = { 0: { kills: 0, lost: 0 }, 1: { kills: 0, lost: 0 }, 2: { kills: 0, lost: 0 } };
     G.buildingById = new Map(); G.sandbox = false; G.difficulty = G.difficulty || 'hard';
     G.decals = [];   // blood, splats and corpses left on the ground
@@ -168,7 +168,7 @@ const Game = (() => {
     switch (o.kind) {
       case 'move': case 'attackmove': {
         const f = Path.getField(o.x, o.y, u.def.cls, G.time); if (!f) break;
-        u.order = { type: o.kind, x: f.tx, y: f.ty, offx: o.offx || 0, offy: o.offy || 0, arrive: o.arrive || 12, phase: 0, retreat: !!o.retreat }; u.field = f;
+        u.order = { type: o.kind, x: f.tx, y: f.ty, offx: o.offx || 0, offy: o.offy || 0, arrive: o.arrive || 12, phase: 0, retreat: !!o.retreat, maxSpeed: o.maxSpeed || 0 }; u.field = f;
         break;
       }
       case 'attack': {
@@ -181,7 +181,7 @@ const Game = (() => {
         if (u.stats.weapon && u.stats.weapon.indirect) u.order = { type: 'bombard', x: o.x, y: o.y };
         else applyOrder(u, { kind: 'attackmove', x: o.x, y: o.y, arrive: 20 });
         break;
-      case 'hold': u.order = { type: 'hold', x: u.x, y: u.y }; break;
+      case 'hold': u.order = { type: 'hold', x: u.x, y: u.y, until: o.until || 0 }; break;
       case 'garrison': {
         const b = o.building;
         if (!canEnter(u, b)) { if (u.owner === 1 && b && !b.dead) toast(b.def.name + ' cannot take this unit'); break; }
@@ -203,11 +203,21 @@ const Game = (() => {
   }
   function nextOrder(u) { u.order = null; u.field = null; u.forced = null; if (u.queue.length) applyOrder(u, u.queue.shift()); }
 
-  function orderMove(units, x, y, mode = 'move', queue = false, retreat = false) {
-    const list = units.filter(u => !u.dead); const n = list.length; if (!n) return;
+  // Squad members move in their squadron's formation; everyone else in a plain grid. opts.facing and
+  // opts.width come from a right-drag (DD E): the arrival line's direction and width.
+  function orderMove(units, x, y, mode = 'move', queue = false, retreat = false, opts = {}) {
+    const list = units.filter(u => !u.dead); if (!list.length) return;
+    const loose = [];
+    for (const [n, members] of bySquad(list)) {
+      if (n === 0) { loose.push(...members); continue; }
+      const s = G.squads[n], slots = formation(s, members, x, y, opts);
+      const maxSpeed = s.move === 'slow' ? Math.min(...members.map(u => u.stats.speed)) : 0;
+      for (const u of members) { const o = slots.get(u); issue(u, { kind: mode, x, y, offx: o[0], offy: o[1], arrive: o[2], retreat, maxSpeed }, queue); }
+    }
+    const n = loose.length; if (!n) return;
     const cols = Math.ceil(Math.sqrt(n)), rows = Math.ceil(n / cols), spacing = 15;
     const arrive = Math.max(12, spacing * Math.sqrt(n) * 0.75);
-    list.forEach((u, i) => {
+    loose.forEach((u, i) => {
       const r = Math.floor(i / cols), c = i % cols;
       issue(u, { kind: mode, x, y, offx: (c - (cols - 1) / 2) * spacing, offy: (r - (rows - 1) / 2) * spacing, arrive, retreat }, queue);
     });
@@ -238,8 +248,20 @@ const Game = (() => {
     let cx = 0, cy = 0; for (const u of list) { cx += u.x; cy += u.y; } cx /= list.length; cy /= list.length;
     const dx = hq.x - cx, dy = hq.y + hq.h / 2 + 30 - cy; const d = Math.hypot(dx, dy);
     if (d < 1) { orderStop(list); return; }
-    const step = Math.min(180, Math.max(0, d - 30));
-    orderMove(list, cx + dx / d * step, cy + dy / d * step, 'move', queue, true);
+    const step = Math.min(180, Math.max(0, d - 30)), tx = cx + dx / d * step, ty = cy + dy / d * step;
+    // DD E: a squadron makes a fighting withdrawal. The rear ranks fall back at once while the front
+    // rank holds for SQ.coverTime seconds, then follows to its place in the new line.
+    const loose = [];
+    for (const [n, members] of bySquad(list)) {
+      if (n === 0 || queue) { loose.push(...members); continue; }
+      const slots = formation(G.squads[n], members, tx, ty, {});
+      for (const u of members) {
+        const o = slots.get(u), move = { kind: 'move', x: tx, y: ty, offx: o[0], offy: o[1], arrive: o[2], retreat: true };
+        if (u.def.role === 1 && members.some(m => m.def.role !== 1)) { u.queue = []; applyOrder(u, { kind: 'hold', until: G.time + SQ.coverTime }); u.queue = [move]; }
+        else issue(u, move, false);
+      }
+    }
+    if (loose.length) orderMove(loose, tx, ty, 'move', queue, true);
   }
 
   // ---- production ----
@@ -255,7 +277,10 @@ const Game = (() => {
     let x = b.x + (R() - 0.5) * b.w * 0.6, y = b.y + b.h / 2 + 10;
     if (!Terrain.passableAt(x, y, cls)) { const p = Path.nearestPassable(Terrain.cellI(x), Terrain.cellJ(y), cls); if (p) { x = Terrain.cx(p[0]); y = Terrain.cy(p[1]); } }
     const u = spawnUnit(type, b.owner, x, y);
-    if (b.rally) orderMove([u], b.rally.x, b.rally.y); else u.micro = { x: x + (R() - 0.5) * 40, y: y + 14 + R() * 24 };
+    const rs = b.rally && b.rally.squad ? G.squads[b.rally.squad] : null;
+    if (rs && rs.members.length < SQ.max) {   // DD E: a rally point on a squad member reinforces that squadron
+      joinSquad(rs, u); const c = squadCentre(rs, u); orderMove([u], c[0], c[1]);
+    } else if (b.rally) orderMove([u], b.rally.x, b.rally.y); else u.micro = { x: x + (R() - 0.5) * 40, y: y + 14 + R() * 24 };
     return u;
   }
 
@@ -269,7 +294,7 @@ const Game = (() => {
   // Labour at a camp: a Worker counts 1, a soldier half (DD Q4). Only those standing near the camp count.
   function activeWorkers(b) {
     let n = 0;
-    for (const id of b.workers) { const u = G.unitById.get(id); if (u && !u.dead && dist(u.x, u.y, b.x, b.y) < 70) n += u.def.labour || Data.ECONOMY.soldierLabour; }
+    for (const id of b.workers) { const u = G.unitById.get(id); if (u && !u.dead && dist(u.x, u.y, b.x, b.y) < 70) n += (u.def.labour || Data.ECONOMY.soldierLabour) * Math.pow(VET.perRank.work, u.def.labour ? u.rank : 0); }
     return n;
   }
   function updateBuildings(dt) {
@@ -324,7 +349,7 @@ const Game = (() => {
   // Every source of stress goes through here. DD Q12: snipers take half; DD I: stress taken is at least x0.25.
   function addStress(u, amt) {
     if (u.dead || u.inside || amt <= 0) return;
-    u.stress = Math.min(1, u.stress + amt * Util.stack('stressTaken', u.def.stressTaken || 1));
+    u.stress = Math.min(1, u.stress + amt * Util.stack('stressTaken', u.def.stressTaken || 1, Math.pow(VET.perRank.stressTaken, u.rank)));   // DD H1: -10% per rank
   }
   function canSee(u, e) {
     if (u.stats.weapon && u.stats.weapon.indirect && u.owner !== 0) return Fog.visible(u.owner, e.x, e.y);
@@ -341,6 +366,10 @@ const Game = (() => {
   function acquire(u) {
     const w = u.stats.weapon; if (!w) { u.target = null; return; }   // unarmed: never picks a target
     if (u.forced && !u.forced.dead && keepsOrders(u) && validTarget(u, u.forced)) { u.target = u.forced; return; }
+    // DD E: riflemen, machine gunners and mortars fire at the squad's target; snipers pick their own.
+    // On 'keep moving' each member fires at the closest enemy he can hit instead (Kaan, after play).
+    const sq = u.squad && !u.def.obeysWhenSuppressed && G.squads[u.squad] && G.squads[u.squad].contact === 'react' ? G.squads[u.squad] : null;
+    if (sq && sq.target && validTarget(u, sq.target)) { u.target = sq.target; return; }
     const maxR = w.range * 1.3;
     let best = null, bestS = Infinity;
     for (const e of G.units) {
@@ -378,7 +407,7 @@ const Game = (() => {
       if (!canAfford(p, w.ammo)) { if (u.owner === 1 && G.time - (u.noAmmoT || -99) > 15) { u.noAmmoT = G.time; toast('Mortar has no sulfur for shells'); } return; }
       pay(p, w.ammo);
     }
-    u.cooldown = w.reload * (u.suppressed ? 1.4 : 1) * (0.9 + R() * 0.2);
+    u.cooldown = w.reload * (u.suppressed ? 1.4 : 1) * (u.rank >= 3 ? VET.rank3Reload : 1) * (0.9 + R() * 0.2);
     u.facing = Math.atan2(ty - u.y, tx - u.x); u.muzzle = 0.08; u.recoil = w.indirect ? 0.2 : 0.12;
     if (w.indirect) fireShell(u, tx, ty); else fireBullet(u, target);
   }
@@ -386,14 +415,15 @@ const Game = (() => {
     const w = u.stats.weapon; const d = dist(u.x, u.y, e.x, e.y); const range = effRange(u, e.x, e.y);
     // All factors multiply, then the hit cap applies (DD I). u.wasMoving: the unit moved last tick (DD Q11).
     const p = Util.stack('hit', w.acc, 1 - 0.55 * Math.pow(Math.min(1, d / range), 2), Terrain.coverAt(e.x, e.y), 1 - 0.5 * u.stress,
-      u.wasMoving ? C.movingAcc : 1, hitMult(u, e.x, e.y), e instanceof Building ? 2.5 : 1);
+      u.wasMoving ? C.movingAcc : 1, hitMult(u, e.x, e.y), e instanceof Building ? 2.5 : 1, Math.pow(VET.perRank.acc, u.rank));
     const hit = R() < p;
     const dmg = hit ? w.dmg * Data.ARMOR_MULT[w.dtype][e.armor] * dmgMult(u, e.x, e.y) : 0;
     const ang = R() * Math.PI * 2, off = hit ? 0 : 8 + R() * 18;
     const tx = e.x + Math.cos(ang) * off, ty = e.y + Math.sin(ang) * off;
     G.projectiles.push(new Projectile({ kind: 'bullet', x: u.x, y: u.y, tx, ty, dur: Math.max(0.03, d / w.pspeed), dmg, target: hit ? e : null, shooter: u, owner: u.owner }));
     if (e instanceof Unit) {   // every shot at a unit stresses it, hit or miss
-      addStress(e, w.suppress); e.lastHitBy = u; alertUnit(e);
+      const was = e.suppressed; addStress(e, w.suppress); e.lastHitBy = u; alertUnit(e);
+      if (!was && e.suppressed) suppressXp(u, e);
       for (const o of G.units) if (o !== e && !o.dead && !o.inside && o.owner === e.owner && dist(o.x, o.y, e.x, e.y) < 30) addStress(o, w.suppress * 0.2);
     }
   }
@@ -413,7 +443,8 @@ const Game = (() => {
       let m = (0.35 + 0.65 * (1 - d / splash)) * Data.ARMOR_MULT[dtype][e.armor];
       if (Terrain.ridgeCover(x, y, e.x, e.y)) m *= 0.35;
       if (Terrain.coverAt(e.x, e.y) < 1) m *= 0.85;
-      addStress(e, 0.3 * (1 - d / splash) + 0.1); e.lastHitBy = shooter; alertUnit(e);
+      const was = e.suppressed; addStress(e, 0.3 * (1 - d / splash) + 0.1); e.lastHitBy = shooter; alertUnit(e);
+      if (!was && e.suppressed && shooter && e.owner !== shooter.owner) suppressXp(shooter, e);
       applyDamage(e, dmg * m, shooter);
     }
     for (const b of G.buildings) {
@@ -421,17 +452,26 @@ const Game = (() => {
       applyDamage(b, dmg * (0.5 + 0.5 * (1 - d / splash)) * Data.ARMOR_MULT[dtype].building, shooter);
     }
   }
-  function applyDamage(e, dmg, by) { if (e.dead || dmg <= 0) return; e.hp -= dmg; if (e.hp <= 0) kill(e, by); }
+  function applyDamage(e, dmg, by) {
+    if (e.dead || dmg <= 0) return;
+    if (by instanceof Unit && !by.dead && by.owner !== e.owner) addXp(by, Math.min(dmg, e.hp) / VET.xp.damagePer);   // DD H1
+    e.hp -= dmg; if (e.hp <= 0) kill(e, by);
+  }
   function kill(e, by) {
     e.dead = true; e.hp = 0;
     G.selection = G.selection.filter(s => s !== e);
     if (e instanceof Unit) {   // kill and loss counters track units only
       const st = G.stats[e.owner]; if (st) st.lost++;
       if (by && by.owner !== e.owner && G.stats[by.owner]) G.stats[by.owner].kills++;
+      if (by instanceof Unit && !by.dead && by.owner !== e.owner) addXp(by, VET.xp.kill);
     }
     if (e instanceof Unit) {
       releaseWork(e);
-      for (const o of G.units) if (!o.dead && o.owner === e.owner && dist(o.x, o.y, e.x, e.y) < 45) addStress(o, 0.2);
+      // DD H1, I: a squad leader's death shocks squadmates within 60 m by +0.3, instead of the usual +0.2.
+      const sq = e.squad ? G.squads[e.squad] : null, shocked = new Set();
+      if (sq && sq.leader === e.id) for (const m of membersOf(sq)) if (m !== e && dist(m.x, m.y, e.x, e.y) < SQ.leaderRadius) { addStress(m, SQ.leaderDeathShock); shocked.add(m); }
+      for (const o of G.units) if (!o.dead && !shocked.has(o) && o.owner === e.owner && dist(o.x, o.y, e.x, e.y) < 45) addStress(o, 0.2);
+      if (sq) leaveSquad(e);
       // blood, a corpse, and a morale shock that alerts nearby friends
       G.effects.push({ kind: 'shock', x: e.x, y: e.y, t: 0, dur: 0.7, r: 45 });
       const blobs = []; for (let i = 0; i < 5; i++) { const a = V() * Math.PI * 2, rr = V() * e.size * 1.6; blobs.push([Math.cos(a) * rr, Math.sin(a) * rr, e.size * (0.5 + V() * 0.7)]); }
@@ -450,6 +490,92 @@ const Game = (() => {
       if (e.type === 'hq') toast(e.owner === 1 ? 'Your headquarters has fallen' : 'Enemy headquarters destroyed!');
       else if (e.owner === 1) toast(e.def.name + ' destroyed');
     }
+  }
+
+  // ---- squadrons (DD E) ----
+  // A squadron: { id, members: [unit ids], move: 'slow'|'own', spacing: 'tight'|'loose',
+  // contact: 'react'|'keep', target, leader }. One squadron per unit; fewer than two members disbands it.
+  const membersOf = s => s.members.map(id => G.unitById.get(id)).filter(u => u && !u.dead);
+  function bySquad(list) { const m = new Map(); for (const u of list) { const k = u.squad && G.squads[u.squad] ? u.squad : 0; if (!m.has(k)) m.set(k, []); m.get(k).push(u); } return m; }
+  function squadCentre(s, except) { const ms = membersOf(s).filter(m => m !== except); if (!ms.length) return null; let x = 0, y = 0; for (const m of ms) { x += m.x; y += m.y; } return [x / ms.length, y / ms.length]; }
+  function disband(n) { const s = G.squads[n]; if (!s) return; for (const u of membersOf(s)) u.squad = 0; delete G.squads[n]; }
+  function leaveSquad(u) { const s = G.squads[u.squad]; u.squad = 0; if (!s) return; s.members = s.members.filter(id => id !== u.id); if (membersOf(s).length < SQ.min) disband(s.id); }
+  function joinSquad(s, u) { if (u.squad && u.squad !== s.id) leaveSquad(u); u.squad = s.id; if (!s.members.includes(u.id)) s.members.push(u.id); }
+  // Ctrl+number: 2-12 units become squadron n, replacing it; they leave any squadron they were in.
+  function setSquad(n, units) {
+    const list = units.filter(u => u instanceof Unit && !u.dead && u.owner === units[0].owner);
+    if (list.length < SQ.min || list.length > SQ.max) return false;
+    if (G.squads[n]) disband(n);
+    for (const u of list) if (u.squad) leaveSquad(u);
+    const s = G.squads[n] = Object.assign({ id: n, members: [], target: null, leader: null }, SQ.defaults);
+    for (const u of list) joinSquad(s, u);
+    updateSquads(0); return true;
+  }
+  // Orders to part of a squadron move the whole squadron (DD E).
+  function expandSquads(list) {
+    const out = new Set(list);
+    for (const u of list) if (u.squad && G.squads[u.squad]) for (const m of membersOf(G.squads[u.squad])) if (!m.inside) out.add(m);   // garrisoned members stay put
+    return [...out];
+  }
+  // Formation slots: ranks by role (front 1, second 2, support 0 in the centre behind them, rear 3 at a
+  // safe distance), rows facing the direction of travel or the right-drag facing. Returns unit -> [offx, offy, arrive].
+  function formation(s, members, x, y, opts) {
+    const sp = SQ.spacing[s.spacing] || SQ.spacing.loose;
+    let cx = 0, cy = 0; for (const m of members) { cx += m.x; cy += m.y; } cx /= members.length; cy /= members.length;
+    const face = opts.facing != null ? opts.facing : Math.atan2(y - cy, x - cx);
+    const fx = Math.cos(face), fy = Math.sin(face), rx = -fy, ry = fx;
+    const perRow = opts.width ? Math.max(1, Math.floor(opts.width / sp) + 1) : Math.max(3, Math.ceil(Math.sqrt(members.length * 2)));
+    const ranks = [1, 2, 0, 3].map(r => members.filter(m => (m.def.role != null ? m.def.role : 1) === r).sort((a, b) => a.id - b.id));
+    const slots = new Map(); let depth = 0;
+    ranks.forEach((rank, ri) => {
+      if (!rank.length) return;
+      if (ri === 3) depth = Math.min(depth, 0) - SQ.rearDepth;   // mortars stand well behind the line
+      for (let i = 0; i < rank.length; i += perRow) {
+        const row = rank.slice(i, i + perRow);
+        row.forEach((m, j) => { const lat = (j - (row.length - 1) / 2) * sp; slots.set(m, [rx * lat + fx * depth, ry * lat + fy * depth, Math.max(12, sp * 1.2)]); });
+        depth -= sp;
+      }
+    });
+    return slots;
+  }
+  // Stress decay: faster within reach of a squadmate (cohesion), faster still near the squad leader.
+  function stressDecay(u) {
+    const s = u.squad ? G.squads[u.squad] : null; if (!s) return C.stressDecay;
+    let near = false, lead = false;
+    for (const m of membersOf(s)) {
+      if (m === u) continue; const d = dist(m.x, m.y, u.x, u.y);
+      if (d < SQ.cohesionRadius) near = true;
+      if (m.id === s.leader && d < SQ.leaderRadius) lead = true;
+    }
+    return (near ? SQ.cohesionDecay : C.stressDecay) * (lead ? SQ.leaderAura : 1);
+  }
+  // Once a tick: prune the dead, pick the leader (highest rank, then most XP), keep a shared target,
+  // and halt the whole squadron on contact when it is set to react.
+  function updateSquads() {
+    for (const k of Object.keys(G.squads)) {
+      const s = G.squads[k]; const ms = membersOf(s);
+      s.members = ms.map(m => m.id);
+      if (ms.length < SQ.min) { disband(s.id); continue; }
+      let best = null; for (const m of ms) if (!best || m.rank > best.rank || (m.rank === best.rank && (m.xp > best.xp || (m.xp === best.xp && m.id < best.id)))) best = m;
+      s.leader = best.id;
+      if (s.target && (s.target.dead || s.target.inside || !ms.some(m => m.target === s.target))) s.target = null;
+      if (!s.target) { const counts = new Map(); for (const m of ms) if (m.target && !m.def.obeysWhenSuppressed) counts.set(m.target, (counts.get(m.target) || 0) + 1); let top = 0; for (const [t, c] of counts) if (c > top) { top = c; s.target = t; } }
+      if (s.contact === 'react' && ms.some(m => m.order && (m.order.type === 'move' || m.order.type === 'attackmove') && !m.order.retreat && m.target && inRange(m, m.target))) {
+        for (const m of ms) if (m.order && (m.order.type === 'move' || m.order.type === 'attackmove') && !m.order.retreat) { m.queue = []; applyOrder(m, { kind: 'hold' }); }
+      }
+    }
+  }
+
+  // ---- veterancy (DD H1) ----
+  function addXp(u, n) {
+    if (u.dead || n <= 0) return; u.xp += n;
+    while (u.rank < VET.ranks.length && u.xp >= VET.ranks[u.rank]) { u.rank++; u.stats.hp *= VET.perRank.hp; u.hp *= VET.perRank.hp; }
+  }
+  // Suppressing an enemy earns XP at most once per target every 30 s (DD I).
+  function suppressXp(u, e) {
+    if (!(u instanceof Unit)) return; u.suppXp = u.suppXp || {};
+    if (G.time - (u.suppXp[e.id] != null ? u.suppXp[e.id] : -1e9) < VET.xp.suppressCooldown) return;
+    u.suppXp[e.id] = G.time; addXp(u, VET.xp.suppress);
   }
 
   // ---- movement ----
@@ -499,7 +625,9 @@ const Game = (() => {
     u.wasMoving = u.moving; u.moving = false;
     u.muzzle = Math.max(0, u.muzzle - dt); u.recoil = Math.max(0, u.recoil - dt); u.alertT = Math.max(0, u.alertT - dt);
     const retreating = !!(u.order && u.order.retreat);
-    u.cooldown -= dt; u.stress = Math.max(0, u.stress - C.stressDecay * (retreating ? C.retreatDecayMult : 1) * dt);   // DD Q9, Q10
+    u.cooldown -= dt; u.stress = Math.max(0, u.stress - stressDecay(u) * (retreating ? C.retreatDecayMult : 1) * dt);   // DD Q9, Q10, E, H1
+    if (u.stress > VET.xp.underFireStress) { u.fireT += dt; if (u.fireT >= VET.xp.underFireEvery) { u.fireT -= VET.xp.underFireEvery; addXp(u, 1); } }
+    if (u.work != null && u.order && u.order.type === 'hold') { u.workT += dt; if (u.workT >= VET.xp.workEvery) { u.workT -= VET.xp.workEvery; addXp(u, 1); } }
     if (u.hp < u.stats.hp * 0.5 && !u.inside) {   // wounded units leave blood behind (visual only)
       u.bleedT -= dt;
       if (u.bleedT <= 0) { u.bleedT = 0.6 + V() * 1.4; addDecal({ kind: 'blood', x: u.x + (V() - 0.5) * 6, y: u.y + (V() - 0.5) * 6, r: 1.1 + V() * 1.2, life: 25 }); }
@@ -514,10 +642,18 @@ const Game = (() => {
     if (u.flee > 0) {
       u.flee -= dt;
       if (u.flee <= 0) u.stress = Math.min(u.stress, 0.55);
-      else { const a = u.lastHitBy; const ax = a ? a.x : u.x + 1, ay = a ? a.y : u.y; moveToward(u, u.x + (u.x - ax), u.y + (u.y - ay), dt, 1.1); return; }
+      else {
+        // Away from the shooter; a squad member also runs towards the squad's centre (DD E).
+        const a = u.lastHitBy; let dx = u.x - (a ? a.x : u.x + 1), dy = u.y - (a ? a.y : u.y); const l = Math.hypot(dx, dy) || 1; dx /= l; dy /= l;
+        const sq = u.squad ? G.squads[u.squad] : null, c = sq && squadCentre(sq, u);
+        if (c) { const cx = c[0] - u.x, cy = c[1] - u.y, cl = Math.hypot(cx, cy); if (cl > 20) { dx += cx / cl; dy += cy / cl; } }
+        moveToward(u, u.x + dx * 40, u.y + dy * 40, dt, 1.1); return;
+      }
     } else if (u.stress >= C.panicAt && !u.def.neverPanics) { u.flee = 2.5 + R(); u.target = null; return; }   // DD Q12: snipers never panic
     tryFire(u);
-    const spd = Util.stack('speed', u.suppressed && !retreating ? 0.6 : 1);   // DD Q10: no suppression slowdown in retreat
+    // DD Q10: no suppression slowdown in retreat. DD E '>': a squad travels at its slowest member's pace.
+    const cap = o0 => o0 && o0.maxSpeed && o0.phase === 0 ? Math.min(1, o0.maxSpeed / u.stats.speed) : 1;
+    const spd = Util.stack('speed', u.suppressed && !retreating ? 0.6 : 1, cap(u.order));
     const o = u.order;
     if (o) {
       switch (o.type) {
@@ -564,7 +700,7 @@ const Game = (() => {
           followField(u, dt, spd);
           break;
         }
-        case 'hold': break;
+        case 'hold': if (o.until && G.time >= o.until) nextOrder(u); break;
       }
     } else if (u.micro) {
       if (moveToward(u, u.micro.x, u.micro.y, dt, spd) || u.stuck > 1) { u.micro = null; u.stuck = 0; }
@@ -627,10 +763,14 @@ const Game = (() => {
   }
   function command(c) {
     G.orders.push(Object.assign({ tick: G.tick }, c));
-    const us = (c.units || []).map(entById).filter(u => u instanceof Unit && !u.dead);
+    const picked = (c.units || []).map(entById).filter(u => u instanceof Unit && !u.dead);
+    const us = c.kind === 'squadSet' ? picked : expandSquads(picked);
     const b = c.building != null ? entById(c.building) : null, q = !!c.queue, pid = c.player || 1;
     switch (c.kind) {
-      case 'move': orderMove(us, c.x, c.y, c.mode || 'move', q); return true;
+      case 'move': orderMove(us, c.x, c.y, c.mode || 'move', q, false, { facing: c.facing, width: c.width }); return true;
+      case 'squadSet': return setSquad(c.squad, us);
+      case 'squadClear': disband(c.squad); return true;
+      case 'squadToggle': { const s = G.squads[c.squad]; if (s && ['move', 'spacing', 'contact'].includes(c.key)) s[c.key] = c.value; return !!s; }
       case 'attack': { const t = entById(c.target); if (t && !t.dead) orderAttack(us, t, q); return true; }
       case 'bombard': orderBombard(us, c.x, c.y, q); return true;
       case 'stop': orderStop(us); return true;
@@ -642,7 +782,7 @@ const Game = (() => {
       case 'cancel': if (b) cancelQueue(b, c.index); return true;
       case 'research': return startResearch(pid, c.research);
       case 'build': return placeBuilding(c.type, pid, c.x, c.y);
-      case 'rally': if (b) b.rally = { x: c.x, y: c.y }; return true;
+      case 'rally': if (b) b.rally = { x: c.x, y: c.y, squad: c.squad || 0 }; return true;
       case 'upgrade': return !!b && upgradeTower(b);
       case 'unload': return b ? unloadBuilding(b) : 0;
       case 'unloadOne': return unloadOne(b, entById(c.unit));
@@ -654,6 +794,7 @@ const Game = (() => {
     G.tick++;
     G.time += dt;
     updateResearch(dt); updateBuildings(dt);
+    updateSquads();
     for (const u of G.units) if (!u.dead) updateUnit(u, dt);
     separate();
     updateProjectiles(dt); updateEffects(dt);
@@ -671,6 +812,7 @@ const Game = (() => {
     orderMove, orderAttack, orderBombard, orderStop, orderHold, orderWork, orderRetreat, orderGarrison,
     canEnter, unloadBuilding, upgradeTower,
     enqueue, cancelQueue, harvestRate, activeWorkers, effRange,
-    _dbg: { validTarget, acquire, inRange, canSee, tryFire, applyDamage, kill, addStress, rangeMult, dmgMult, hitMult, heightDiff },
+    squadCentre, membersOf, setSquad,
+    _dbg: { addXp, validTarget, acquire, inRange, canSee, tryFire, applyDamage, kill, addStress, rangeMult, dmgMult, hitMult, heightDiff },
   };
 })();

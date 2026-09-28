@@ -48,6 +48,11 @@ button { font: inherit; }
 .gtile .gcount span { display: inline-flex; align-items: center; gap: 2px; }
 .gtile .gcount canvas { width: 17px; height: 17px; }
 .gtile .gbar { height: 3px; background: #111; }
+.gtile .grank { color: var(--brass2); letter-spacing: -1px; font-weight: 700; }
+.sqtoggles { display: grid; gap: 4px; margin: 2px 0 8px; }
+.sqrow { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
+.sqrow span { width: 76px; color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: 1px; }
+.sqrow .btn { padding: 2px 8px; font-size: 12px; }
 .gtile .gbar > div { height: 100%; }
 
 /* portraits with a class badge (unit logo in its team shape) in the corner */

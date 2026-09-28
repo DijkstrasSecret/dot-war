@@ -91,41 +91,58 @@ const UI = (() => {
   }
   // Class badge: the unit's logo on its shape in team colour, as drawn on the map.
   function badge(u, px) { const c = Icons.makeCanvas(u.def.icon, px, '#fff', Data.PLAYER_COLORS[u.owner], u.def.shape); c.className = 'badge'; return c; }
-  // Group bar, top centre: one tile per control group with a count per unit class, health and stress.
+  // Squadron bar, top centre (DD E): one tile per squadron with a count per unit class, health,
+  // stress and the average rank. Click to select; click twice to centre the view.
+  const chevrons = r => r > 0 ? '˄'.repeat(Math.round(r)) : '';
   function updateGroups() {
-    const keys = Object.keys(G.groups).filter(k => G.groups[k].some(u => !u.dead)).sort();
+    const keys = Object.keys(G.squads).map(Number).sort((a, b) => a - b);
     const sel = new Set(G.selection);
-    const alive = k => G.groups[k].filter(u => !u.dead);
-    const isSelected = k => { const us = alive(k); return us.length === sel.size && us.every(u => sel.has(u)); };
-    const s = keys.map(k => k + ':' + alive(k).map(u => u.id).join('.') + (isSelected(k) ? '*' : '')).join('|');
+    const alive = n => Game.membersOf(G.squads[n]).filter(u => u.owner === 1);
+    const isSelected = n => { const us = alive(n).filter(u => !u.inside); return us.length && us.length === sel.size && us.every(u => sel.has(u)); };
+    const s = keys.map(n => n + ':' + alive(n).map(u => u.id + '.' + u.rank).join(',') + (isSelected(n) ? '*' : '')).join('|');
     if (s !== groupSig) {
       groupSig = s; groupBar.innerHTML = ''; const bars = [];
-      for (const k of keys) {
-        const us = alive(k);
-        const t = el('div', 'gtile' + (isSelected(k) ? ' on' : ''));
-        t.title = 'Group ' + k + ': press ' + k + ' to select, twice to centre the view';
-        t.appendChild(el('span', 'gnum', k));
+      for (const n of keys) {
+        const us = alive(n); if (!us.length) continue;
+        const t = el('div', 'gtile' + (isSelected(n) ? ' on' : ''));
+        t.title = 'Squadron ' + n + ': press ' + n + ' to select, twice to centre the view';
+        t.appendChild(el('span', 'gnum', String(n)));
         const counts = el('div', 'gcount'); const by = {};
         for (const u of us) by[u.type] = (by[u.type] || 0) + 1;
         for (const type of Object.keys(Data.UNITS)) if (by[type]) {
           const d = Data.UNITS[type], sp = el('span'); sp.title = by[type] + ' ' + d.name + (by[type] > 1 ? 's' : '');
           sp.appendChild(Icons.makeCanvas(d.icon, 28, '#fff', Data.PLAYER_COLORS[1], d.shape)); sp.appendChild(document.createTextNode('×' + by[type])); counts.appendChild(sp);
         }
+        const avg = us.reduce((a, u) => a + u.rank, 0) / us.length;
+        if (avg >= 0.5) { const r = el('span', 'grank', chevrons(avg)); r.title = 'Average rank ' + avg.toFixed(1); counts.appendChild(r); }
         t.appendChild(counts);
         const hp = el('div', 'gbar'), hf = el('div'); hf.style.background = 'var(--good)'; hp.appendChild(hf);
         const st = el('div', 'gbar'), sf = el('div'); sf.style.background = '#ffb000'; st.appendChild(sf);
-        t.appendChild(hp); t.appendChild(st); bars.push([us, hf, sf]);
-        t.onclick = () => Input.selectGroup(k);
+        t.appendChild(hp); t.appendChild(st); bars.push([n, hf, sf]);
+        t.onclick = () => Input.selectSquad(n);
         groupBar.appendChild(t);
       }
-      groupTick = () => { for (const [us, hf, sf] of bars) { const alive = us.filter(u => !u.dead); if (!alive.length) continue; hf.style.width = (alive.reduce((a, u) => a + u.hp / u.stats.hp, 0) / alive.length * 100) + '%'; sf.style.width = (alive.reduce((a, u) => a + u.stress, 0) / alive.length * 100) + '%'; } };
+      groupTick = () => { for (const [n, hf, sf] of bars) { if (!G.squads[n]) continue; const a = alive(n); if (!a.length) continue; hf.style.width = (a.reduce((x, u) => x + u.hp / u.stats.hp, 0) / a.length * 100) + '%'; sf.style.width = (a.reduce((x, u) => x + u.stress, 0) / a.length * 100) + '%'; } };
     }
     if (groupTick) groupTick();
+  }
+  // Squad panel (DD E): the three toggles, shown when exactly one whole squadron is selected.
+  function squadToggles(sq) {
+    const box = el('div', 'sqtoggles');
+    const row = (label, key, opts) => {
+      const r = el('div', 'sqrow'); r.appendChild(el('span', null, label));
+      for (const [v, text, tip] of opts) { const b = btn(text, () => { Game.command({ kind: 'squadToggle', squad: sq.id, key, value: v }); refresh(); }, tip); if (sq[key] === v) b.classList.add('on'); r.appendChild(b); }
+      box.appendChild(r);
+    };
+    row('Movement', 'move', [['slow', '>', 'Everyone moves at the slowest member\'s pace'], ['own', '>>', 'Each at his own pace; they regroup at the destination']]);
+    row('Spacing', 'spacing', [['tight', 'Tight 15 m'], ['loose', 'Loose 25 m']]);
+    row('Contact', 'contact', [['react', 'React', 'The whole squad halts and faces the enemy'], ['keep', 'Keep moving', 'Members keep walking and each fires at the closest enemy, at lower accuracy']]);
+    return box;
   }
   function signature() {
     const p = G.players[1];
     let s = tab + '|' + Input.state.mode + '|' + (Input.state.buildType || '') + '|' + [...p.unlocked].join(',') + '|' + [...p.done].join(',') + '|' + (p.research ? p.research.id : '') + '|';
-    if (tab === 'sel') s += G.selection.map(e => e.id + ':' + (e.dead ? 'd' : '') + (e instanceof Building ? e.queue.map(q => q.type).join('.') + ':' + e.built + ':' + e.workers.length + ':' + e.level + ':' + e.garrison.join('.') + ':' + !!e.upgrading : (e.work || '') + ':' + (e.order ? e.order.type : '') + ':' + (e.flee > 0) + ':' + e.suppressed)).join(',');
+    if (tab === 'sel') s += Object.values(G.squads).map(q => q.id + q.move + q.spacing + q.contact + q.members.length).join('') + '|' + G.selection.map(e => e.id + ':' + (e.dead ? 'd' : '') + (e instanceof Building ? e.queue.map(q => q.type).join('.') + ':' + e.built + ':' + e.workers.length + ':' + e.level + ':' + e.garrison.join('.') + ':' + !!e.upgrading : (e.work || '') + ':' + (e.order ? e.order.type : '') + ':' + (e.flee > 0) + ':' + e.suppressed + ':' + e.rank + ':' + e.squad)).join(',');
     if (tab === 'build') s += Data.BUILD_LIST.map(t => Game.canAfford(p, Data.BUILDINGS[t].cost)).join(',');
     if (tab === 'research') s += Data.RESEARCH_ORDER.map(r => Game.researchState(p, r)).join(',');
     if (tab === 'sel') { const b = G.selection[0]; if (b instanceof Building && b.def.produces) s += '|' + b.def.produces.map(t => p.unlocked.has(t) && Game.canAfford(p, p.blueprints[t].cost)).join(','); }
@@ -182,6 +199,10 @@ const UI = (() => {
     content.appendChild(el('div', 'small', 'Stress')); content.appendChild(st);
     const status = el('div', 'small'); status.style.margin = '6px 0'; content.appendChild(status);
     const w = u.stats.weapon; const box = el('div');
+    const R = Data.VETERANCY.ranks, next = R[u.rank];
+    const sq = u.squad ? G.squads[u.squad] : null;
+    box.appendChild(statRow('Rank', (u.rank ? chevrons(u.rank) + ' ' : '') + Math.floor(u.xp) + ' XP' + (next ? ' / ' + next : '') + (sq && sq.leader === u.id ? ' · ★ leader' : '')));
+    if (sq) box.appendChild(statRow('Squadron', String(sq.id)));
     if (w) {
       box.appendChild(statRow('Damage', w.dmg.toFixed(0) + ' ' + w.dtype + (w.splash ? ', splash ' + w.splash : '')));
       box.appendChild(statRow('Range', (w.minRange ? w.minRange + '–' : '') + w.range.toFixed(0)));
@@ -204,7 +225,10 @@ const UI = (() => {
     };
   }
   function groupPanel(units) {
-    content.appendChild(el('h3', null, units.length + ' units selected'));
+    const sqIds = new Set(units.map(u => u.squad)); const sq = sqIds.size === 1 && units[0].squad ? G.squads[units[0].squad] : null;
+    const whole = sq && Game.membersOf(sq).filter(u => !u.inside).length === units.length;
+    content.appendChild(el('h3', null, whole ? 'Squadron ' + sq.id + ' · ' + units.length + ' soldiers' : units.length + ' units selected'));
+    if (whole) content.appendChild(squadToggles(sq));
     // One face per soldier with a class badge and a health bar; click a face to select only them.
     const faces = el('div', 'faces'), fills = [];
     for (const u of units.slice(0, 24)) {
