@@ -27,6 +27,18 @@ and open <http://localhost:8765>. The Claude Code preview uses the same command 
 `.claude/launch.json`. Do not use `python -m http.server` for development: it lets the browser
 cache the scripts and you will test stale code.
 
+## Deploy it
+
+The game is static files, so any web server that serves this folder works. `deploy.sh` copies
+`index.html`, `style.css`, `js/` and `assets/` to a web root over SSH with rsync:
+
+```bash
+DEPLOY_HOST=user@dotwarz.duckdns.org DEPLOY_PATH=/var/www/dotwar ./deploy.sh
+```
+
+`DEPLOY_PORT` and `DEPLOY_KEY` override the SSH port and key. Point the site's document root at
+`DEPLOY_PATH` and the game loads at the domain; no server-side code is needed.
+
 ## Playing
 
 The start menu offers four maps and three difficulties. Hard is the original tuning; Easy and
