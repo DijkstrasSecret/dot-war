@@ -370,9 +370,11 @@ Every army also has rare peaked caps, head bandages and bare heads.
 
 ## 5b. Menu and loading-screen paintings
 
-- **What exists:** seven paintings and the `PaintingFx` engine, on `main` in `assets/paintings/`.
-  Approved look; not wired into the game yet. Read `assets/paintings/README.md` first.
-- **Menu:** *The calling*. The left 40% of the painting is empty near-black space for the
+- **What exists:** nine paintings (three menu, six loading) and the `PaintingFx` engine, on `main`
+  in `assets/paintings/`. Approved look; not wired into the game yet. Read
+  `assets/paintings/README.md` first.
+- **Menu:** one of *The calling*, *The letter* and *The wounded*, picked at random each time the
+  menu opens. The left 40% of every menu painting is empty near-black space for the
   buttons: white serif text (IM Fell English SC for the title, Cormorant Garamond for buttons in
   the preview). Hover shows a warm underline, click a short brightening flash. Stop the engine
   when a match starts.

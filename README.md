@@ -48,6 +48,11 @@ sandbox with neutral guards and no enemy commander.
 Time runs at a calm pace at 1x; 2x is the tempo of the first build. All timers in the game data are
 in game seconds.
 
+The menu's "Your army" row picks one of nine armies (British, American, French, German, Italian,
+Polish, Soviet, Turkish, Spanish). It changes uniforms, headgear and soldiers' names only; every
+army plays the same. The enemy gets a different army at random. Click a soldier to see his
+portrait and name in the selection panel.
+
 | Action | Input |
 | --- | --- |
 | Select | Left click, drag a box, Shift adds, double click picks all of a type, Ctrl+A all on screen |

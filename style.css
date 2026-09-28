@@ -41,6 +41,7 @@ h3 { margin: 8px 0 8px; font-size: 11px; text-transform: uppercase; letter-spaci
 .card.disabled { opacity: 0.5; cursor: default; }
 .card.active { border-left-color: var(--brass2); outline: 1px solid var(--brass); }
 .card canvas { width: 36px; height: 36px; flex: none; }
+.card img.portrait { width: 64px; height: 64px; flex: none; border-radius: 4px; }   /* DD K: unit portrait */
 .card .info { flex: 1; min-width: 0; }
 .card .name { font-weight: 600; color: #fff; letter-spacing: 0.3px; }
 .card .cost { color: var(--brass2); font-size: 12px; font-family: Consolas, "Cascadia Mono", monospace; }
@@ -83,6 +84,6 @@ input[type=range] { flex: 1; accent-color: var(--brass); }
 .mapcard.on { border-top-color: var(--brass2); background: #3b4a2c; }
 .mapcard canvas { width: 100%; aspect-ratio: 1 / 1; background: #000; border: 1px solid var(--line); display: block; margin-bottom: 6px; }
 .mapcard .name { font-weight: 600; color: #fff; margin-bottom: 3px; letter-spacing: 0.5px; }
-.diffrow { display: flex; gap: 8px; align-items: center; margin: 14px 0 6px; }
+.diffrow { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 14px 0 6px; }
 .diffrow span { color: var(--muted); margin-right: 4px; text-transform: uppercase; letter-spacing: 1.2px; font-size: 11px; }
 .startbtn { font-size: 15px; padding: 7px 24px; background: var(--brass); color: #1b1d17; font-weight: 700; letter-spacing: 1px; border-color: #6d5715; }

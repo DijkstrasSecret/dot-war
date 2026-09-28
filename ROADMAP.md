@@ -13,6 +13,7 @@ harvesting with assigned workers; elevation-driven combat with suppression, pani
 and towers; an enemy commander scaled by difficulty; neutral creeps; fog of war; background music;
 combat flavour (recoil, alerts, bleeding, blood, corpses, morale shock); the W/A/D/S/X/E command
 scheme with Shift queuing and middle-mouse panning. The map editor is shelved in `attic/`.
+Patch 0.2a added nine cosmetic armies with a portrait and name for every soldier (`js/portraits.js`).
 
 The list below is in the order that seems most useful. Each item names the files it touches, and
 each module carries a `TODO(...)` reminder at the top.

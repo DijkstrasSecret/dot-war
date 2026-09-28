@@ -2,8 +2,8 @@
 
 Browser RTS in plain JavaScript. No build, no dependencies, no modules: files are classic scripts
 loaded in the order listed in `index.html`, each defining one global (`Util`, `Data`, `Icons`,
-`Terrain`, `Path`, `Fog`, `Game`/`G`, `AI`, `Render`, `Input`, `UI`, `MapGen`, `Music`, `Menu`,
-`Main`). The map editor lives in `attic/editor.js`, shelved but kept for a later patch.
+`Terrain`, `Path`, `Fog`, `Game`/`G`, `AI`, `Render`, `Input`, `Portraits`, `UI`, `MapGen`, `Music`,
+`Menu`, `Main`). The map editor lives in `attic/editor.js`, shelved but kept for a later patch.
 
 Read `DEVELOPMENT.md` before changing simulation code; `grep -rn "TODO(" js` lists the per-module
 reminders.

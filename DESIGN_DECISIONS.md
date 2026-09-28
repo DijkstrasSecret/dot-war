@@ -97,7 +97,8 @@ play-testing. Everything else was decided explicitly.
 
 ## Units and structures
 
-- **Q16:** The Truck is the first vehicle in 0.3 (section A). The armoured car follows.
+- **Q16:** The Truck is the first vehicle (section A), in patch 0.5 of `IMPLEMENTATION_PLAN.md`.
+  The armoured car follows in 0.8.
 - **Q17:** Blueprint designer, section D.
 - **Q19:** New Scout Tower **level 4** for artillery (section B).
 - **Q20:**
@@ -295,7 +296,7 @@ Grenades, for Riflemen:
 
 Rifling and the Musketeer are removed from the list.
 
-## D. Blueprint designer (0.5)
+## D. Blueprint designer (patch 0.8 in `IMPLEMENTATION_PLAN.md`)
 
 - Chassis at launch: infantry (circle), crew weapon (square), truck (rectangle), armoured car
   (triangle).
