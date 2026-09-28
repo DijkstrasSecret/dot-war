@@ -414,12 +414,12 @@ section 11.
 
 ## 7. Next steps for Kaan
 
-1. On GitHub, merge pull request #2 (`design-decisions` into `main`). It changes docs only, plus
-   `deploy.sh` from pull request #1, which then closes as merged.
-2. In Claude Code, pull `main`, ask it to read `PROJECT_SUMMARY.md` and report back, then say:
-   "Do patch 0.2a following PATCH_0.2a_PORTRAITS.md."
-3. Plan the rest of the UI rework (0.2b) in a new chat in this project. Start by pointing it at
-   this summary.
+Patches 0.2a, 0.2b, 0.2.1, 0.3, 0.3.1 and 0.4 are built and merged (see the ticks in
+`IMPLEMENTATION_PLAN.md` and the "Built in patch ..." notes in `DESIGN_DECISIONS.md`).
+
+1. Play 0.4 and answer the grenade question at the end of "Built in patch 0.4" in
+   `DESIGN_DECISIONS.md` (grenades clear trenches and Bunkers very quickly).
+2. Then patch 0.5: vehicles, logistics and the tech tree.
 
 ---
 

@@ -62,8 +62,8 @@ Victory: destroy the enemy Headquarters. Defeat: lose yours. The sandbox map has
 
 ## 3. Units
 
-All five blueprints are infantry class. Squares count as "heavy" for tower capacity. The
-Musketeer was removed in patch 0.2.1.
+All six blueprints are infantry class. Squares count as "heavy" for tower capacity. The
+Musketeer was removed in patch 0.2.1; the Medic arrived in patch 0.4.
 
 | Blueprint | Shape | HP | Speed | Vision | Cost | Train time | Needs research |
 | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -72,6 +72,7 @@ Musketeer was removed in patch 0.2.1.
 | Machine Gunner | circle | 80 | 38 | 160 | 10 wood, 35 metal | 14 s | Heavy Machine Gun |
 | Sniper | circle | 55 | 48 | 230 | 10 wood, 25 metal | 14 s | Marksman Rifle |
 | Mortar Crew | square | 70 | 34 | 140 | 20 wood, 40 metal | 16 s | Mortar |
+| Medic | circle | 50 | 50 | 140 | 20 wood, 15 metal | 10 s | Field Medicine |
 
 Weapons:
 
@@ -82,6 +83,8 @@ Weapons:
 | Machine Gunner | 11 | ballistic | 200 | 0 | 0.40 | 0.18 s | 0.035 | pins enemies down; cannot fire while moving |
 | Sniper | 65 | ballistic | 300 | 0 | 0.85 | 3.5 s | 0.25 | half stress, never panics, keeps target orders when suppressed |
 | Mortar Crew | 50 | explosive | 380 | 90 | 0.50 | 5 s | 0.35 | indirect, splash 32, costs 2 sulfur per shell, needs a spotter |
+| Medic | – | – | – | – | – | – | – | unarmed; heals one soldier at a time, 4 HP/s within 40 m |
+| Grenade (Riflemen) | 45 | explosive | 35 | 0 | – | 20 s | – | after the Grenades research; splash 18, 1 sulfur each |
 
 Speeds are world units per game second. Times are game seconds. All units have armor class
 "none" today; the armor table already exists for the vehicle patch:
@@ -92,7 +95,9 @@ Speeds are world units per game second. Times are game seconds. All units have a
 | explosive | 1.00 | 0.70 | 0.35 | 0.90 |
 | ap (planned) | 0.60 | 1.00 | 0.90 | 0.50 |
 
-Each unit stores a snapshot of its blueprint when produced, so research only affects new units.
+Each unit stores a snapshot of its blueprint when produced, so stat research only affects new
+units. Unlocks that are abilities or buildings (Grenades, Fortification, Field Hospital) and
+Entrenching Tools apply at once, to units already in the field too.
 
 ## 4. Combat model
 
@@ -112,9 +117,10 @@ least x0.35 (`Util.stack`).
     damage `x(1 + clamp(0.1 s, -0.03, +0.06))`, hit chance `x(1 + clamp(0.08 s, -0.03, +0.05))`.
     20 m above a target 50 m away gives +4% damage and +3% hit chance. Most of the high-ground edge
     is reach: in the Balance Lab the side 30 m higher wins about 74% of 5 v 5 rifle duels.
-- **Hit chance** = `acc * (1 - 0.55 * (d / range)^2) * cover * (1 - 0.5 * stress) * moving * height`,
+- **Hit chance** = `acc * (1 - 0.55 * (d / range)^2) * cover * (1 - 0.5 * stress) * moving * height * line * bunker`,
   capped at 0.95. `moving` is 0.35 if the shooter moved in the last tick. Buildings are 2.5x easier
-  to hit. At maximum range accuracy is 45% of the base value.
+  to hit. At maximum range accuracy is 45% of the base value. `line` is 0.6 for a target standing
+  in a trench and 0.7 behind a barricade (section 5); `bunker` is 1.1 for a shooter inside a Bunker.
 - **Damage** = `dmg * ARMOR_MULT[type][armor] * height`.
 - **Stress** (0 to 1) per unit: every shot fired at a unit adds the weapon's `suppress` value, hit
   or miss; neighbours within 30 units get 20% of it; a nearby death adds 0.2; a shell adds up to
@@ -124,11 +130,17 @@ least x0.35 (`Util.stack`).
     the nearest enemy instead (yellow ring).
   - At 0.95 the unit **panics** for about 2.5 to 3.5 s: drops its target and flees ("!!").
   - Snipers take half stress and never panic. They can be suppressed, but keep their target
-    orders. Garrisoned units take no stress.
+    orders. Soldiers in a trench take half stress. Garrisoned units take no stress, except from a
+    grenade that lands on a Bunker.
 - **Indirect fire** (mortar): shells arc over ridges, cannot fire inside the minimum range, the
   scatter grows when the target point is not seen by a friendly unit (the spotter rule), each shot
   consumes ammo (2 sulfur), splash damage falls off linearly to the edge, reverse slopes take only
   35% of it, and friendly fire is on.
+- **Grenades** (Riflemen, after the Grenades research): thrown automatically at the nearest enemy
+  standing in a trench, or at an occupied enemy Bunker, within 35 m; or on order (V, then click a
+  point or an enemy: the Rifleman walks into reach and throws). 45 explosive damage, splash 18,
+  1 sulfur each, 20 s cooldown, friendly fire on. A grenade on a Bunker hurts the Bunker and reaches
+  everyone inside for 30% damage and full stress.
 - **Moving fire.** On a plain move units shoot while walking at x0.35 accuracy; Machine Gunners
   cannot fire while moving. On attack-move units stop to shoot. Defend holds position.
 - **Retreat** moves the group 180 units towards its HQ with no suppression slowdown, and stress
@@ -153,12 +165,14 @@ one mine per deposit.
 
 | Building | Size | HP | Cost | Build time | Role |
 | --- | --- | --- | --- | --- | --- |
-| Headquarters | 64x64 | 1500 | given | 0 | trains Riflemen at 0.7x speed and Workers at full speed, vision 220 |
-| Barracks | 48x40 | 600 | 80 wood, 20 metal | 30 s | trains Riflemen, Machine Gunners, Snipers |
+| Headquarters | 64x64 | 1500 | given | 0 | trains Riflemen at 0.7x speed and Workers at full speed, vision 220, holds 6 infantry (+6 m), heals infantry within 150 m at 0.5 HP/s |
+| Barracks | 48x40 | 600 | 80 wood, 20 metal | 30 s | trains Riflemen, Machine Gunners, Snipers, Medics |
 | Ordnance Works | 52x44 | 700 | 60 wood, 60 metal | 40 s | trains squares (mortar) |
 | Lumber Camp | 40x32 | 350 | 40 wood | 20 s | 1.0 wood/s + 0.6 per worker, max 4 workers |
 | Mine | 40x36 | 400 | 60 wood, 10 metal | 25 s | 0.5/s + 0.35 per worker, max 4 workers |
 | Scout Tower | 30x30 | 400 | 60 wood, 10 metal | 25 s | garrison, see below |
+| Bunker | 32x32 | 1200 | 120 wood, 90 metal | 45 s | 4 infantry + 1 Machine Gunner slot, occupants shoot x1.1, no height; needs Fortification |
+| Field Hospital | 48x40 | 500 | 80 wood, 40 metal | 35 s | heals your infantry within 120 m at 1.5 HP/s; needs Field Hospital research |
 
 A Lumber Camp with four Workers yields 3.4 wood/s; a Mine with four Workers 1.9 metal or sulfur/s.
 Production cost is paid when queued and refunded on cancel; new units walk to the building's
@@ -174,11 +188,42 @@ rally point.
 
 Garrisoned units are hidden, untargetable, take no stress, and get the tower's height for range,
 damage and sight. When a tower is destroyed the occupants lose half their health, gain stress and
-are thrown out.
+are thrown out. The same garrison rules hold for the **Bunker** (4 infantry plus a slot only a
+Machine Gunner can take; extra Machine Gunners use infantry slots; no height; occupants shoot x1.1;
+grenades reach them) and the **HQ** (6 infantry, +6 m, sees from that height with its 220 vision).
+Workers and Medics cannot garrison. Q unloads any of them.
+
+### Line defences (patch 0.4)
+
+Picked from the Build tab (Y trench, I barricade, J wire), then drawn by holding the left button
+and dragging. The line is cut into 10 m segments. The selected soldiers dig it; with nobody
+selected, idle Workers within 300 m do. A soldier digs 10 m in 15 s, a Worker 1.5x faster (plus 10%
+per rank), several diggers on one segment add up, and Entrenching Tools makes everyone 30% faster.
+Each segment is **paid when digging on it starts**; if the diggers are stopped or die, the segments
+nobody started are dropped unpaid. Started segments stay; right click one with soldiers or Workers
+to dig on. Diggers go to the nearest unfinished segment. Only finished segments have effects, and
+routes are recalculated once a whole line is finished. A Worker earns 1 XP per 10 m dug.
+
+| Type | Cost per 10 m | Research | Holders | Crossing infantry | HP per 10 m |
+| --- | --- | --- | --- | --- | --- |
+| Trench | 30 wood | none | hit chance x0.6, half stress | enemies x0.4, your own x1 | cannot be destroyed; Workers fill it (K), as slowly as digging |
+| Barricade | 30 wood, 15 metal | Fortification | hit chance x0.7 | everyone x0.5 | 200; explosives full damage, a rifle or MG bullet that misses someone behind it does 10% |
+| Barbed wire | 20 metal | Fortification | nothing | everyone x0.25 | 80; only explosives |
+
+A unit within 6 m of a line stands in it. Barricades and wire also make routes through them dearer,
+so units walk around them when there is a way. Vehicles (patch 0.5) will be blocked by barricades
+and slowed by trenches.
+
+### Healing (patch 0.4)
+
+Infantry only; the sources add up. The HQ heals 0.5 HP/s within 150 m and a Field Hospital 1.5 HP/s
+within 120 m. A Medic treats one wounded soldier at a time within 40 m at 4 HP/s (+10% per rank),
+its squadmates first; an idle Medic walks over to the nearest wounded soldier it can see. A Medic
+earns 1 XP per 20 HP healed.
 
 ## 6. Research
 
-Eight items, researched one at a time at the HQ. Effects apply to blueprints, so only to units
+Thirteen items, researched one at a time at the HQ. Effects apply to blueprints, so only to units
 trained afterwards. Rifling is done for everyone from the start, so it is no longer an item. The
 five-branch tech tree of `DESIGN_DECISIONS.md` section F arrives in patch 0.5.
 
@@ -192,6 +237,13 @@ five-branch tech tree of `DESIGN_DECISIONS.md` section F arrives in patch 0.5.
 | Mortar | 40 wood, 60 metal | 50 s | none | unlocks Mortar Crew |
 | Improved Powder | 30 sulfur, 20 metal | 40 s | none | +12% range, new firearm units |
 | HE Shells | 40 sulfur, 40 metal | 45 s | Mortar | +25% mortar damage, new crews |
+| Fortification | 60 wood, 60 metal | 45 s | none | unlocks Bunker, barricade, barbed wire |
+| Entrenching Tools | 60 wood, 20 metal | 35 s | none | digging 30% faster, every digger |
+| Grenades | 30 metal, 40 sulfur | 40 s | none | Riflemen throw grenades |
+| Field Medicine | 40 wood, 40 metal | 40 s | none | unlocks Medic |
+| Field Hospital | 60 wood, 50 metal | 45 s | Field Medicine | unlocks Field Hospital |
+
+The last five are on the HQ list only until the tech tree arrives in patch 0.5.
 
 ## 7. Time and pacing
 
@@ -212,7 +264,7 @@ Crews only after their unlock time. It has passive income instead of workers: 1.
 and 0.35 sulfur per second times the difficulty income factor. Raiders that lose their target walk
 home. Raids escalate: each sends 10% more of the army than the last (up to 90%), and once the AI's
 army is twice the enemy soldiers it has seen in the last two minutes (at least 3), it sends
-everyone. The AI does not build, research, expand or use towers.
+everyone. The AI does not build, research, expand, dig, throw grenades, train Medics or use towers.
 
 The first raid comes at the enemy's walking time to the player's HQ plus 300 s of build-up; each
 raid interval adds the walking time too. The walking time is measured over the real terrain for a
@@ -233,10 +285,12 @@ five and fight anyone who comes close.
 
 W A S D, arrow keys, screen edge or middle mouse pan the camera; the wheel zooms. Right click is the
 smart command: ground moves, an enemy attacks, your camp or mine puts the selection to work, your
-tower garrisons it. F attack-move, R defend position, G retreat, X stop, E enter (camp, mine or
-tower), Q exit (unload a tower), T upgrade a tower. With a factory selected Z X C V train, and Tab
+tower, Bunker or HQ garrisons it, your unfinished line gets dug on. F attack-move, R defend
+position, G retreat, X stop, E enter (camp, mine, tower, Bunker or HQ), Q exit (unload a tower,
+Bunker or HQ), T upgrade a tower, K fill a trench (Workers), V throw a grenade (Riflemen). With a factory selected Z X C V train, and Tab
 flips to the next four when a factory has more (otherwise Tab cycles factories). B build (L Lumber
-Camp, M Mine, C Barracks, O Ordnance Works, T Scout Tower), N research, H headquarters, Shift queues
+Camp, M Mine, C Barracks, O Ordnance Works, T Scout Tower, U Bunker, P Field Hospital; line
+defences Y trench, I barricade, J barbed wire), N research, H headquarters, Shift queues
 orders, Ctrl+1..9 squadrons (section 9a), right-drag sets a squadron's line, Space pauses, comma and period change
 speed, F1 help. New features take free keys; existing ones don't move without asking.
 
@@ -290,7 +344,7 @@ squadron beat 6 loose Riflemen 55–60% of the time (target).
 
 **Veterancy.** Soldiers earn XP: 10 per kill, 1 per 10 damage, 5 when a target they are shooting
 becomes suppressed (once per target every 30 s), 1 per 10 s spent with stress above 0.3, and for
-Workers 1 per 60 s of work. Ranks come at 30, 80 and 160 XP. Each rank gives +5% accuracy, -10%
+Workers 1 per 60 s of work and 1 per 10 m dug, for Medics 1 per 20 HP healed. Ranks come at 30, 80 and 160 XP. Each rank gives +5% accuracy, -10%
 stress taken and +5% health; rank 3 also reloads 10% faster. A Worker's rank adds 10% labour instead.
 Ranks show as chevrons under the shape, and portrait titles follow them (Pvt., Cpl., Sgt., Sgt. Maj.).
 Rank is never lost. The highest-ranked member leads the squadron (star): within 60 m of him stress

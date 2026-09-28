@@ -135,8 +135,8 @@ Goal: the game plays at the new core values, and every run can be repeated exact
 - [x] Rally point on a squad member adds new units to that squadron.
 
 **Veterancy** [H1, I]
-- [x] XP sources (suppression XP at most once per target every 30 s). Medic XP waits for the
-      Medic (0.4), digging XP for trenches (0.4).
+- [x] XP sources (suppression XP at most once per target every 30 s). Medic XP and digging XP
+      came with patch 0.4.
 - [x] Ranks 1–3 at 30, 80 and 160 XP, with chevrons. Set `u.rank` so portrait names show the
       title (Pvt., Cpl., Sgt., Sgt. Maj.) [K].
 - [x] Leader: highest rank, star marker, aura ×1.2 decay within 60 m. Death shock +0.3 replaces
@@ -150,30 +150,31 @@ Goal: the game plays at the new core values, and every run can be repeated exact
 
 ## Patch 0.4: Fortifications and medical
 
-- [ ] Line tool: pick from the build menu, then drag to draw.
-  - [ ] Cost per 10 m segment.
-  - [ ] Digging: selected infantry dig it; if none are selected, idle Workers within 300 m take
+- [x] Line tool: pick from the build menu, then drag to draw.
+  - [x] Cost per 10 m segment.
+  - [x] Digging: selected infantry dig it; if none are selected, idle Workers within 300 m take
         it [J].
-  - [ ] Dig rate 15 s per 10 m; Workers 1.5× faster.
-- [ ] Trench, barricade and wire effects and HP [B, G12, I].
-  - [ ] Your own barricades and wire slow your own units; your own trenches don't slow your own
+  - [x] Dig rate 15 s per 10 m; Workers 1.5× faster.
+- [x] Trench, barricade and wire effects and HP [B, G12, I].
+  - [x] Your own barricades and wire slow your own units; your own trenches don't slow your own
         infantry.
-  - [ ] Fill trench (K), Workers only.
-- [ ] Paths recalculated once per finished line.
-- [ ] Bunker [B].
-- [ ] HQ garrison: 6 infantry, +6 m height, 220 vision [I].
-- [ ] Grenades:
-  - [ ] Thrown automatically at units in trenches or bunkers, or by order.
-  - [ ] Bunker occupants take 30% damage and full stress.
-  - [ ] Friendly fire on.
-- [ ] Medic unit [A]; Field Hospital [B]; HQ regeneration 0.5 HP/s within 150 m. Sources add up,
+  - [x] Fill trench (K), Workers only.
+- [x] Paths recalculated once per finished line.
+- [x] Bunker [B].
+- [x] HQ garrison: 6 infantry, +6 m height, 220 vision [I].
+- [x] Grenades:
+  - [x] Thrown automatically at units in trenches or bunkers, or by order.
+  - [x] Bunker occupants take 30% damage and full stress.
+  - [x] Friendly fire on.
+- [x] Medic unit [A]; Field Hospital [B]; HQ regeneration 0.5 HP/s within 150 m. Sources add up,
       infantry only.
-- [ ] Research items for these systems (Fortification, Entrenching Tools, Grenades, Field
+- [x] Medic XP (1 per 20 HP healed) and Worker digging XP (1 per 10 m) [H1].
+- [x] Research items for these systems (Fortification, Entrenching Tools, Grenades, Field
       Medicine, Field Hospital), temporarily on the HQ list until 0.5.
 
 **Done when**
-- [ ] Balance Lab tests for a bunker assault and a trench hold.
-- [ ] `GAME_DESIGN.md` updated.
+- [x] Balance Lab tests for a bunker assault and a trench hold.
+- [x] `GAME_DESIGN.md` updated.
 
 ---
 

@@ -42,7 +42,7 @@ const Render = (() => {
     ctx.moveTo(Math.cos(u.facing) * s * 0.75, Math.sin(u.facing) * s * 0.75); ctx.lineTo(Math.cos(u.facing) * (s + 2.5), Math.sin(u.facing) * (s + 2.5)); ctx.stroke();
     Icons.drawIcon(ctx, u.def.icon, 0, 0, s * 0.64, '#fff');
     if (u.muzzle > 0) { ctx.fillStyle = '#ffe680'; ctx.beginPath(); ctx.arc(Math.cos(u.facing) * (s + 3.5), Math.sin(u.facing) * (s + 3.5), 2.2, 0, Math.PI * 2); ctx.fill(); }
-    if (u.work != null) { ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(s + 2, -s - 2, 3.2, 0, Math.PI * 2); ctx.fill(); Icons.drawIcon(ctx, 'worker', s + 2, -s - 2, 2.2, '#222'); }
+    if (u.work != null || G.time - (u.digT || -9) < 0.3) { ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(s + 2, -s - 2, 3.2, 0, Math.PI * 2); ctx.fill(); Icons.drawIcon(ctx, 'worker', s + 2, -s - 2, 2.2, '#222'); }
     if (u.flee > 0 || u.alertT > 0) {   // "!!" while panicking, "!" when fire starts coming in
       const txt = u.flee > 0 ? '!!' : '!'; const bob = Math.sin((u.flee > 0 ? u.flee : u.alertT) * 14) * 1.2;
       ctx.font = 'bold 11px "Segoe UI", Arial, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
@@ -87,11 +87,11 @@ const Render = (() => {
       ctx.fillStyle = 'rgba(0,0,0,0.5)'; ctx.fillRect(x0 + 4, b.h / 2 - 7, pw, 3);
       ctx.fillStyle = '#7fd27f'; ctx.fillRect(x0 + 4, b.h / 2 - 7, pw * q.t / q.total, 3);
     }
-    if (b.def.tower && b.built) {
-      const lv = b.levelDef; const n = b.garrison.length;
-      ctx.fillStyle = '#ffd257'; for (let i = 0; i < b.level; i++) { ctx.beginPath(); ctx.arc(x0 + 5 + i * 6, y0 + 5, 2, 0, Math.PI * 2); ctx.fill(); }
+    if (b.slots && b.built && (b.def.tower || b.garrison.length || b.owner === 1)) {   // occupancy; tower level dots
+      const n = b.garrison.filter(id => { const g = G.unitById.get(id); return g && !g.dead; }).length;
+      ctx.fillStyle = '#ffd257'; if (b.def.levels) for (let i = 0; i < b.level; i++) { ctx.beginPath(); ctx.arc(x0 + 5 + i * 6, y0 + 5, 2, 0, Math.PI * 2); ctx.fill(); }
       ctx.fillStyle = '#fff'; ctx.font = 'bold 9px sans-serif'; ctx.textAlign = 'right'; ctx.textBaseline = 'top';
-      ctx.fillText(n + '/' + (lv.cap + lv.heavy), b.w / 2 - 3, y0 + 2);
+      if (b.def.tower || n) ctx.fillText(n + '/' + Game.slotCount(b.slots), b.w / 2 - 3, y0 + (b.type === 'hq' ? 12 : 2));
       if (b.upgrading) { ctx.fillStyle = 'rgba(0,0,0,0.5)'; ctx.fillRect(x0 + 4, b.h / 2 - 7, b.w - 8, 3); ctx.fillStyle = '#ffd257'; ctx.fillRect(x0 + 4, b.h / 2 - 7, (b.w - 8) * b.upgrading.t / b.upgrading.total, 3); }
     }
     const hp = b.hp / b.maxHp;
@@ -154,6 +154,36 @@ const Render = (() => {
     }
   }
 
+  // Line defences (patch 0.4): a planned segment is a dashed outline, a started one fills in as it is
+  // dug. Trenches are dark earth, barricades timber with cross braces, wire a zigzag with barbs.
+  function strokeSeg(sg, t) { ctx.beginPath(); ctx.moveTo(sg.x0, sg.y0); ctx.lineTo(sg.x0 + (sg.x1 - sg.x0) * t, sg.y0 + (sg.y1 - sg.y0) * t); ctx.stroke(); }
+  function drawSeg(sg) {
+    const col = Data.PLAYER_COLORS[sg.owner], t = sg.done ? 1 : sg.progress;
+    ctx.lineCap = 'butt';
+    if (t < 1) { ctx.strokeStyle = col; ctx.globalAlpha = 0.55; ctx.lineWidth = 1; ctx.setLineDash([3, 3]); strokeSeg(sg, 1); ctx.setLineDash([]); ctx.globalAlpha = 1; }
+    if (t > 0) {
+      ctx.globalAlpha = sg.done ? 1 : 0.75;
+      if (sg.type === 'trench') {
+        ctx.strokeStyle = col; ctx.globalAlpha *= 0.45; ctx.lineWidth = 9; strokeSeg(sg, t); ctx.globalAlpha = sg.done ? 1 : 0.75;
+        ctx.strokeStyle = '#7a5f3a'; ctx.lineWidth = 7; strokeSeg(sg, t); ctx.strokeStyle = '#3b2d1b'; ctx.lineWidth = 3.5; strokeSeg(sg, t);
+      } else if (sg.type === 'barricade') {
+        ctx.strokeStyle = '#8a7658'; ctx.lineWidth = 4; strokeSeg(sg, t);
+        const L = Math.hypot(sg.x1 - sg.x0, sg.y1 - sg.y0) || 1, ux = (sg.x1 - sg.x0) / L, uy = (sg.y1 - sg.y0) / L;
+        ctx.strokeStyle = '#3a2f22'; ctx.lineWidth = 1.2; ctx.beginPath();
+        for (let d = 2; d < L * t; d += 4) { const x = sg.x0 + ux * d, y = sg.y0 + uy * d; ctx.moveTo(x - uy * 4 - ux * 1.5, y + ux * 4 - uy * 1.5); ctx.lineTo(x + uy * 4 + ux * 1.5, y - ux * 4 + uy * 1.5); }
+        ctx.stroke(); ctx.strokeStyle = col; ctx.lineWidth = 1; strokeSeg(sg, t);
+      } else {
+        const L = Math.hypot(sg.x1 - sg.x0, sg.y1 - sg.y0) || 1, ux = (sg.x1 - sg.x0) / L, uy = (sg.y1 - sg.y0) / L;
+        ctx.strokeStyle = '#555'; ctx.lineWidth = 0.9; ctx.beginPath(); ctx.moveTo(sg.x0, sg.y0);
+        for (let d = 1.5, k = 0; d <= L * t; d += 1.5, k++) { const o = k % 2 ? 2.5 : -2.5; ctx.lineTo(sg.x0 + ux * d - uy * o, sg.y0 + uy * d + ux * o); }
+        ctx.stroke(); ctx.strokeStyle = col; ctx.lineWidth = 0.8; ctx.globalAlpha *= 0.7; strokeSeg(sg, t);
+      }
+      ctx.globalAlpha = 1;
+    }
+    if (sg.done && sg.maxHp && sg.hp < sg.maxHp) { ctx.fillStyle = '#d64545'; ctx.fillRect(sg.x - 4, sg.y - 7, 8 * sg.hp / sg.maxHp, 1.5); }
+    ctx.lineCap = 'round';
+  }
+
   // Blood, splatter and corpses stay on the ground and fade out.
   function drawDecals() {
     for (const d of G.decals) {
@@ -183,10 +213,15 @@ const Render = (() => {
     if (vx1 > vx0 && vy1 > vy0) { ctx.imageSmoothingEnabled = cam.zoom < 1; ctx.drawImage(Terrain.cache, vx0, vy0, vx1 - vx0, vy1 - vy0, vx0, vy0, vx1 - vx0, vy1 - vy0); }
     const sel = new Set(G.selection);
     drawDecals();
+    for (const sg of G.segs) if (sg.owner === 1 || sg.seen) drawSeg(sg);
     for (const b of G.buildings) if (!b.dead && buildingVisible(b)) drawBuilding(b, sel.has(b));
     for (const b of G.buildings) if (!b.dead && b.rally && sel.has(b)) { ctx.strokeStyle = '#fff'; ctx.lineWidth = 1; ctx.setLineDash([3, 3]); ctx.beginPath(); ctx.moveTo(b.x, b.y); ctx.lineTo(b.rally.x, b.rally.y); ctx.stroke(); ctx.setLineDash([]); ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(b.rally.x, b.rally.y, 3, 0, Math.PI * 2); ctx.fill(); }
     for (const e of G.selection) if (!e.dead && (e instanceof Unit ? unitVisible(e) : buildingVisible(e))) drawSelectionRing(e);
-    for (const u of G.units) if (!u.dead && unitVisible(u)) drawUnit(u, sel.has(u));
+    for (const u of G.units) if (!u.dead && unitVisible(u)) {
+      const t = u.def.heal && u.patient;   // a Medic's line to the soldier it is treating
+      if (t && !t.dead && t.hp < t.stats.hp && u.owner === 1 && dist(u.x, u.y, t.x, t.y) <= u.def.heal.range) { ctx.strokeStyle = 'rgba(90,214,90,0.7)'; ctx.lineWidth = 1.2; ctx.setLineDash([2, 2]); ctx.beginPath(); ctx.moveTo(u.x, u.y); ctx.lineTo(t.x, t.y); ctx.stroke(); ctx.setLineDash([]); }
+      drawUnit(u, sel.has(u));
+    }
     for (const p of G.projectiles) if (Fog.visible(1, p.x + (p.tx - p.x) * p.t / p.dur, p.y + (p.ty - p.y) * p.t / p.dur)) drawProjectile(p);
     for (const e of G.effects) drawEffect(e);
     ctx.globalAlpha = 0.4; ctx.imageSmoothingEnabled = true; ctx.drawImage(Fog.canvas, 0, 0, Terrain.W, Terrain.H, 0, 0, mw, mh); ctx.globalAlpha = 1;
@@ -198,7 +233,15 @@ const Render = (() => {
       ctx.globalAlpha = 1; Icons.drawIcon(ctx, def.icon, st.mouse.wx, st.mouse.wy, Math.min(def.w, def.h) * 0.3, '#fff');
       if (def.needs === 'forest') { ctx.strokeStyle = 'rgba(0,80,0,0.5)'; ctx.setLineDash([3, 3]); ctx.beginPath(); ctx.arc(st.mouse.wx, st.mouse.wy, 70, 0, Math.PI * 2); ctx.stroke(); ctx.setLineDash([]); }
     }
-    if (st.mode === 'attack' || st.mode === 'walk' || st.mode === 'work') { ctx.strokeStyle = st.mode === 'attack' ? '#c33' : '#3a3'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(st.mouse.wx, st.mouse.wy, 6, 0, Math.PI * 2); ctx.stroke(); }
+    if (st.mode === 'line') {   // the line being drawn, ticked every 10 m, with its total cost
+      const pts = st.linePts || [[st.mouse.wx, st.mouse.wy]]; const T = Data.LINES[st.lineType];
+      let len = 0; for (let i = 1; i < pts.length; i++) len += dist(pts[i - 1][0], pts[i - 1][1], pts[i][0], pts[i][1]);
+      const n = Math.max(pts.length > 1 ? 1 : 0, Math.floor(len / Data.DIG.segment)), cost = {}; for (const k in T.cost) cost[k] = T.cost[k] * n;
+      ctx.strokeStyle = Game.canAfford(G.players[1], cost) ? '#3a6' : '#c33'; ctx.lineWidth = 2.5; ctx.setLineDash([5, 3]);
+      ctx.beginPath(); pts.forEach((p, i) => ctx[i ? 'lineTo' : 'moveTo'](p[0], p[1])); ctx.stroke(); ctx.setLineDash([]);
+      if (n) { ctx.font = '10px "Segoe UI", Arial, sans-serif'; ctx.textAlign = 'left'; ctx.textBaseline = 'bottom'; ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(246,243,230,0.9)'; const txt = n * 10 + ' m · ' + Util.costStr(cost); ctx.strokeText(txt, st.mouse.wx + 8, st.mouse.wy - 6); ctx.fillStyle = '#222'; ctx.fillText(txt, st.mouse.wx + 8, st.mouse.wy - 6); }
+    }
+    if (st.mode === 'attack' || st.mode === 'walk' || st.mode === 'work' || st.mode === 'fill' || st.mode === 'grenade') { ctx.strokeStyle = st.mode === 'attack' || st.mode === 'grenade' ? '#c33' : '#3a3'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(st.mouse.wx, st.mouse.wy, 6, 0, Math.PI * 2); ctx.stroke(); }
     for (const u of G.selection) if (u instanceof Unit && u.queue.length) { ctx.strokeStyle = 'rgba(60,60,60,0.5)'; ctx.setLineDash([2, 4]); ctx.beginPath(); ctx.moveTo(u.order && u.order.x != null ? u.order.x : u.x, u.order && u.order.y != null ? u.order.y : u.y); for (const o of u.queue) if (o.x != null) ctx.lineTo(o.x, o.y); ctx.stroke(); ctx.setLineDash([]); }
     // screen-space overlays
     ctx.setTransform(1, 0, 0, 1, 0, 0);
@@ -212,7 +255,8 @@ const Render = (() => {
       ctx.fillStyle = '#fff'; ctx.fillText(t.msg, w / 2, ty); ty -= 28;
     }
     ctx.globalAlpha = 1;
-    const banner = { build: st.buildType ? 'Click to place ' + Data.BUILDINGS[st.buildType].name + ' (right click cancels)' : '', walk: 'Move: click where to go (hold Shift to queue)', attack: 'Attack-move: click an enemy or a point (hold Shift to queue)', work: 'Enter: click a Lumber Camp, Mine or Scout Tower' }[st.mode];
+    const banner = { build: st.buildType ? 'Click to place ' + Data.BUILDINGS[st.buildType].name + ' (right click cancels)' : '', walk: 'Move: click where to go (hold Shift to queue)', attack: 'Attack-move: click an enemy or a point (hold Shift to queue)', work: 'Enter: click a Lumber Camp, Mine, Scout Tower, Bunker or the HQ',
+      line: st.lineType ? Data.LINES[st.lineType].name + ': hold the left button and drag to draw (right click cancels)' : '', fill: 'Fill: click one of your trenches (Workers only)', grenade: 'Grenade: click an enemy or a point' }[st.mode];
     // Below the group bar, which floats at the top centre in the open-map layout.
     if (banner) { ctx.font = '12px "Segoe UI", Arial, sans-serif'; const bw = ctx.measureText(banner).width + 24; ctx.fillStyle = 'rgba(0,0,0,0.55)'; ctx.fillRect(w / 2 - bw / 2, 66, bw, 22); ctx.fillStyle = '#fff'; ctx.fillText(banner, w / 2, 77); }
     if (G.speed === 0 && !G.over) { ctx.fillStyle = 'rgba(0,0,0,0.5)'; ctx.fillRect(w / 2 - 50, 96, 100, 26); ctx.fillStyle = '#fff'; ctx.font = 'bold 14px "Segoe UI", Arial, sans-serif'; ctx.fillText('PAUSED', w / 2, 109); }

@@ -4,10 +4,12 @@
 // Key layout: DESIGN_DECISIONS.md section 9 (F attack-move, R defend, G retreat, X stop, E enter,
 // Q exit, T tower upgrade, Z X C V train). New features take free keys; existing ones don't move.
 // Every order goes through Game.command, which logs it with its tick for replays.
+// Patch 0.4: line tools (Y trench, I barricade, J wire) are drawn by holding the left button and
+// dragging; K fills a trench (Workers), V throws a grenade (Riflemen, after the research).
 // TODO(patch 0.3): load/unload keys for transports (reuse the work/garrison click flow).
 const Input = (() => {
   const { dist } = Util;
-  const state = { mode: 'normal', buildType: null, box: null, mouse: { x: 0, y: 0, wx: 0, wy: 0, inside: false, moveT: 0 }, keys: new Set(), lastGroupT: 0, lastGroupK: '', trainPage: 0 };
+  const state = { mode: 'normal', buildType: null, box: null, mouse: { x: 0, y: 0, wx: 0, wy: 0, inside: false, moveT: 0 }, keys: new Set(), lastGroupT: 0, lastGroupK: '', trainPage: 0, lineType: null, linePts: null };
   const PAN_KEYS = { w: 'arrowup', a: 'arrowleft', s: 'arrowdown', d: 'arrowright' };   // DD 9: WASD pans like the arrows
   const ids = list => list.map(e => e.id);
   const cmd = c => Game.command(c);
@@ -66,9 +68,19 @@ const Input = (() => {
   }
   const trainable = b => b.def.produces.filter(t => G.players[1].unlocked.has(t));
   function setMode(m, buildType) {
-    if ((m === 'walk' || m === 'attack' || m === 'work') && !selectedUnits().length) m = 'normal';
-    state.mode = m; state.buildType = buildType || null; UI.refresh();
+    if ((m === 'walk' || m === 'attack' || m === 'work' || m === 'fill' || m === 'grenade') && !selectedUnits().length) m = 'normal';
+    if (m === 'build' && Data.LINES[buildType]) { m = 'line'; }   // line tools share the build menu and keys
+    state.mode = m; state.buildType = m === 'build' ? buildType : null; state.lineType = m === 'line' ? buildType : null; state.linePts = null; UI.refresh();
   }
+  // A clicked point on one of your own line segments (null if none).
+  const ownSegAt = (wx, wy, doneOnly) => { const s = Game.segNear(wx, wy, doneOnly); return s && s.owner === 1 ? s : null; };
+  function finishDraw(q) {
+    const pts = state.linePts; state.linePts = null; if (!pts || pts.length < 2) return;
+    const n = cmd({ kind: 'line', type: state.lineType, points: pts.map(p => [Math.round(p[0]), Math.round(p[1])]), units: ids(selectedUnits()), queue: q });
+    if (n) { Game.toast(n + ' digging the ' + Data.LINES[state.lineType].name.toLowerCase()); if (!q) setMode('normal'); }
+  }
+  // Garrisonable: towers, Bunkers and the HQ (DD 9: right click or E on them garrisons).
+  const canHold = ent => ent instanceof Building && ent.owner === 1 && ent.slots && ent.built;
 
   // ---- mouse ----
   function onDown(e) {
@@ -84,6 +96,18 @@ const Input = (() => {
     }
     if (e.button !== 0) return;
     const units = selectedUnits();
+    if (state.mode === 'line') { state.linePts = [[wx, wy]]; state.lineShift = q; return; }
+    if (state.mode === 'fill') {
+      const sg = ownSegAt(wx, wy, true);
+      if (sg && sg.type === 'trench') { const n = cmd({ kind: 'fill', units: ids(units), seg: sg.id, queue: q }); Game.toast(n ? n + ' Workers filling the trench' : 'Only Workers can fill trenches'); marker(sg.x, sg.y, '#3c3'); if (!q) setMode('normal'); }
+      else Game.toast('Click one of your trenches');
+      return;
+    }
+    if (state.mode === 'grenade') {
+      const ent = entityAt(wx, wy); const t = ent && ent.owner !== 1 ? ent : null;
+      const n = cmd({ kind: 'grenade', units: ids(units), x: wx, y: wy, target: t ? t.id : null, queue: q });
+      if (!n) Game.toast('Grenades need Riflemen and the Grenades research'); marker(wx, wy, '#c33'); if (!q) setMode('normal'); return;
+    }
     if (state.mode === 'build') {
       const b = cmd({ kind: 'build', type: state.buildType, x: wx, y: wy });
       if (b && !q) setMode('normal'); else UI.refresh();
@@ -100,10 +124,10 @@ const Input = (() => {
       if (ent instanceof Building && ent.owner === 1 && ent.def.harvest && ent.built) {
         const n = cmd({ kind: 'work', units: ids(units), building: ent.id, queue: q }); if (n) Game.toast(n + ' sent to work at the ' + ent.def.name);
         marker(ent.x, ent.y, '#3c3'); if (!q) setMode('normal');
-      } else if (ent instanceof Building && ent.owner === 1 && ent.def.tower && ent.built) {
+      } else if (canHold(ent)) {
         const n = cmd({ kind: 'garrison', units: ids(units), building: ent.id, queue: q }); if (n) Game.toast(n + ' heading into the ' + ent.def.name);
         marker(ent.x, ent.y, '#3c3'); if (!q) setMode('normal');
-      } else Game.toast('Click one of your Lumber Camps, Mines or Scout Towers');
+      } else Game.toast('Click one of your Lumber Camps, Mines, Scout Towers, Bunkers or the HQ');
       return;
     }
     dragStart = { x: state.mouse.x, y: state.mouse.y, shift: q };
@@ -111,6 +135,7 @@ const Input = (() => {
   function onMove(e) {
     updateMouse(e);
     if (state.rdrag) { state.rdrag.ex = state.mouse.wx; state.rdrag.ey = state.mouse.wy; }
+    if (state.linePts) { const l = state.linePts[state.linePts.length - 1]; if (dist(l[0], l[1], state.mouse.wx, state.mouse.wy) >= 4 && state.linePts.length < 400) state.linePts.push([state.mouse.wx, state.mouse.wy]); }
     if (pan) {
       if (e.buttons & 4) { Render.cam.x = pan.cx - (e.clientX - pan.x) / Render.cam.zoom; Render.cam.y = pan.cy - (e.clientY - pan.y) / Render.cam.zoom; Render.clampCam(); return; }
       pan = null;
@@ -122,6 +147,7 @@ const Input = (() => {
   function onUp(e) {
     if (e.button === 1) { pan = null; return; }
     if (e.button === 2 && state.rdrag) { updateMouse(e); finishLine(); return; }
+    if (e.button === 0 && state.linePts) { updateMouse(e); finishDraw(state.lineShift || e.shiftKey); return; }
     if (e.button !== 0 || !dragStart) return;
     const add = dragStart.shift;
     if (state.box) {
@@ -158,7 +184,9 @@ const Input = (() => {
     if (units.length) {
       if (ent && ent.owner !== 1 && !ent.dead) { cmd({ kind: 'attack', units: ids(units), target: ent.id, queue: q }); marker(ent.x, ent.y, '#c33'); return; }
       if (ent instanceof Building && ent.owner === 1 && ent.def.harvest && ent.built) { const n = cmd({ kind: 'work', units: ids(units), building: ent.id, queue: q }); if (n) Game.toast(n + ' sent to work at the ' + ent.def.name); marker(ent.x, ent.y, '#3c3'); return; }
-      if (ent instanceof Building && ent.owner === 1 && ent.def.tower && ent.built) { const n = cmd({ kind: 'garrison', units: ids(units), building: ent.id, queue: q }); if (n) Game.toast(n + ' heading into the ' + ent.def.name); marker(ent.x, ent.y, '#3c3'); return; }
+      if (canHold(ent)) { const n = cmd({ kind: 'garrison', units: ids(units), building: ent.id, queue: q }); if (n) Game.toast(n + ' heading into the ' + ent.def.name); marker(ent.x, ent.y, '#3c3'); return; }
+      const sg = !ent && ownSegAt(wx, wy, false);   // right click on your unfinished line: dig on
+      if (sg && !sg.done) { const n = cmd({ kind: 'dig', units: ids(units), seg: sg.id, queue: q }); if (n) Game.toast(n + ' digging'); marker(sg.x, sg.y, '#3c3'); return; }
       cmd({ kind: 'move', units: ids(units), x: wx, y: wy, queue: q }); marker(wx, wy, '#3c3'); return;
     }
     const b = selectedBuilding();
@@ -189,7 +217,7 @@ const Input = (() => {
       if (t) { cmd({ kind: 'enqueue', building: b.id, type: t }); UI.refresh(); }
       return;
     }
-    if (b && b.def.tower && k === 'q') { const n = cmd({ kind: 'unload', building: b.id }); if (n) Game.toast(n + ' left the tower'); UI.refresh(); return; }
+    if (b && b.slots && k === 'q') { const n = cmd({ kind: 'unload', building: b.id }); if (n) Game.toast(n + ' left the ' + b.def.name); UI.refresh(); return; }
     if (b && b.def.tower && k === 't') { cmd({ kind: 'upgrade', building: b.id }); UI.refresh(); return; }
     if (units.length) {
       if (k === 'f') { setMode('attack'); return; }
@@ -197,6 +225,8 @@ const Input = (() => {
       if (k === 'g') { cmd({ kind: 'retreat', units: ids(units), queue: e.shiftKey }); return; }
       if (k === 'x') { cmd({ kind: 'stop', units: ids(units) }); return; }
       if (k === 'e') { setMode('work'); return; }
+      if (k === 'k' && units.some(u => u.def.labour)) { setMode('fill'); return; }
+      if (k === 'v' && units.some(u => Game.canThrow(u))) { setMode('grenade'); return; }
     }
     if (k === 'b') { UI.showTab('build'); return; }
     if (k === 'n') { UI.showTab('research'); return; }
