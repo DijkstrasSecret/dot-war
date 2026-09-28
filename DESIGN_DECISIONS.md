@@ -869,7 +869,9 @@ Agreed on 28 September 2026. Built as `js/portraits.js` (visual only, own random
 | Topic | Decision |
 | --- | --- |
 | What a faction changes | **Looks only**: uniform, headgear, camouflage and soldiers' names. Stats, units and the tech tree stay identical, so sides stay symmetric. |
-| Realism | **Real nations**, with real-looking uniforms and helmets but **no flags, party or political insignia**. The only markings are the player's team colour on collar tabs and cap bands. |
+| Realism | **Real nations** with period uniforms, helmets and **national insignia**, following the Hearts of Iron approach (changed 28 September 2026; this replaces the earlier "no insignia" rule). The player's team colour stays on collar tabs and cap bands. |
+| Allowed markings | National markings (US white star, Soviet red star, British roundel, French cockade, German Balkenkreuz and so on), national flags, rank badges and unit patches. |
+| Never shown | The swastika, SS runes and anything built around them, including the WW2 German cap and breast eagle, which holds a swastika (leave it out, or draw the eagle without it). No party symbols of any nation, such as the Italian fasces or the Falange yoke and arrows. Reason: legal limits in Germany and stricter platform and ad rules; fans rarely miss these. |
 | Roster | British, American, French, German, Italian, Polish, Soviet, Turkish, Spanish. |
 | Choosing | Each player picks a faction at match start (proposed). The AI gets a random faction different from the player's (proposed). Team colour stays a separate choice. |
 | Who serves | About **85%** of a faction's soldiers have names from their own nation. The rest are **volunteers** with names from neighbouring nations, wearing the faction's uniform. |
@@ -900,3 +902,5 @@ Agreed on 28 September 2026. Built as `js/portraits.js` (visual only, own random
 - Exact extra weights (1 or 2) per designer extra, and the designer's chassis cost factors.
 - The research that triggers Cold War and Modern kit (section K, proposed triggers).
 - Where portraits appear in the UI: selection panel, squadron bar, or both.
+- National insignia on portraits and in-game art (helmet decals, cap badges) per army and era, under
+  the section K marking rules. Patch 0.2a has none yet.

@@ -280,8 +280,10 @@ don't change with faction or era; only the kit changes.
 ### Rules (DESIGN_DECISIONS section K)
 
 - **Looks only.** Factions never change stats; the sides stay symmetric.
-- **Real nations, no symbols.** Real-looking uniforms and helmets, but no flags, party or
-  political insignia. The only markings are the team colour on collar tabs and cap bands.
+- **Real nations with national insignia** (Hearts of Iron approach, changed 28 Sept). National
+  markings, flags, rank badges and unit patches are allowed. Never the swastika, SS runes or
+  anything built around them (including the WW2 German eagle), and no party symbols of any nation.
+  The team colour stays on collar tabs and cap bands.
 - **Nine armies:** British, American, French, German, Italian, Polish, Soviet, Turkish, Spanish.
 - **Choosing:** each player picks an army at match start. The AI gets a different random army,
   and neutral guards keep a mixed look.
@@ -395,6 +397,7 @@ section 11.
 - The UI rework: layout, and where portraits appear (selection panel, squadron bar, or both).
 - Final research triggers for Cold War and Modern kit, once the tech tree grows past WW2.
 - Drones: when they arrive and what research unlocks them.
+- National insignia on portraits and art (helmet decals, cap badges); patch 0.2a has none yet.
 
 ---
 
@@ -414,4 +417,6 @@ section 11.
 | Weather and time units | Section H says "real time at 2x" | Section I: all minutes are game minutes |
 | Era | "Grounded 1910–1945" | WW2 and beyond (section K) |
 | Faction vs team | — | Faction = army look and names. Team = colour (blue or red). They are separate. |
+| Insignia | "No flags, party or political insignia" (morning of 28 Sept) | National insignia allowed, Nazi and party symbols never (section K) |
+| Paintings | — | Menu and loading screen paintings are on `main` in `assets/paintings/` (see its README) |
 | Doc versions | Before 28 Sept afternoon, the repo copies lacked section K and patch 0.2a | Repo `design-decisions` branch and project copies now match |
