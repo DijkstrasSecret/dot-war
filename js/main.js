@@ -38,6 +38,7 @@ const Main = (() => {
   function start(mapId, difficulty, faction) { for (const s of steps(mapId, difficulty, faction)) s.run(); }
   // Start behind the loading screen; the game loop idles until the screen is gone.
   async function load(mapId, difficulty, faction) {
+    if (loading) return;   // a second click while a build is running would start two overlapping ones
     loading = true;
     try { await Loading.run(steps(mapId, difficulty, faction)); } finally { loading = false; }
   }
