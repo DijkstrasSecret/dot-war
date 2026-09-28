@@ -928,12 +928,16 @@ Balance Lab results when 0.2.1 was finished (100 seeded runs each):
 | Height too strong (Q8) | Soften the steepness bonuses, keep the range formula. Damage `x(1 + clamp(0.1 s, -0.03, +0.06))`, hit chance `x(1 + clamp(0.08 s, -0.03, +0.05))`, about a fifth of the original. The side 30 m higher now wins about 74% of 5 v 5 duels (target 65–80%). The range bonus alone gives about 63%, so most of the high-ground edge is reach. |
 | AI stalemate | Raids escalate now, before the full Q24 raid logic in 0.7: each raid sends 10% more of the army than the last (up to 90%), and once the AI's army is twice the enemy soldiers it has seen in the last 2 minutes (at least 3), it sends everyone. Numbers in `Data.AI_RAIDS`. |
 | Music file | The repo keeps the 80 kbps copy (14 MB) instead of the 44 MB original. |
+| Stalemate after escalation (result) | Did not end AI-v-AI matches: seeds 1 and 2 on Normal still had no winner at 90 min (about 330 kills a side, up from about 190). An instrumented 40-minute run shows why: raids never reach the enemy HQ (at most 2 attackers within 250 m, neither HQ damaged). The defender's whole army meets each raid on the way, both sides trade evenly, and both refill to the same cap with the same income. Two identical scripted commanders have nothing to break the tie. Open question for Kaan: see "Still open". |
 
 ---
 
 ## Still open
 
 - Every value marked (proposed): tune in the Balance Lab.
+- AI-v-AI stalemate: the mirror match cannot end while both sides run the same scripted AI with
+  the same cap and income. Decide whether the 45–75 min target waits for Q23 (AI on the player's
+  economy), is measured with unequal sides, or needs deeper AI changes now.
 - Exact extra weights (1 or 2) per designer extra, and the designer's chassis cost factors.
 - The research that triggers Cold War and Modern kit (section K, proposed triggers).
 - Where portraits appear in the UI: selection panel, squadron bar, or both.
