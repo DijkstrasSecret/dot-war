@@ -23,29 +23,31 @@ const Data = {
   },
 
   UNITS: {
-    musket: {
-      name: 'Musketeer', shape: 'circle', icon: 'musket', cls: 'infantry', size: 6,
-      hp: 60, armor: 'none', speed: 50, vision: 150, cost: { wood: 15 }, time: 8,
-      weapon: { dmg: 24, dtype: 'ballistic', range: 110, minRange: 0, acc: 0.5, reload: 3.2, pspeed: 700, indirect: false, splash: 0, suppress: 0.12 },
-      desc: 'Wood-only line infantry. Short range, slow reload, cheap.',
+    // DD A: harvests and (from 0.4) digs; unarmed. Counts as a full worker at a camp, soldiers as half (DD Q4).
+    worker: {
+      name: 'Worker', shape: 'circle', icon: 'worker', cls: 'infantry', size: 5.5, labour: 1,
+      hp: 40, armor: 'none', speed: 50, vision: 120, cost: { wood: 25 }, time: 8, supply: 1,
+      weapon: null,
+      desc: 'Unarmed labourer. A full worker at a camp or mine, where soldiers count as half.',
     },
     rifle: {
       name: 'Rifleman', shape: 'circle', icon: 'rifle', cls: 'infantry', size: 6,
-      hp: 70, armor: 'none', speed: 52, vision: 160, cost: { wood: 12, metal: 10 }, time: 10, requires: 'rifling',
+      hp: 70, armor: 'none', speed: 52, vision: 160, cost: { wood: 12, metal: 10 }, time: 10,
       weapon: { dmg: 20, dtype: 'ballistic', range: 170, minRange: 0, acc: 0.68, reload: 1.5, pspeed: 900, indirect: false, splash: 0, suppress: 0.08 },
       desc: 'Standard infantry. Good range and accuracy.',
     },
     hmg: {
       name: 'Machine Gunner', shape: 'circle', icon: 'hmg', cls: 'infantry', size: 6.5,
-      hp: 80, armor: 'none', speed: 38, vision: 160, cost: { wood: 10, metal: 35 }, time: 14, requires: 'hmg',
+      hp: 80, armor: 'none', speed: 38, vision: 160, cost: { wood: 10, metal: 35 }, time: 14, requires: 'hmg', noMovingFire: true,   // DD Q11: cannot fire on the move
       weapon: { dmg: 11, dtype: 'ballistic', range: 200, minRange: 0, acc: 0.4, reload: 0.18, pspeed: 900, indirect: false, splash: 0, suppress: 0.035 },
       desc: 'Sustained fire. Pins enemies down and shreds infantry in the open.',
     },
     sniper: {
       name: 'Sniper', shape: 'circle', icon: 'sniper', cls: 'infantry', size: 6,
-      hp: 55, armor: 'none', speed: 48, vision: 230, cost: { wood: 10, metal: 25 }, time: 14, requires: 'sniper', ignoresSuppression: true,
+      hp: 55, armor: 'none', speed: 48, vision: 230, cost: { wood: 10, metal: 25 }, time: 14, requires: 'sniper',
+      stressTaken: 0.5, neverPanics: true, obeysWhenSuppressed: true,   // DD Q12, I: half stress, never panics, can be suppressed but keeps its orders
       weapon: { dmg: 65, dtype: 'ballistic', range: 300, minRange: 0, acc: 0.85, reload: 3.5, pspeed: 1300, indirect: false, splash: 0, suppress: 0.25 },
-      desc: 'Long sight and reach. Always obeys target orders, even under fire.',
+      desc: 'Long sight and reach. Takes half stress, never panics, keeps its target orders even when suppressed.',
     },
     mortar: {
       name: 'Mortar Crew', shape: 'square', icon: 'mortar', cls: 'infantry', size: 7,
@@ -56,11 +58,12 @@ const Data = {
   },
 
   BUILDINGS: {
-    hq: { name: 'Headquarters', w: 64, h: 64, hp: 1500, icon: 'hq', produces: ['musket'], prodMult: 0.7, cost: {}, buildTime: 0, vision: 220, desc: 'Your command post. Lose it and the game is over.' },
-    barracks: { name: 'Barracks', w: 48, h: 40, hp: 600, icon: 'circle', produces: ['musket', 'rifle', 'hmg', 'sniper'], prodMult: 1, cost: { wood: 80, metal: 20 }, buildTime: 30, vision: 120, desc: 'Trains infantry (circles).' },
-    ordnance: { name: 'Ordnance Works', w: 52, h: 44, hp: 700, icon: 'square', produces: ['mortar'], prodMult: 1, cost: { wood: 60, metal: 60 }, buildTime: 40, vision: 120, desc: 'Builds mortars and other heavy weapons (squares).' },
-    lumber: { name: 'Lumber Camp', w: 40, h: 32, hp: 350, icon: 'lumber', harvest: 'wood', rate: 1.0, perWorker: 0.6, maxWorkers: 4, cost: { wood: 40 }, buildTime: 20, vision: 100, needs: 'forest', desc: 'Place next to forest. Assign infantry as workers to speed it up.' },
-    mine: { name: 'Mine', w: 40, h: 36, hp: 400, icon: 'mine', harvest: 'deposit', rate: 0.5, perWorker: 0.35, maxWorkers: 4, cost: { wood: 60, metal: 10 }, buildTime: 25, vision: 100, needs: 'deposit', desc: 'Place on a metal or sulfur deposit. Assign infantry as workers.' },
+    hq: { name: 'Headquarters', w: 64, h: 64, hp: 1500, icon: 'hq', produces: ['rifle', 'worker'], prodMult: { rifle: 0.7 },   // DD I: Riflemen at 0.7x, Workers at full speed
+      cost: {}, buildTime: 0, vision: 220, desc: 'Your command post. Lose it and the game is over.' },
+    barracks: { name: 'Barracks', w: 48, h: 40, hp: 600, icon: 'circle', produces: ['rifle', 'hmg', 'sniper'], cost: { wood: 80, metal: 20 }, buildTime: 30, vision: 120, desc: 'Trains infantry (circles).' },
+    ordnance: { name: 'Ordnance Works', w: 52, h: 44, hp: 700, icon: 'square', produces: ['mortar'], cost: { wood: 60, metal: 60 }, buildTime: 40, vision: 120, desc: 'Builds mortars and other heavy weapons (squares).' },
+    lumber: { name: 'Lumber Camp', w: 40, h: 32, hp: 350, icon: 'lumber', harvest: 'wood', rate: 1.0, perWorker: 0.6, maxWorkers: 4, cost: { wood: 40 }, buildTime: 20, vision: 100, needs: 'forest', desc: 'Place next to forest. Assign Workers (or soldiers, at half rate) to speed it up.' },
+    mine: { name: 'Mine', w: 40, h: 36, hp: 400, icon: 'mine', harvest: 'deposit', rate: 0.5, perWorker: 0.35, maxWorkers: 4, cost: { wood: 60, metal: 10 }, buildTime: 25, vision: 100, needs: 'deposit', desc: 'Place on a metal or sulfur deposit. Assign Workers (or soldiers, at half rate).' },
     tower: {
       name: 'Scout Tower', w: 30, h: 30, hp: 400, icon: 'tower', cost: { wood: 60, metal: 10 }, buildTime: 25, vision: 200, tower: true,
       levels: [
@@ -73,28 +76,57 @@ const Data = {
   },
   BUILD_LIST: ['lumber', 'mine', 'barracks', 'ordnance', 'tower'],
   BUILD_HOTKEYS: { lumber: 'L', mine: 'M', barracks: 'C', ordnance: 'O', tower: 'T' },
-  TRAIN_HOTKEYS: ['Q', 'W', 'E', 'R', 'T'],
+  TRAIN_HOTKEYS: ['Z', 'X', 'C', 'V'],   // DD 9: Tab flips to the next four when a factory has more
 
   RESEARCH: {
-    rifling: { name: 'Rifling', cost: { wood: 60, metal: 30 }, time: 45, req: [], unlock: 'rifle', desc: 'Unlocks Riflemen.' },
+    // DD Q1: Rifling is done for every player at the start, so it is no longer an item.
     drill: { name: 'Marksmanship Drill', cost: { wood: 80 }, time: 40, req: [], effects: [{ units: 'all', stat: 'acc', mult: 1.1 }], desc: '+10% accuracy for newly trained units.' },
     logistics: { name: 'Logistics', cost: { wood: 100, metal: 20 }, time: 50, req: [], effects: [{ harvest: 1.25 }], desc: '+25% harvest rate.' },
     boots: { name: 'Field Boots', cost: { wood: 70 }, time: 35, req: [], effects: [{ units: 'all', stat: 'speed', mult: 1.1 }], desc: '+10% speed for newly trained infantry.' },
-    hmg: { name: 'Heavy Machine Gun', cost: { metal: 90 }, time: 60, req: ['rifling'], unlock: 'hmg', desc: 'Unlocks Machine Gunners.' },
-    sniper: { name: 'Marksman Rifle', cost: { wood: 20, metal: 60 }, time: 50, req: ['rifling'], unlock: 'sniper', desc: 'Unlocks Snipers.' },
-    mortar: { name: 'Mortar', cost: { wood: 40, metal: 60 }, time: 50, req: ['rifling'], unlock: 'mortar', desc: 'Unlocks Mortar Crews (needs sulfur for shells).' },
-    powder: { name: 'Improved Powder', cost: { sulfur: 30, metal: 20 }, time: 40, req: ['rifling'], effects: [{ units: 'firearms', stat: 'range', mult: 1.12 }], desc: '+12% range for newly trained firearm units.' },
+    hmg: { name: 'Heavy Machine Gun', cost: { metal: 90 }, time: 60, req: [], unlock: 'hmg', desc: 'Unlocks Machine Gunners.' },
+    sniper: { name: 'Marksman Rifle', cost: { wood: 20, metal: 60 }, time: 50, req: [], unlock: 'sniper', desc: 'Unlocks Snipers.' },
+    mortar: { name: 'Mortar', cost: { wood: 40, metal: 60 }, time: 50, req: [], unlock: 'mortar', desc: 'Unlocks Mortar Crews (needs sulfur for shells).' },
+    powder: { name: 'Improved Powder', cost: { sulfur: 30, metal: 20 }, time: 40, req: [], effects: [{ units: 'firearms', stat: 'range', mult: 1.12 }], desc: '+12% range for newly trained firearm units.' },
     shells: { name: 'HE Shells', cost: { sulfur: 40, metal: 40 }, time: 45, req: ['mortar'], effects: [{ units: ['mortar'], stat: 'dmg', mult: 1.25 }], desc: '+25% mortar damage for new crews.' },
   },
-  RESEARCH_ORDER: ['rifling', 'drill', 'logistics', 'boots', 'hmg', 'sniper', 'mortar', 'powder', 'shells'],
+  RESEARCH_ORDER: ['drill', 'logistics', 'boots', 'hmg', 'sniper', 'mortar', 'powder', 'shells'],
 
   DEPOSIT_NAMES: { metal: 'Iron ore', sulfur: 'Sulfur', rubber: 'Rubber trees', oil: 'Oil seep' },
 
   // Enemy commander settings per difficulty. 'hard' is the original tuning.
+  // DD Q2: first raid = the enemy's walking time to the player's HQ + buildUp; each raid interval
+  // also adds that walking time. DD G7: game seconds at which the AI may train each unit; Normal
+  // uses the agreed 8 / 12 / 15 min, Easy x1.25 and Hard x0.75 (proposed, set in 0.2.1).
   DIFFICULTY: {
-    easy: { name: 'Easy', desc: 'Small garrison, rare small raids, slow enemy production.', cap: 8, capGrow: 1, firstRaid: 420, raidMin: 320, raidVar: 120, raidFrac: 0.4, garrison: 6, income: 0.6 },
-    normal: { name: 'Normal', desc: 'Moderate garrison and raids every few minutes.', cap: 11, capGrow: 2, firstRaid: 300, raidMin: 220, raidVar: 100, raidFrac: 0.5, garrison: 9, income: 0.8 },
-    hard: { name: 'Hard', desc: 'Full garrison on the mountain and frequent large raids.', cap: 14, capGrow: 2, firstRaid: 240, raidMin: 150, raidVar: 90, raidFrac: 0.55, garrison: 12, income: 1 },
+    easy: { name: 'Easy', desc: 'Small garrison, rare small raids, slow enemy production.', cap: 8, capGrow: 1, buildUp: 300, raidMin: 320, raidVar: 120, raidFrac: 0.4, garrison: 6, income: 0.6, unlocks: { hmg: 600, sniper: 900, mortar: 1125 } },
+    normal: { name: 'Normal', desc: 'Moderate garrison and raids every few minutes.', cap: 11, capGrow: 2, buildUp: 300, raidMin: 220, raidVar: 100, raidFrac: 0.5, garrison: 9, income: 0.8, unlocks: { hmg: 480, sniper: 720, mortar: 900 } },
+    hard: { name: 'Hard', desc: 'Full garrison on the mountain and frequent large raids.', cap: 14, capGrow: 2, buildUp: 300, raidMin: 150, raidVar: 90, raidFrac: 0.55, garrison: 12, income: 1, unlocks: { hmg: 360, sniper: 540, mortar: 675 } },
   },
   DIFFICULTY_ORDER: ['easy', 'normal', 'hard'],
+
+  // Raid escalation (agreed with Kaan on 28 Sept to end AI-v-AI stalemates; the full DD Q24 raid logic
+  // comes in 0.7): each raid sends raidGrow more of the army than the last, up to raidFracMax; once
+  // the army is allInRatio times the enemy soldiers seen in the last `memory` seconds, everyone goes.
+  AI_RAIDS: { raidGrow: 0.1, raidFracMax: 0.9, allInRatio: 2, memory: 120, minEnemy: 3 },
+
+  START: { units: ['rifle', 'rifle', 'rifle', 'rifle', 'rifle', 'rifle', 'worker', 'worker', 'worker', 'worker'] },   // DD Q15
+
+  // Combat constants (formulas in game.js). DD Q8, Q9, Q10, Q11, I.
+  COMBAT: {
+    deadZone: 3,                                        // height differences under this give no bonus or penalty
+    rangeUp: 0.04, rangeUpMax: 0.5,                     // range x(1 + 0.04 sqrt(dh)), at most +50%
+    rangeDown: 0.03, rangeDownMax: 0.2,                 // uphill x(1 - 0.03 sqrt(|dh|)), at most -20%
+    indirectRangeShare: 0.5, indirectRangeMax: 0.25,    // mortars get half the height range bonus, at most +25%
+    // Damage and hit chance x(1 + clamp(k s)), s = dh / max(d, 20). Softened with Kaan on 28 Sept (DD L)
+    // from 0.5 / -0.1..+0.25 and 0.4 / -0.1..+0.2, which made high ground win 91% of 5 v 5 duels.
+    dmgSteep: 0.1, dmgMin: -0.03, dmgMax: 0.06,
+    hitSteep: 0.08, hitMin: -0.03, hitMax: 0.05,
+    steepMinDist: 20,
+    stressDecay: 0.06, retreatDecayMult: 2,             // per second; retreating units shed stress twice as fast
+    suppressedAt: 0.6, panicAt: 0.95,
+    movingAcc: 0.35,                                    // accuracy multiplier when firing on the move
+  },
+  // DD I: every bonus and penalty multiplies, then these caps apply (Util.stack).
+  CAPS: { hit: { max: 0.95 }, stressTaken: { min: 0.25 }, speed: { min: 0.2 }, vision: { min: 0.35 } },
+  ECONOMY: { soldierLabour: 0.5 },                      // DD Q4: a soldier at a camp counts as half a Worker
 };

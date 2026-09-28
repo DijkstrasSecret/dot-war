@@ -1,6 +1,6 @@
 # Dot War: game design summary
 
-A self-contained description of the game as it is built today (patch 0.2), written so it can be
+A self-contained description of the game as it is built today (patch 0.2.1), written so it can be
 pasted into a chat and discussed without the code. Every number here is the live value from
 `js/data.js` or the formula from `js/game.js`, `js/terrain.js` and `js/fog.js`. Section 12 lists
 the questions worth fine-tuning; section 13 says how to hand decisions back so they can be coded.
@@ -58,16 +58,17 @@ Victory: destroy the enemy Headquarters. Defeat: lose yours. The sandbox map has
 - Vision radius grows with height: `base * (1 + clamp(height / 300, 0, 1) * 0.9)`, so a unit at
   270 m sees almost 1.8x as far as one at sea level.
 - Fog of war shows the terrain always and hides enemy units outside vision. Recomputed four times
-  a game second.
+  a game second; a unit or building that has not moved reuses its last result.
 
 ## 3. Units
 
-All five blueprints are infantry class. Squares count as "heavy" for tower capacity.
+All five blueprints are infantry class. Squares count as "heavy" for tower capacity. The
+Musketeer was removed in patch 0.2.1.
 
 | Blueprint | Shape | HP | Speed | Vision | Cost | Train time | Needs research |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| Musketeer | circle | 60 | 50 | 150 | 15 wood | 8 s | none |
-| Rifleman | circle | 70 | 52 | 160 | 12 wood, 10 metal | 10 s | Rifling |
+| Worker | circle | 40 | 50 | 120 | 25 wood | 8 s | none |
+| Rifleman | circle | 70 | 52 | 160 | 12 wood, 10 metal | 10 s (14 s at the HQ) | none |
 | Machine Gunner | circle | 80 | 38 | 160 | 10 wood, 35 metal | 14 s | Heavy Machine Gun |
 | Sniper | circle | 55 | 48 | 230 | 10 wood, 25 metal | 14 s | Marksman Rifle |
 | Mortar Crew | square | 70 | 34 | 140 | 20 wood, 40 metal | 16 s | Mortar |
@@ -76,10 +77,10 @@ Weapons:
 
 | Blueprint | Damage | Type | Range | Min range | Accuracy | Reload | Suppress per shot | Notes |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Musketeer | 24 | ballistic | 110 | 0 | 0.50 | 3.2 s | 0.12 | cheap line infantry |
+| Worker | – | – | – | – | – | – | – | unarmed; a full worker at a camp or mine |
 | Rifleman | 20 | ballistic | 170 | 0 | 0.68 | 1.5 s | 0.08 | the standard unit |
-| Machine Gunner | 11 | ballistic | 200 | 0 | 0.40 | 0.18 s | 0.035 | pins enemies down |
-| Sniper | 65 | ballistic | 300 | 0 | 0.85 | 3.5 s | 0.25 | ignores suppression, always obeys target orders |
+| Machine Gunner | 11 | ballistic | 200 | 0 | 0.40 | 0.18 s | 0.035 | pins enemies down; cannot fire while moving |
+| Sniper | 65 | ballistic | 300 | 0 | 0.85 | 3.5 s | 0.25 | half stress, never panics, keeps target orders when suppressed |
 | Mortar Crew | 50 | explosive | 380 | 90 | 0.50 | 5 s | 0.35 | indirect, splash 32, costs 2 sulfur per shell, needs a spotter |
 
 Speeds are world units per game second. Times are game seconds. All units have armor class
@@ -95,29 +96,43 @@ Each unit stores a snapshot of its blueprint when produced, so research only aff
 
 ## 4. Combat model
 
+All numbers below are in `Data.COMBAT` and `Data.CAPS`. Every bonus and penalty multiplies, then
+caps apply: hit chance at most 0.95, stress taken at least x0.25, speed at least x0.2, vision at
+least x0.35 (`Util.stack`).
+
 - **Target acquisition** every 0.3 s: a forced target if still valid and the unit is not
-  suppressed; otherwise the nearest visible enemy not inside a building, preferring targets in
-  range, then buildings.
-- **Elevation bonus.** With `dh` the height difference shooter minus target (tower height counts):
-  effective range `range * (1 + clamp(dh / 60, -0.15, +0.30))`, damage
-  `dmg * (1 + clamp(dh / 100, -0.10, +0.20))`. So 18 m of height gives +30% range, 20 m gives
-  +20% damage; shooting uphill costs up to 15% range and 10% damage.
-- **Hit chance** = `acc * (1 - 0.55 * (d / range)^2) * cover * (1 - 0.5 * stress) * (moving ? 0.6 : 1)`.
-  Buildings are 2.5x easier to hit. At maximum range accuracy is 45% of the base value.
-- **Damage** = `dmg * ARMOR_MULT[type][armor]`.
-- **Stress** (0 to 1) per unit: each shot that hits or lands near a unit adds the weapon's
-  `suppress` value; neighbours within 30 units get 20% of it; a nearby death adds 0.2; a shell adds
-  up to 0.4. Stress decays 0.09 per second.
+  suppressed (snipers keep theirs even then); otherwise the nearest visible enemy not inside a
+  building, preferring targets in range, then buildings. Workers never pick targets.
+- **Elevation.** `dh` is the height difference shooter minus target (tower height counts);
+  differences under 3 m count as flat.
+  - Range: `x(1 + 0.04 * sqrt(dh))`, at most +50% (about +20% at 25 m, +40% at 100 m). Uphill:
+    `x(1 - 0.03 * sqrt(|dh|))`, at most -20%. Mortars get half the bonus, at most +25%, and the
+    same uphill penalty.
+  - Damage and accuracy use steepness `s = dh / max(d, 20)`, so height matters most up close:
+    damage `x(1 + clamp(0.1 s, -0.03, +0.06))`, hit chance `x(1 + clamp(0.08 s, -0.03, +0.05))`.
+    20 m above a target 50 m away gives +4% damage and +3% hit chance. Most of the high-ground edge
+    is reach: in the Balance Lab the side 30 m higher wins about 74% of 5 v 5 rifle duels.
+- **Hit chance** = `acc * (1 - 0.55 * (d / range)^2) * cover * (1 - 0.5 * stress) * moving * height`,
+  capped at 0.95. `moving` is 0.35 if the shooter moved in the last tick. Buildings are 2.5x easier
+  to hit. At maximum range accuracy is 45% of the base value.
+- **Damage** = `dmg * ARMOR_MULT[type][armor] * height`.
+- **Stress** (0 to 1) per unit: every shot fired at a unit adds the weapon's `suppress` value, hit
+  or miss; neighbours within 30 units get 20% of it; a nearby death adds 0.2; a shell adds up to
+  0.4. Stress decays 0.06 per second, 0.12 while retreating. One Machine Gunner pins a Rifleman in
+  about 4.5 s, three Riflemen pin one in about 6 s, a lone Rifleman never does.
   - Above 0.6 the unit is **suppressed**: 60% speed, 1.4x reload, ignores target orders and shoots
     the nearest enemy instead (yellow ring).
   - At 0.95 the unit **panics** for about 2.5 to 3.5 s: drops its target and flees ("!!").
-  - Snipers skip all of this. Garrisoned units take no stress.
+  - Snipers take half stress and never panic. They can be suppressed, but keep their target
+    orders. Garrisoned units take no stress.
 - **Indirect fire** (mortar): shells arc over ridges, cannot fire inside the minimum range, the
   scatter grows when the target point is not seen by a friendly unit (the spotter rule), each shot
   consumes ammo (2 sulfur), splash damage falls off linearly to the edge, reverse slopes take only
   35% of it, and friendly fire is on.
-- **Moving fire.** On a plain move units shoot while walking at the 0.6 penalty; on attack-move
-  they stop to shoot. Defend holds position; Retreat moves the group 180 units towards its HQ.
+- **Moving fire.** On a plain move units shoot while walking at x0.35 accuracy; Machine Gunners
+  cannot fire while moving. On attack-move units stop to shoot. Defend holds position.
+- **Retreat** moves the group 180 units towards its HQ with no suppression slowdown, and stress
+  drains twice as fast on the way. Units can still panic.
 - **Presentation only**, no rules effect: recoil, a "!" alert when fire starts after six quiet
   seconds, bleeding decals below 50% health, blood, corpses, and a shock ring on death.
 
@@ -127,25 +142,25 @@ Resources: wood, metal, sulfur in use; rubber and oil placed but unused.
 
 | Who | Starting stock |
 | --- | --- |
-| Player | 400 wood, 60 metal |
+| Player | 400 wood, 60 metal, and 6 Riflemen and 4 Workers |
 | Enemy commander | 3000 wood, 1500 metal, 600 sulfur, plus passive income |
 
-Harvest buildings produce `rate + activeWorkers * perWorker` per game second, times the player's
-harvest multiplier (Logistics research gives 1.25). Workers are ordinary infantry assigned with E
-and count only while standing within 70 units of their camp; they do not animate or carry
-anything. A Lumber Camp needs forest within 70 units; a Mine sits on a metal or sulfur deposit,
+Harvest buildings produce `rate + labour * perWorker` per game second, times the player's harvest
+multiplier (Logistics research gives 1.25). Labour counts 1 for each Worker and 0.5 for each soldier
+assigned with E, and only while standing within 70 units of their camp; they do not animate or
+carry anything yet. A camp has four slots whoever fills them. Workers cannot garrison towers. A Lumber Camp needs forest within 70 units; a Mine sits on a metal or sulfur deposit,
 one mine per deposit.
 
 | Building | Size | HP | Cost | Build time | Role |
 | --- | --- | --- | --- | --- | --- |
-| Headquarters | 64x64 | 1500 | given | 0 | trains Musketeers at 0.7x speed, vision 220 |
-| Barracks | 48x40 | 600 | 80 wood, 20 metal | 30 s | trains circles |
+| Headquarters | 64x64 | 1500 | given | 0 | trains Riflemen at 0.7x speed and Workers at full speed, vision 220 |
+| Barracks | 48x40 | 600 | 80 wood, 20 metal | 30 s | trains Riflemen, Machine Gunners, Snipers |
 | Ordnance Works | 52x44 | 700 | 60 wood, 60 metal | 40 s | trains squares (mortar) |
 | Lumber Camp | 40x32 | 350 | 40 wood | 20 s | 1.0 wood/s + 0.6 per worker, max 4 workers |
 | Mine | 40x36 | 400 | 60 wood, 10 metal | 25 s | 0.5/s + 0.35 per worker, max 4 workers |
 | Scout Tower | 30x30 | 400 | 60 wood, 10 metal | 25 s | garrison, see below |
 
-A fully staffed Lumber Camp yields 3.4 wood/s; a fully staffed Mine 1.9 metal or sulfur/s.
+A Lumber Camp with four Workers yields 3.4 wood/s; a Mine with four Workers 1.9 metal or sulfur/s.
 Production cost is paid when queued and refunded on cancel; new units walk to the building's
 rally point.
 
@@ -163,19 +178,19 @@ are thrown out.
 
 ## 6. Research
 
-Nine items, researched one at a time at the HQ. Effects apply to blueprints, so only to units
-trained afterwards.
+Eight items, researched one at a time at the HQ. Effects apply to blueprints, so only to units
+trained afterwards. Rifling is done for everyone from the start, so it is no longer an item. The
+five-branch tech tree of `DESIGN_DECISIONS.md` section F arrives in patch 0.5.
 
 | Item | Cost | Time | Requires | Effect |
 | --- | --- | --- | --- | --- |
-| Rifling | 60 wood, 30 metal | 45 s | none | unlocks Rifleman |
 | Marksmanship Drill | 80 wood | 40 s | none | +10% accuracy, all new units |
 | Logistics | 100 wood, 20 metal | 50 s | none | +25% harvest rate |
 | Field Boots | 70 wood | 35 s | none | +10% speed, new infantry |
-| Heavy Machine Gun | 90 metal | 60 s | Rifling | unlocks Machine Gunner |
-| Marksman Rifle | 20 wood, 60 metal | 50 s | Rifling | unlocks Sniper |
-| Mortar | 40 wood, 60 metal | 50 s | Rifling | unlocks Mortar Crew |
-| Improved Powder | 30 sulfur, 20 metal | 40 s | Rifling | +12% range, new firearm units |
+| Heavy Machine Gun | 90 metal | 60 s | none | unlocks Machine Gunner |
+| Marksman Rifle | 20 wood, 60 metal | 50 s | none | unlocks Sniper |
+| Mortar | 40 wood, 60 metal | 50 s | none | unlocks Mortar Crew |
+| Improved Powder | 30 sulfur, 20 metal | 40 s | none | +12% range, new firearm units |
 | HE Shells | 40 sulfur, 40 metal | 45 s | Mortar | +25% mortar damage, new crews |
 
 ## 7. Time and pacing
@@ -184,31 +199,46 @@ The simulation runs fixed 30 steps per game second. At the 1x setting a game sec
 real seconds; 2x is real time and was the tempo of the first build. All timers above are game
 seconds. Typical matches on Normal run 15 to 30 real minutes at 2x.
 
+Every match has a seed. All randomness that can change the outcome comes from one seeded stream,
+and player actions are logged with the tick they happened on, so a match can be replayed exactly
+from its seed and its log. Looks-only randomness (blood, corpse shapes) has its own stream.
+
 ## 8. Enemy commander and neutrals
 
-The AI holds the plateau, trains from its factories with unit weights rifle 5, HMG 2, musket 1,
-sniper 1, mortar 1, keeps a garrison home, and sends raids downhill at the player's HQ once it has
-enough units (at least 6, or 70% of its cap). It has passive income instead of workers:
-1.5 wood, 0.8 metal and 0.35 sulfur per second times the difficulty income factor. Raiders that
-lose their target walk home. The AI does not build, research, expand or use towers.
+The AI holds the plateau, trains from its factories with unit weights rifle 5, HMG 2, sniper 1,
+mortar 1 (never Workers), keeps a garrison home, and sends raids downhill at the player's HQ once it
+has enough units (at least 6, or 70% of its cap). It may train Machine Gunners, Snipers and Mortar
+Crews only after their unlock time. It has passive income instead of workers: 1.5 wood, 0.8 metal
+and 0.35 sulfur per second times the difficulty income factor. Raiders that lose their target walk
+home. Raids escalate: each sends 10% more of the army than the last (up to 90%), and once the AI's
+army is twice the enemy soldiers it has seen in the last two minutes (at least 3), it sends
+everyone. The AI does not build, research, expand or use towers.
 
-| Difficulty | Unit cap | Cap growth | First raid | Raid interval | Raid size | Start garrison | Income |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| Easy | 8 | +1 | 420 s | 320 to 440 s | 40% of army | 6 | 0.6x |
-| Normal | 11 | +2 | 300 s | 220 to 320 s | 50% | 9 | 0.8x |
-| Hard | 14 | +2 | 240 s | 150 to 240 s | 55% | 12 | 1.0x |
+The first raid comes at the enemy's walking time to the player's HQ plus 300 s of build-up; each
+raid interval adds the walking time too. The walking time is measured over the real terrain for a
+Rifleman: about 42 s on Highland Pass, 47 s on Western Ridge, 44 s on Southern Reach.
 
-Hard is the original tuning. Difficulty also picks how many of the map's listed garrison units
-spawn. Neutral guards (creeps) hold deposits and hills in small groups of three to five and fight
-anyone who comes close. The player starts every map with six Musketeers.
+| Difficulty | Unit cap | Cap growth | First raid | Raid interval | Raid size | Start garrison | Income | MG / Sniper / Mortar from |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Easy | 8 | +1 | walk + 300 s | walk + 320 to 440 s | 40% of army | 6 | 0.6x | 10 / 15 / 18.75 min |
+| Normal | 11 | +2 | walk + 300 s | walk + 220 to 320 s | 50% | 9 | 0.8x | 8 / 12 / 15 min |
+| Hard | 14 | +2 | walk + 300 s | walk + 150 to 240 s | 55% | 12 | 1.0x | 6 / 9 / 11.25 min |
 
-## 9. Controls (fixed, do not remap)
+Hard is the original tuning for size and income. Difficulty also picks how many of the map's listed
+garrison units spawn; the garrison is placed, not trained, so it can hold Machine Gunners and
+Mortars from the start. Neutral guards (creeps) hold deposits and hills in small groups of three to
+five and fight anyone who comes close.
 
-W walk, A attack or attack-move, D defend position, S retreat, X stop, E work or garrison,
-B build (L Lumber Camp, M Mine, C Barracks, O Ordnance Works, T Scout Tower), N research,
-Q W E R T train from a selected factory, G upgrade tower, U unload, H headquarters, Shift queues
-orders, Ctrl+1..9 groups, middle mouse pans, wheel zooms, Space pauses, comma and period change
-speed, F1 help. New features add keys; they never move these.
+## 9. Controls (patch 0.2.1, `DESIGN_DECISIONS.md` section 9)
+
+W A S D, arrow keys, screen edge or middle mouse pan the camera; the wheel zooms. Right click is the
+smart command: ground moves, an enemy attacks, your camp or mine puts the selection to work, your
+tower garrisons it. F attack-move, R defend position, G retreat, X stop, E enter (camp, mine or
+tower), Q exit (unload a tower), T upgrade a tower. With a factory selected Z X C V train, and Tab
+flips to the next four when a factory has more (otherwise Tab cycles factories). B build (L Lumber
+Camp, M Mine, C Barracks, O Ordnance Works, T Scout Tower), N research, H headquarters, Shift queues
+orders, Ctrl+1..9 groups (squadrons replace them in 0.3), Space pauses, comma and period change
+speed, F1 help. New features take free keys; existing ones don't move without asking.
 
 ## 10. Presentation
 
@@ -270,6 +300,10 @@ colour on collar tabs and cap bands.
 - **Multiplayer readiness.** Seeded random and order descriptors with tick numbers for lockstep.
 
 ## 12. Design questions to fine-tune
+
+> Answered on 28 September 2026: the answers are in `DESIGN_DECISIONS.md`, and patch 0.2.1 built the
+> first of them. The questions below are kept as they were asked, with the values of patch 0.2
+> (Musketeers, Rifling, 0.09 decay), so the answers can be read against them.
 
 These are the places where a design decision changes the game most. Current values are given so
 a discussion can propose concrete replacements.

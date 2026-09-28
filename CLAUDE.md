@@ -2,8 +2,9 @@
 
 Browser RTS in plain JavaScript. No build, no dependencies, no modules: files are classic scripts
 loaded in the order listed in `index.html`, each defining one global (`Util`, `Data`, `Icons`,
-`Terrain`, `Path`, `Fog`, `Game`/`G`, `AI`, `Render`, `Input`, `Portraits`, `UI`, `MapGen`, `Music`,
-`PaintingFx` from `assets/paintings/`, `Loading`, `Menu`, `Main`). The map editor lives in
+`Terrain`, `Path`, `Fog`, `Game`/`G`, `AI`, `Render`, `Input`, `Portraits`, `UI`, `MapGen`, `Sim`,
+`Music`, `PaintingFx` from `assets/paintings/`, `Loading`, `Menu`, `Main`). The Balance Lab
+(`lab.html`) loads the simulation files plus `lab/` and nothing that draws. The map editor lives in
 `attic/editor.js`, shelved but kept for a later patch.
 
 Read `DEVELOPMENT.md` before changing simulation code; `grep -rn "TODO(" js` lists the per-module
@@ -43,8 +44,10 @@ step-by-step instructions for anything he has to run or check.
   uniforms and names from a unit id, with its own random stream. Only `UI`, `Menu` and `Main` may
   call it; the simulation only stores the cosmetic `faction` and `kitEra` fields. Factions change
   looks and names, never stats (`DESIGN_DECISIONS.md` section K).
-- **Randomness** (from patch 0.2.1): the simulation uses a seeded `Util.mulberry32` stream, never
-  `Math.random`. Visual-only randomness (decals, corpses) uses a separate stream.
+- **Randomness** (from patch 0.2.1): the simulation draws from `G.rng`, a seeded
+  `Util.mulberry32` stream, never `Math.random`. Visual-only randomness (decals, corpses, facing)
+  draws from `G.vrng`. Player actions go through `Game.command` so they are logged in `G.orders`;
+  never change simulation state straight from `Input` or `UI`.
 - **Time:** every "minute" in the design docs is a game minute (30 simulation steps per game
   second).
 - **Stacking:** bonuses and penalties multiply, then the section I caps apply: hit chance ≤ 0.95,
@@ -52,10 +55,9 @@ step-by-step instructions for anything he has to run or check.
 - Flow-field costs stay `Float64Array` (Float32 makes Dijkstra loop for minutes).
 - Player ids: 0 neutral, 1 human, 2 AI. Civilians get their own id (patch 0.7) that nothing
   auto-targets. Buildings use `b.maxHp`, never `def.hp`.
-- **Hotkeys:** the key layout is `DESIGN_DECISIONS.md` section 9. WASD pans the camera, and the
-  orders move to F / R / G / X / E / Q. This replaces the old "fixed, do not remap" rule. It is
-  built in patch 0.2.1; until then the game keeps W A D S X E for orders. New features take free
-  keys; existing ones don't move without asking.
+- **Hotkeys:** the key layout is `DESIGN_DECISIONS.md` section 9, built in patch 0.2.1: WASD
+  pans the camera, F attack-move, R defend, G retreat, X stop, E enter, Q exit, T tower upgrade,
+  Z X C V train. New features take free keys; existing ones don't move without asking.
 - **Git:**
   - One branch per patch (e.g. `patch-0.2.1`), merged by pull request.
   - Ask before force-pushing, deleting branches or files, or rewriting history.
@@ -69,7 +71,11 @@ step-by-step instructions for anything he has to run or check.
   lie. If in doubt, check `Terrain.cellPassable.toString()` for a recent change.
 - Headless check in the page console: `Menu.hide(); Main.start('highland', 'normal'); Game.setSpeed(0);`
   then `for (let i = 0; i < 1800; i++) Game.update(1/30);` and inspect `G.units`, `G.stats`,
-  `G.players[1].res`. Keep single console scripts under about two seconds of work.
+  `G.players[1].res`. Keep single console scripts under about two seconds of work. Without the page:
+  `Sim.newMatch({ map: 'highland', difficulty: 'normal', seed: 42 }); Sim.run(1800); Sim.fingerprint()`
+  gives the same fingerprint every time for the same seed.
+- Balance Lab: open `http://127.0.0.1:8765/lab.html`, press "Run the target duels". The tests are
+  in `lab/lab-tests.js` (no DOM), so they also run from the console or node.
 - Map connectivity: `Path.reachable(Path.getField(hq.x, hq.y + 60, 'infantry', 0), x, y)` for
   every deposit and the enemy HQ after touching `maps.js` or `terrain.js`.
 - Force a frame when the browser pane is hidden: `Render.draw(); UI.update(0.3);`. Screenshots of a

@@ -18,6 +18,12 @@ const Icons = (() => {
       const p = along(a, b, 0.42, 0.14); circ(ctx, p[0], p[1], 0.11, true);
       const q = along(a, b, 0.62, -0.16); line(ctx, q[0], q[1], q[0] + 0.28, q[1] - 0.14, 0.08);
     },
+    worker(ctx) {   // a shovel: long handle, grip bar and blade
+      line(ctx, -0.7, 0.7, 0.45, -0.45, 0.14);
+      line(ctx, -0.95, 0.5, -0.5, 0.95, 0.14);
+      poly(ctx, [0.3, -0.3, 0.62, -0.95, 0.95, -0.62, 0.3, -0.3], true);
+      poly(ctx, [0.28, -0.58, 0.62, -0.95, 0.95, -0.62, 0.58, -0.28], true);
+    },
     rifle(ctx) {
       const a = [-0.95, 0.45], b = [0.95, -0.4];
       line(ctx, a[0], a[1], b[0], b[1], 0.13);

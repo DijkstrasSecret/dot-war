@@ -112,7 +112,8 @@ const MapGen = (() => {
   function placeEntities(spec, diff) {
     const base = spec.base;
     Game.addBuilding('hq', 1, base[0], base[1], true);
-    spec.player.forEach((t, n) => Game.spawnUnit(t, 1, base[0] - 50 + n * 20, base[1] + 60));
+    // DD Q15: 6 Riflemen and 4 Workers, in rows of six below the HQ.
+    Data.START.units.forEach((t, n) => Game.spawnUnit(t, 1, base[0] - 50 + (n % 6) * 20, base[1] + 60 + Math.floor(n / 6) * 20));
     if (spec.ai) {
       const A = spec.ai;
       Game.addBuilding('hq', 2, A.hq[0], A.hq[1], true);
@@ -181,15 +182,14 @@ const MapGen = (() => {
     sites: [{ c: [680, 2120], r: 45 }, { c: [560, 600], r: 45 }, { c: [1250, 1230], r: 45 }, { c: [2020, 440], r: 50 }, { c: [1870, 620], r: 70 }, { c: [1960, 610], r: 40 }],
     deposits: [{ type: 'metal', x: 680, y: 2120 }, { type: 'metal', x: 560, y: 600 }, { type: 'sulfur', x: 1250, y: 1230 }, { type: 'sulfur', x: 2020, y: 440 }, { type: 'metal', x: 1700, y: 1620 }, { type: 'rubber', x: 300, y: 1300 }, { type: 'oil', x: 1520, y: 2050 }],
     creeps: [
-      { c: [1250, 1230], r: 45, units: ['rifle', 'rifle', 'musket', 'musket', 'hmg'] },
-      { c: [560, 610], r: 40, units: ['musket', 'musket', 'musket', 'rifle'] },
+      { c: [1250, 1230], r: 45, units: ['rifle', 'rifle', 'rifle', 'rifle', 'hmg'] },
+      { c: [560, 610], r: 40, units: ['rifle', 'rifle', 'rifle', 'rifle'] },
       { c: [1722, 1580], r: 22, units: ['rifle', 'rifle', 'rifle'] },
     ],
     ai: {
       hq: [1880, 520], buildings: [{ type: 'barracks', x: 1970, y: 610 }, { type: 'ordnance', x: 1790, y: 620 }, { type: 'mine', x: 2020, y: 440 }],
-      garrisonCenter: [1880, 690], garrison: ['rifle', 'rifle', 'hmg', 'rifle', 'sniper', 'rifle', 'mortar', 'rifle', 'hmg', 'rifle', 'mortar', 'musket'],
+      garrisonCenter: [1880, 690], garrison: ['rifle', 'rifle', 'hmg', 'rifle', 'sniper', 'rifle', 'mortar', 'rifle', 'hmg', 'rifle', 'mortar', 'rifle'],
     },
-    player: ['musket', 'musket', 'musket', 'musket', 'musket', 'musket'],
     hint: 'Build a Lumber Camp by the forest, then a Barracks. Scout north-west first.',
   };
 
@@ -231,13 +231,12 @@ const MapGen = (() => {
     sites: [{ c: [860, 2140], r: 45 }, { c: [560, 700], r: 45 }, { c: [1840, 700], r: 45 }, { c: [1250, 1230], r: 45 }, { c: [1900, 1880], r: 45 }, { c: [250, 1330], r: 40 }, { c: [2150, 1280], r: 40 }],
     deposits: [{ type: 'metal', x: 860, y: 2140 }, { type: 'metal', x: 560, y: 700 }, { type: 'metal', x: 1840, y: 700 }, { type: 'sulfur', x: 1250, y: 1230 }, { type: 'sulfur', x: 1900, y: 1880 }, { type: 'rubber', x: 250, y: 1330 }, { type: 'oil', x: 2150, y: 1280 }],
     creeps: [
-      { c: [560, 700], r: 40, units: ['musket', 'musket', 'rifle', 'rifle'] },
+      { c: [560, 700], r: 40, units: ['rifle', 'rifle', 'rifle', 'rifle'] },
       { c: [1840, 700], r: 45, units: ['rifle', 'rifle', 'rifle', 'hmg', 'sniper'] },
-      { c: [1250, 1230], r: 45, units: ['rifle', 'rifle', 'musket', 'hmg'] },
+      { c: [1250, 1230], r: 45, units: ['rifle', 'rifle', 'rifle', 'hmg'] },
       { c: [1900, 1880], r: 40, units: ['rifle', 'rifle', 'rifle', 'mortar'] },
     ],
     ai: null,
-    player: ['musket', 'musket', 'musket', 'musket', 'musket', 'musket'],
     hint: 'Sandbox: no enemy commander. Take the deposits from the neutral guards at your own pace.',
   };
 

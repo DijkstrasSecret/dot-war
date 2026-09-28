@@ -15,6 +15,8 @@ combat flavour (recoil, alerts, bleeding, blood, corpses, morale shock); the W/A
 scheme with Shift queuing and middle-mouse panning. The map editor is shelved in `attic/`.
 Patch 0.2a added nine cosmetic armies with a portrait and name for every soldier (`js/portraits.js`).
 Patch 0.2b put the start menu and a loading screen on the oil paintings in `assets/paintings/`.
+Patch 0.2.1 laid the foundations: seeded, replayable matches, the Balance Lab, the new combat values,
+the Worker, no more Musketeers, a time-gated AI and the WASD key layout.
 
 The list below is in the order that seems most useful. Each item names the files it touches, and
 each module carries a `TODO(...)` reminder at the top.

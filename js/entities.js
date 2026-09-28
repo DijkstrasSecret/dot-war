@@ -1,6 +1,6 @@
 'use strict';
 // Entity classes: units (dots), buildings, projectiles.
-let _nextId = 1;
+let _nextId = 1;   // reset by Game.init so a match's ids, and so its replays, start from 1
 
 class Unit {
   constructor(type, owner, x, y, stats) {
@@ -10,10 +10,10 @@ class Unit {
     this.stats = stats;                 // blueprint snapshot at production time
     this.hp = stats.hp;
     this.stress = 0; this.flee = 0; this.lastHitBy = null;
-    this.cooldown = Math.random() * 0.5; this.acquireT = Math.random() * 0.3;
+    this.cooldown = G.rng() * 0.5; this.acquireT = G.rng() * 0.3;   // seeded simulation stream
     this.order = null; this.field = null; this.forced = null; this.target = null;
     this.micro = null;                  // short direct move (cover seeking)
-    this.facing = Math.random() * Math.PI * 2; this.moving = false;
+    this.facing = G.vrng() * Math.PI * 2; this.moving = false; this.wasMoving = false;   // facing is looks only
     this.work = null; this.group = 0; this.dead = false; this.queue = [];
     this.inside = null; this.hBonus = 0;   // garrisoned building id and the extra height it gives
     this.recoil = 0; this.alertT = 0; this.bleedT = 0; this.lastAttackedT = -99;   // presentation timers
@@ -23,7 +23,7 @@ class Unit {
     this.muzzle = 0;
   }
   get alive() { return !this.dead; }
-  get suppressed() { return this.stress > 0.6 && !this.def.ignoresSuppression; }
+  get suppressed() { return this.stress > Data.COMBAT.suppressedAt; }   // DD Q12: snipers can be suppressed too
   get size() { return this.def.size; }
   get armor() { return this.def.armor; }
 }

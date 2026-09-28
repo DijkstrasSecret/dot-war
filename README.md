@@ -3,7 +3,7 @@
 A browser real-time strategy game where every unit is a simple shape with a logo inside it,
 fought on a topographic map where elevation decides everything.
 
-- Circles are infantry (musket, rifle, machine gun, sniper), squares are crew weapons (mortar).
+- Circles are infantry (worker, rifle, machine gun, sniper), squares are crew weapons (mortar).
   Rectangles (trucks, armoured vehicles) and triangles (bikes, armoured cars) are planned.
 - The map is a heightmap drawn like a hiking map: contour lines every 10 m, bold lines every 50 m,
   forests, rivers with bridges, swamp, roads and resource deposits.
@@ -26,6 +26,14 @@ python serve.py 8765
 and open <http://localhost:8765>. The Claude Code preview uses the same command via
 `.claude/launch.json`. Do not use `python -m http.server` for development: it lets the browser
 cache the scripts and you will test stale code.
+
+## Balance Lab
+
+With the dev server running, open <http://localhost:8765/lab.html>. It runs the real game rules
+with no map drawing: unit duels (pick the sides, the ground and the number of runs), an economy
+timeline for a standard opening, and AI-versus-AI matches. "Run the target duels" fills the target
+table; results outside the agreed ranges in `lab/balance-targets.js` turn red. Every run is
+seeded, so the same settings give the same numbers.
 
 ## Deploy it
 
@@ -57,24 +65,25 @@ portrait and name in the selection panel.
 | Action | Input |
 | --- | --- |
 | Select | Left click, drag a box, Shift adds, double click picks all of a type, Ctrl+A all on screen |
-| Walk | W then click (right click on ground also walks) |
-| Attack | A then click an enemy or a point; mortars bombard the point |
-| Defend position | D |
-| Retreat towards base | S |
+| Smart command | Right click: ground moves, an enemy attacks, your camp or mine puts them to work, your tower garrisons it |
+| Attack-move | F then click an enemy or a point; mortars bombard the point |
+| Defend position | R |
+| Retreat towards base | G (not slowed by suppression, sheds stress twice as fast) |
 | Stop | X |
-| Work or garrison | E then click a Lumber Camp, Mine or Scout Tower (right click on it also works) |
+| Enter | E then click a Lumber Camp, Mine or Scout Tower |
 | Queue orders | Hold Shift while giving commands |
 | Build | B opens the Build tab; L Lumber Camp, M Mine, C Barracks, O Ordnance Works, T Scout Tower |
 | Research | N opens the Research tab |
-| Factory | Q W E R T train the listed units, right click sets the rally point, Tab cycles factories |
-| Tower | G upgrade, U unload everyone, click a unit icon in the panel to unload just that one |
+| Factory | Z X C V train the listed units (Tab shows the next four if there are more), right click sets the rally point, Tab cycles factories |
+| Tower | T upgrade, Q unload everyone, click a unit icon in the panel to unload just that one |
 | Groups | Ctrl+1..9 assign, 1..9 select, press twice to centre |
-| Camera | Arrow keys, screen edge, middle mouse drag, mouse wheel zoom, minimap click |
+| Camera | W A S D, arrow keys, screen edge, middle mouse drag, mouse wheel zoom, minimap click |
 | Time | Space pause, `,` slower, `.` faster |
 | Other | H jump to headquarters, F1 help, Menu button for a new game, ♫ toggles music |
 
-Suppressed units (yellow ring) ignore target orders and shoot the nearest enemy. Snipers always
-obey. A yellow "!" appears when a unit starts taking fire, "!!" when it panics. Wounded units bleed,
+You start with six Riflemen and four Workers. Workers harvest at full rate; soldiers put to work
+count as half a worker. Suppressed units (yellow ring) ignore target orders and shoot the nearest
+enemy. Snipers take half the stress, never panic and keep their orders. A yellow "!" appears when a unit starts taking fire, "!!" when it panics. Wounded units bleed,
 the dead leave a corpse and a splash of blood, and a death shocks nearby friends.
 
 ## Project layout
@@ -83,6 +92,8 @@ the dead leave a corpse and a splash of blood, and a death shocks nearby friends
 index.html        page shell, help overlay, script load order
 style.css         theme: olive panels, brass accents, stencil headings
 serve.py          no-cache development server
+lab.html          Balance Lab: unit duels, economy timeline, AI versus AI, with target ranges
+lab/              the lab's tests (lab-tests.js, no DOM), page script and balance-targets.js
 assets/music/     background music (Grieg, Violin Sonata No. 3, performed by Gregor Quendel)
 assets/paintings/ menu and loading paintings, their animation engine (painting-fx.js) and README
 assets/fonts/     the two serif faces of the painted screens, bundled under the Open Font License
@@ -101,6 +112,7 @@ js/input.js       mouse and keyboard, command modes, camera
 js/portraits.js   soldier faces, faction kit and names from a unit id (visual only)
 js/ui.js          side panel and top bar (DOM)
 js/maps.js        map generator and the four map specs
+js/sim.js         headless runner: build a match, run ticks, replay a command log, fingerprint
 js/audio.js       music player
 js/loading.js     loading screen over a painting, bar driven by the build steps
 js/menu.js        start menu over a painting (front page and the map, difficulty, army setup)

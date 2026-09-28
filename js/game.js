@@ -2,32 +2,41 @@
 // Core simulation: players, economy, production, research, orders, movement, combat, towers.
 // TODO(patch 0.3): vehicles use cls 'vehicle' (Data.MOVE_CLASSES); transport = reuse enterBuilding/unloadBuilding with a unit as the container.
 // TODO(patch 0.4): replace the direct harvest credit in updateBuildings with workers carrying loads and trucks hauling to the HQ.
-// TODO(multiplayer): swap Math.random (R) for a seeded Util.mulberry32 stream so runs are reproducible.
+// Randomness (patch 0.2.1): everything that can change a match's outcome draws from G.rng, a seeded
+// Util.mulberry32 stream; looks-only randomness (decals, facing) draws from G.vrng. Player actions
+// arrive through Game.command and are logged with their tick in G.orders, ready for replays.
 const G = {
-  time: 0, speed: 1, lastSpeed: 1, over: false, winner: 0,
+  time: 0, tick: 0, speed: 1, lastSpeed: 1, over: false, winner: 0, seed: 1,
   units: [], buildings: [], projectiles: [], effects: [],
   unitById: new Map(),
-  players: {}, selection: [], groups: {}, toasts: [],
+  players: {}, selection: [], groups: {}, toasts: [], orders: [],
   cleanupT: 0,
+  rng: Util.mulberry32(1), vrng: Util.mulberry32(2),
 };
 
 const Game = (() => {
   const { clamp, dist } = Util;
-  const R = Math.random;
+  const C = Data.COMBAT;
+  const R = () => G.rng();    // simulation stream: anything that can change the outcome
+  const V = () => G.vrng();   // visual stream: decals and other looks
 
   function newPlayer(id, res) {
     const r = {}; for (const k of Data.RES) r[k] = res[k] || 0;
-    return { id, res: r, blueprints: JSON.parse(JSON.stringify(Data.UNITS)), unlocked: new Set(['musket']), done: new Set(), research: null, harvestMult: 1,
-      faction: null, kitEra: 'ww2' };   // DD K: cosmetic only; set by Main.start, read by UI portraits
+    // DD Q1: Rifling is researched from the start, so Riflemen and Workers are open to everyone.
+    return { id, res: r, blueprints: JSON.parse(JSON.stringify(Data.UNITS)), unlocked: new Set(['rifle', 'worker']), done: new Set(), research: null, harvestMult: 1,
+      faction: null, kitEra: 'ww2' };   // DD K: cosmetic only; set by Main, read by UI portraits
   }
-  function init() {
-    G.time = 0; G.speed = 1; G.lastSpeed = 1; G.over = false; G.winner = 0;
-    G.units = []; G.buildings = []; G.projectiles = []; G.effects = []; G.selection = []; G.groups = {}; G.toasts = []; G.unitById = new Map();
+  // A new match. The same seed and the same logged commands give the same match, tick for tick.
+  function init(seed) {
+    G.seed = (seed == null ? 1 : seed) >>> 0; G.rng = Util.mulberry32(G.seed); G.vrng = Util.mulberry32(G.seed ^ 0x5bd1e995);
+    _nextId = 1;
+    G.time = 0; G.tick = 0; G.cleanupT = 0; G.speed = 1; G.lastSpeed = 1; G.over = false; G.winner = 0;
+    G.units = []; G.buildings = []; G.projectiles = []; G.effects = []; G.selection = []; G.groups = {}; G.toasts = []; G.orders = []; G.unitById = new Map();
     G.stats = { 0: { kills: 0, lost: 0 }, 1: { kills: 0, lost: 0 }, 2: { kills: 0, lost: 0 } };
     G.buildingById = new Map(); G.sandbox = false; G.difficulty = G.difficulty || 'hard';
     G.decals = [];   // blood, splats and corpses left on the ground
     G.players = { 0: newPlayer(0, {}), 1: newPlayer(1, { wood: 400, metal: 60 }), 2: newPlayer(2, { wood: 3000, metal: 1500, sulfur: 600 }) };
-    for (const id of [0, 2]) for (const t of Object.keys(Data.UNITS)) G.players[id].unlocked.add(t);
+    for (const t of Object.keys(Data.UNITS)) G.players[0].unlocked.add(t);   // neutral guards; the AI unlocks over time (DD G7)
   }
   function toast(msg) { G.toasts.push({ msg, t: 3.5 }); if (G.toasts.length > 4) G.toasts.shift(); }
   function addDecal(d) { d.t = 0; G.decals.push(d); if (G.decals.length > 400) G.decals.shift(); }
@@ -37,7 +46,10 @@ const Game = (() => {
   function togglePause() { setSpeed(G.speed === 0 ? (G.lastSpeed || 1) : 0); }
 
   // ---- blueprints, costs, research ----
-  function statsFor(owner, type) { const bp = G.players[owner].blueprints[type]; return { hp: bp.hp, speed: bp.speed, vision: bp.vision, weapon: { ...bp.weapon } }; }
+  function statsFor(owner, type) { const bp = G.players[owner].blueprints[type]; return { hp: bp.hp, speed: bp.speed, vision: bp.vision, weapon: bp.weapon ? { ...bp.weapon } : null }; }
+  // DD I: the HQ trains Riflemen at 0.7x and Workers at full speed; prodMult maps unit type to a multiplier.
+  function prodMult(b, type) { const m = b.def.prodMult; return (m && m[type]) || 1; }
+  function prodTime(b, type) { return G.players[b.owner].blueprints[type].time / prodMult(b, type); }
   function canAfford(p, cost) { for (const k in cost) if ((p.res[k] || 0) < cost[k]) return false; return true; }
   function pay(p, cost, mult = 1) { for (const k in cost) p.res[k] -= cost[k] * mult; }
   function researchState(p, rid) {
@@ -60,9 +72,9 @@ const Game = (() => {
     for (const e of r.effects || []) {
       if (e.harvest) { p.harvestMult *= e.harvest; continue; }
       for (const [t, bp] of Object.entries(p.blueprints)) {
-        const match = e.units === 'all' || (e.units === 'firearms' && !bp.weapon.indirect) || (Array.isArray(e.units) && e.units.includes(t));
+        const match = e.units === 'all' || (e.units === 'firearms' && bp.weapon && !bp.weapon.indirect) || (Array.isArray(e.units) && e.units.includes(t));
         if (!match) continue;
-        if (e.stat in bp.weapon) bp.weapon[e.stat] *= e.mult; else if (e.stat in bp) bp[e.stat] *= e.mult;
+        if (bp.weapon && e.stat in bp.weapon) bp.weapon[e.stat] *= e.mult; else if (e.stat in bp && e.stat !== 'weapon') bp[e.stat] *= e.mult;
       }
     }
   }
@@ -84,7 +96,8 @@ const Game = (() => {
   // ---- scout towers: garrison, unload, upgrade ----
   const isHeavy = u => u.def.shape === 'square';
   function canEnter(u, b) {
-    const lv = b.levelDef; if (!lv || b.dead || !b.built || b.owner !== u.owner || u.def.cls !== 'infantry') return false;
+    // Unarmed units (Workers) stay out: a tower slot is for firing from.
+    const lv = b.levelDef; if (!lv || b.dead || !b.built || b.owner !== u.owner || u.def.cls !== 'infantry' || !u.stats.weapon) return false;
     let inf = 0, hv = 0; for (const id of b.garrison) { const g = G.unitById.get(id); if (g && !g.dead) { if (isHeavy(g)) hv++; else inf++; } }
     return isHeavy(u) ? hv < lv.heavy : inf < lv.cap;
   }
@@ -155,17 +168,17 @@ const Game = (() => {
     switch (o.kind) {
       case 'move': case 'attackmove': {
         const f = Path.getField(o.x, o.y, u.def.cls, G.time); if (!f) break;
-        u.order = { type: o.kind, x: f.tx, y: f.ty, offx: o.offx || 0, offy: o.offy || 0, arrive: o.arrive || 12, phase: 0 }; u.field = f;
+        u.order = { type: o.kind, x: f.tx, y: f.ty, offx: o.offx || 0, offy: o.offy || 0, arrive: o.arrive || 12, phase: 0, retreat: !!o.retreat }; u.field = f;
         break;
       }
       case 'attack': {
         const t = o.target; if (!t || t.dead) break;
-        if (u.suppressed) { applyOrder(u, { kind: 'attackmove', x: t.x, y: t.y, arrive: 20 }); break; }
+        if (u.suppressed && !u.def.obeysWhenSuppressed) { applyOrder(u, { kind: 'attackmove', x: t.x, y: t.y, arrive: 20 }); break; }
         u.forced = t; u.target = t; u.order = { type: 'attack', target: t }; u.acquireT = 0;
         break;
       }
       case 'bombard':
-        if (u.stats.weapon.indirect) u.order = { type: 'bombard', x: o.x, y: o.y };
+        if (u.stats.weapon && u.stats.weapon.indirect) u.order = { type: 'bombard', x: o.x, y: o.y };
         else applyOrder(u, { kind: 'attackmove', x: o.x, y: o.y, arrive: 20 });
         break;
       case 'hold': u.order = { type: 'hold', x: u.x, y: u.y }; break;
@@ -190,22 +203,23 @@ const Game = (() => {
   }
   function nextOrder(u) { u.order = null; u.field = null; u.forced = null; if (u.queue.length) applyOrder(u, u.queue.shift()); }
 
-  function orderMove(units, x, y, mode = 'move', queue = false) {
+  function orderMove(units, x, y, mode = 'move', queue = false, retreat = false) {
     const list = units.filter(u => !u.dead); const n = list.length; if (!n) return;
     const cols = Math.ceil(Math.sqrt(n)), rows = Math.ceil(n / cols), spacing = 15;
     const arrive = Math.max(12, spacing * Math.sqrt(n) * 0.75);
     list.forEach((u, i) => {
       const r = Math.floor(i / cols), c = i % cols;
-      issue(u, { kind: mode, x, y, offx: (c - (cols - 1) / 2) * spacing, offy: (r - (rows - 1) / 2) * spacing, arrive }, queue);
+      issue(u, { kind: mode, x, y, offx: (c - (cols - 1) / 2) * spacing, offy: (r - (rows - 1) / 2) * spacing, arrive, retreat }, queue);
     });
   }
   function orderAttack(units, target, queue = false) {
-    if (!queue && units.some(u => !u.dead && u.owner === 1 && u.suppressed)) toast('Suppressed units cannot pick targets');
+    if (!queue && units.some(u => !u.dead && u.owner === 1 && u.suppressed && !u.def.obeysWhenSuppressed)) toast('Suppressed units cannot pick targets');
     for (const u of units) issue(u, { kind: 'attack', target }, queue);
   }
+  const isIndirect = u => !!(u.stats.weapon && u.stats.weapon.indirect);
   function orderBombard(units, x, y, queue = false) {
-    const direct = units.filter(u => !u.dead && !u.stats.weapon.indirect);
-    for (const u of units) if (!u.dead && u.stats.weapon.indirect) issue(u, { kind: 'bombard', x, y }, queue);
+    const direct = units.filter(u => !u.dead && !isIndirect(u));
+    for (const u of units) if (!u.dead && isIndirect(u)) issue(u, { kind: 'bombard', x, y }, queue);
     if (direct.length) orderMove(direct, x, y, 'attackmove', queue);
   }
   function orderStop(units) { for (const u of units) { u.queue = []; releaseWork(u); u.order = null; u.field = null; u.forced = null; u.micro = null; } }
@@ -215,7 +229,8 @@ const Game = (() => {
     for (const u of units) { if (u.dead || u.def.cls !== 'infantry' || u.work === b.id) continue; issue(u, { kind: 'work', building: b }, queue); n++; }
     return n;
   }
-  // Pull back a short distance towards the owner's headquarters, as one group.
+  // Pull back a short distance towards the owner's headquarters, as one group. DD Q10: while
+  // retreating there is no suppression slowdown and stress drains twice as fast; panic still can happen.
   function orderRetreat(units, queue = false) {
     const list = units.filter(u => !u.dead); if (!list.length) return;
     const hq = G.buildings.find(b => b.owner === list[0].owner && b.type === 'hq' && !b.dead);
@@ -224,7 +239,7 @@ const Game = (() => {
     const dx = hq.x - cx, dy = hq.y + hq.h / 2 + 30 - cy; const d = Math.hypot(dx, dy);
     if (d < 1) { orderStop(list); return; }
     const step = Math.min(180, Math.max(0, d - 30));
-    orderMove(list, cx + dx / d * step, cy + dy / d * step, 'move', queue);
+    orderMove(list, cx + dx / d * step, cy + dy / d * step, 'move', queue, true);
   }
 
   // ---- production ----
@@ -232,7 +247,7 @@ const Game = (() => {
     const p = G.players[b.owner]; const bp = p.blueprints[type];
     if (!p.unlocked.has(type) || b.queue.length >= 8) return false;
     if (!canAfford(p, bp.cost)) { if (b.owner === 1) toast('Not enough resources'); return false; }
-    pay(p, bp.cost); b.queue.push({ type, t: 0, total: bp.time / b.def.prodMult }); return true;
+    pay(p, bp.cost); b.queue.push({ type, t: 0, total: prodTime(b, type) }); return true;
   }
   function cancelQueue(b, i) { const q = b.queue[i]; if (!q) return; pay(G.players[b.owner], G.players[b.owner].blueprints[q.type].cost, -1); b.queue.splice(i, 1); }
   function spawnFrom(b, type) {
@@ -251,7 +266,12 @@ const Game = (() => {
       if (p.research.t >= p.research.total) { applyResearch(p, p.research.id); if (p.id === 1) toast('Research complete: ' + Data.RESEARCH[p.research.id].name); p.research = null; }
     }
   }
-  function activeWorkers(b) { let n = 0; for (const id of b.workers) { const u = G.unitById.get(id); if (u && !u.dead && dist(u.x, u.y, b.x, b.y) < 70) n++; } return n; }
+  // Labour at a camp: a Worker counts 1, a soldier half (DD Q4). Only those standing near the camp count.
+  function activeWorkers(b) {
+    let n = 0;
+    for (const id of b.workers) { const u = G.unitById.get(id); if (u && !u.dead && dist(u.x, u.y, b.x, b.y) < 70) n += u.def.labour || Data.ECONOMY.soldierLabour; }
+    return n;
+  }
   function updateBuildings(dt) {
     for (const b of G.buildings) {
       if (b.dead) continue;
@@ -282,21 +302,46 @@ const Game = (() => {
   function harvestRate(b) { const p = G.players[b.owner]; return (b.def.rate + activeWorkers(b) * b.def.perWorker) * p.harvestMult; }
 
   // ---- combat helpers ----
-  // u.hBonus is the extra height of a tower the unit stands in; it counts for range, damage and sight.
-  function effRange(u, tx, ty) { const dh = Terrain.hAt(u.x, u.y) + u.hBonus - Terrain.hAt(tx, ty); return u.stats.weapon.range * (1 + clamp(dh / 60, -0.15, 0.3)); }
-  function dmgMult(u, tx, ty) { const dh = Terrain.hAt(u.x, u.y) + u.hBonus - Terrain.hAt(tx, ty); return 1 + clamp(dh / 100, -0.1, 0.2); }
+  // Height difference shooter minus target; u.hBonus is the height of a tower the unit stands in.
+  // DD I: differences under the dead zone count as flat ground.
+  function heightDiff(u, tx, ty) { const dh = Terrain.hAt(u.x, u.y) + u.hBonus - Terrain.hAt(tx, ty); return Math.abs(dh) < C.deadZone ? 0 : dh; }
+  // DD Q8: range grows with the square root of the height, at most +50%; uphill loses up to 20%.
+  // DD I: indirect fire gets half the bonus, at most +25% (the uphill penalty is the same as direct fire).
+  function rangeMult(u, dh) {
+    if (dh > 0) {
+      let b = Math.min(C.rangeUp * Math.sqrt(dh), C.rangeUpMax);
+      if (u.stats.weapon.indirect) b = Math.min(b * C.indirectRangeShare, C.indirectRangeMax);
+      return 1 + b;
+    }
+    if (dh < 0) return 1 - Math.min(C.rangeDown * Math.sqrt(-dh), C.rangeDownMax);
+    return 1;
+  }
+  function effRange(u, tx, ty) { const w = u.stats.weapon; return w ? w.range * rangeMult(u, heightDiff(u, tx, ty)) : 0; }
+  // DD Q8: damage and accuracy follow steepness s = dh / max(d, 20), so height matters most up close.
+  function steepness(u, tx, ty) { return heightDiff(u, tx, ty) / Math.max(dist(u.x, u.y, tx, ty), C.steepMinDist); }
+  function dmgMult(u, tx, ty) { return 1 + clamp(C.dmgSteep * steepness(u, tx, ty), C.dmgMin, C.dmgMax); }
+  function hitMult(u, tx, ty) { return 1 + clamp(C.hitSteep * steepness(u, tx, ty), C.hitMin, C.hitMax); }
+  // Every source of stress goes through here. DD Q12: snipers take half; DD I: stress taken is at least x0.25.
+  function addStress(u, amt) {
+    if (u.dead || u.inside || amt <= 0) return;
+    u.stress = Math.min(1, u.stress + amt * Util.stack('stressTaken', u.def.stressTaken || 1));
+  }
   function canSee(u, e) {
-    if (u.stats.weapon.indirect && u.owner !== 0) return Fog.visible(u.owner, e.x, e.y);
+    if (u.stats.weapon && u.stats.weapon.indirect && u.owner !== 0) return Fog.visible(u.owner, e.x, e.y);
     return Terrain.los(u.x, u.y, e.x, e.y, 2.2 + u.hBonus, e instanceof Building ? 6 : 1.8);
   }
   function inRange(u, e) {
+    if (!u.stats.weapon) return false;
     const d = dist(u.x, u.y, e.x, e.y) - (e instanceof Building ? e.size * 0.7 : 0);
     return d <= effRange(u, e.x, e.y) && d >= u.stats.weapon.minRange;
   }
   function validTarget(u, e) { return e && !e.dead && !e.inside && e.owner !== u.owner && inRange(u, e) && canSee(u, e); }
+  // Snipers keep their forced target while suppressed (DD I); everyone else fires at the nearest.
+  const keepsOrders = u => !u.suppressed || u.def.obeysWhenSuppressed;
   function acquire(u) {
-    if (u.forced && !u.forced.dead && !u.suppressed && validTarget(u, u.forced)) { u.target = u.forced; return; }
-    const w = u.stats.weapon; const maxR = w.range * 1.3;
+    const w = u.stats.weapon; if (!w) { u.target = null; return; }   // unarmed: never picks a target
+    if (u.forced && !u.forced.dead && keepsOrders(u) && validTarget(u, u.forced)) { u.target = u.forced; return; }
+    const maxR = w.range * 1.3;
     let best = null, bestS = Infinity;
     for (const e of G.units) {
       if (e.dead || e.inside || e.owner === u.owner) continue;
@@ -317,8 +362,10 @@ const Game = (() => {
     u.target = best;
   }
   function tryFire(u) {
-    if (u.cooldown > 0) return;
-    const w = u.stats.weapon; let tx, ty, target = null;
+    const w = u.stats.weapon;
+    if (!w || u.cooldown > 0) return;
+    if (w.noMovingFire && u.wasMoving) return;   // DD Q11: machine gunners must stop to fire
+    let tx, ty, target = null;
     if (u.order && u.order.type === 'bombard' && w.indirect) {
       tx = u.order.x; ty = u.order.y; const d = dist(u.x, u.y, tx, ty);
       if (d > effRange(u, tx, ty) || d < w.minRange) return;
@@ -337,16 +384,17 @@ const Game = (() => {
   }
   function fireBullet(u, e) {
     const w = u.stats.weapon; const d = dist(u.x, u.y, e.x, e.y); const range = effRange(u, e.x, e.y);
-    let p = w.acc * (1 - 0.55 * Math.pow(Math.min(1, d / range), 2)) * Terrain.coverAt(e.x, e.y) * (1 - 0.5 * u.stress) * (u.moving ? 0.6 : 1);
-    if (e instanceof Building) p = Math.min(1, p * 2.5);
+    // All factors multiply, then the hit cap applies (DD I). u.wasMoving: the unit moved last tick (DD Q11).
+    const p = Util.stack('hit', w.acc, 1 - 0.55 * Math.pow(Math.min(1, d / range), 2), Terrain.coverAt(e.x, e.y), 1 - 0.5 * u.stress,
+      u.wasMoving ? C.movingAcc : 1, hitMult(u, e.x, e.y), e instanceof Building ? 2.5 : 1);
     const hit = R() < p;
     const dmg = hit ? w.dmg * Data.ARMOR_MULT[w.dtype][e.armor] * dmgMult(u, e.x, e.y) : 0;
     const ang = R() * Math.PI * 2, off = hit ? 0 : 8 + R() * 18;
     const tx = e.x + Math.cos(ang) * off, ty = e.y + Math.sin(ang) * off;
     G.projectiles.push(new Projectile({ kind: 'bullet', x: u.x, y: u.y, tx, ty, dur: Math.max(0.03, d / w.pspeed), dmg, target: hit ? e : null, shooter: u, owner: u.owner }));
-    if (e instanceof Unit) {
-      e.stress = Math.min(1, e.stress + w.suppress); e.lastHitBy = u; alertUnit(e);
-      for (const o of G.units) if (o !== e && !o.dead && !o.inside && o.owner === e.owner && dist(o.x, o.y, e.x, e.y) < 30) o.stress = Math.min(1, o.stress + w.suppress * 0.2);
+    if (e instanceof Unit) {   // every shot at a unit stresses it, hit or miss
+      addStress(e, w.suppress); e.lastHitBy = u; alertUnit(e);
+      for (const o of G.units) if (o !== e && !o.dead && !o.inside && o.owner === e.owner && dist(o.x, o.y, e.x, e.y) < 30) addStress(o, w.suppress * 0.2);
     }
   }
   function fireShell(u, tx, ty) {
@@ -365,7 +413,7 @@ const Game = (() => {
       let m = (0.35 + 0.65 * (1 - d / splash)) * Data.ARMOR_MULT[dtype][e.armor];
       if (Terrain.ridgeCover(x, y, e.x, e.y)) m *= 0.35;
       if (Terrain.coverAt(e.x, e.y) < 1) m *= 0.85;
-      e.stress = Math.min(1, e.stress + 0.3 * (1 - d / splash) + 0.1); e.lastHitBy = shooter; alertUnit(e);
+      addStress(e, 0.3 * (1 - d / splash) + 0.1); e.lastHitBy = shooter; alertUnit(e);
       applyDamage(e, dmg * m, shooter);
     }
     for (const b of G.buildings) {
@@ -383,10 +431,10 @@ const Game = (() => {
     }
     if (e instanceof Unit) {
       releaseWork(e);
-      for (const o of G.units) if (!o.dead && o.owner === e.owner && dist(o.x, o.y, e.x, e.y) < 45) o.stress = Math.min(1, o.stress + 0.2);
+      for (const o of G.units) if (!o.dead && o.owner === e.owner && dist(o.x, o.y, e.x, e.y) < 45) addStress(o, 0.2);
       // blood, a corpse, and a morale shock that alerts nearby friends
       G.effects.push({ kind: 'shock', x: e.x, y: e.y, t: 0, dur: 0.7, r: 45 });
-      const blobs = []; for (let i = 0; i < 5; i++) { const a = R() * Math.PI * 2, rr = R() * e.size * 1.6; blobs.push([Math.cos(a) * rr, Math.sin(a) * rr, e.size * (0.5 + R() * 0.7)]); }
+      const blobs = []; for (let i = 0; i < 5; i++) { const a = V() * Math.PI * 2, rr = V() * e.size * 1.6; blobs.push([Math.cos(a) * rr, Math.sin(a) * rr, e.size * (0.5 + V() * 0.7)]); }
       addDecal({ kind: 'splat', x: e.x, y: e.y, blobs, life: 90 });
       if (!e.inside) addDecal({ kind: 'corpse', x: e.x, y: e.y, shape: e.def.shape, size: e.size, color: Data.PLAYER_COLORS[e.owner], facing: e.facing, life: 60 });
       for (const o of G.units) if (!o.dead && !o.inside && o.owner === e.owner && dist(o.x, o.y, e.x, e.y) < 45) o.alertT = Math.max(o.alertT, 1.2);
@@ -396,7 +444,7 @@ const Game = (() => {
       e.workers = [];
       // a collapsing tower hurts everyone inside and throws the survivors out
       let n = 0;
-      for (const id of e.garrison) { const u = G.unitById.get(id); if (!u || u.dead) continue; placeOutside(u, e, n++); u.stress = Math.min(1, u.stress + 0.6); applyDamage(u, u.stats.hp * 0.5, by); }
+      for (const id of e.garrison) { const u = G.unitById.get(id); if (!u || u.dead) continue; placeOutside(u, e, n++); addStress(u, 0.6); applyDamage(u, u.stats.hp * 0.5, by); }
       e.garrison = [];
       G.effects.push({ kind: 'explosion', x: e.x, y: e.y, r: e.size * 1.4, t: 0, dur: 1.1 });
       if (e.type === 'hq') toast(e.owner === 1 ? 'Your headquarters has fallen' : 'Enemy headquarters destroyed!');
@@ -446,11 +494,15 @@ const Game = (() => {
   }
 
   function updateUnit(u, dt) {
-    u.moving = false; u.muzzle = Math.max(0, u.muzzle - dt); u.recoil = Math.max(0, u.recoil - dt); u.alertT = Math.max(0, u.alertT - dt);
-    u.cooldown -= dt; u.stress = Math.max(0, u.stress - 0.09 * dt);
+    // wasMoving: whether the unit moved last tick. Firing happens before this tick's move, so it is
+    // what the moving-fire penalty reads (DD Q11).
+    u.wasMoving = u.moving; u.moving = false;
+    u.muzzle = Math.max(0, u.muzzle - dt); u.recoil = Math.max(0, u.recoil - dt); u.alertT = Math.max(0, u.alertT - dt);
+    const retreating = !!(u.order && u.order.retreat);
+    u.cooldown -= dt; u.stress = Math.max(0, u.stress - C.stressDecay * (retreating ? C.retreatDecayMult : 1) * dt);   // DD Q9, Q10
     if (u.hp < u.stats.hp * 0.5 && !u.inside) {   // wounded units leave blood behind (visual only)
       u.bleedT -= dt;
-      if (u.bleedT <= 0) { u.bleedT = 0.6 + R() * 1.4; addDecal({ kind: 'blood', x: u.x + (R() - 0.5) * 6, y: u.y + (R() - 0.5) * 6, r: 1.1 + R() * 1.2, life: 25 }); }
+      if (u.bleedT <= 0) { u.bleedT = 0.6 + V() * 1.4; addDecal({ kind: 'blood', x: u.x + (V() - 0.5) * 6, y: u.y + (V() - 0.5) * 6, r: 1.1 + V() * 1.2, life: 25 }); }
     }
     u.acquireT -= dt; if (u.acquireT <= 0) { u.acquireT = 0.3 + R() * 0.1; acquire(u); }
     if (u.inside) {   // garrisoned: pinned to the tower, only fires
@@ -463,9 +515,9 @@ const Game = (() => {
       u.flee -= dt;
       if (u.flee <= 0) u.stress = Math.min(u.stress, 0.55);
       else { const a = u.lastHitBy; const ax = a ? a.x : u.x + 1, ay = a ? a.y : u.y; moveToward(u, u.x + (u.x - ax), u.y + (u.y - ay), dt, 1.1); return; }
-    } else if (u.stress >= 0.95 && !u.def.ignoresSuppression) { u.flee = 2.5 + R(); u.target = null; return; }
+    } else if (u.stress >= C.panicAt && !u.def.neverPanics) { u.flee = 2.5 + R(); u.target = null; return; }   // DD Q12: snipers never panic
     tryFire(u);
-    const spd = u.suppressed ? 0.6 : 1;
+    const spd = Util.stack('speed', u.suppressed && !retreating ? 0.6 : 1);   // DD Q10: no suppression slowdown in retreat
     const o = u.order;
     if (o) {
       switch (o.type) {
@@ -494,7 +546,7 @@ const Game = (() => {
         }
         case 'attack': {
           const t = o.target;
-          if (!t || t.dead || u.suppressed) { nextOrder(u); break; }
+          if (!t || t.dead || !keepsOrders(u)) { nextOrder(u); break; }
           if (inRange(u, t) && canSee(u, t)) break;
           const ci = Terrain.cellI(t.x), cj = Terrain.cellJ(t.y);
           if (!u.field || u.field.ci !== ci || u.field.cj !== cj) u.field = Path.getField(t.x, t.y, u.def.cls, G.time);
@@ -516,7 +568,7 @@ const Game = (() => {
       }
     } else if (u.micro) {
       if (moveToward(u, u.micro.x, u.micro.y, dt, spd) || u.stuck > 1) { u.micro = null; u.stuck = 0; }
-    } else if (u.target && !inRange(u, u.target) && !u.stats.weapon.indirect) {
+    } else if (u.target && !inRange(u, u.target) && !isIndirect(u)) {
       const t = u.target;
       if (dist(u.x, u.y, t.x, t.y) < u.stats.weapon.range * 1.3 && Terrain.straightPassable(u.x, u.y, t.x, t.y, u.cls)) moveToward(u, t.x, t.y, dt, spd);
     } else if (u.owner === 0 && !u.target && dist(u.x, u.y, u.spawn.x, u.spawn.y) > 90) {
@@ -564,7 +616,42 @@ const Game = (() => {
     const enemyHq = G.buildings.some(b => b.type === 'hq' && b.owner === 2 && !b.dead);
     if (!myHq) { G.over = true; G.winner = 2; } else if (!enemyHq && !G.sandbox) { G.over = true; G.winner = 1; }
   }
+  // ---- player commands ----
+  // Every player action as a plain record with unit and building ids, logged in G.orders with the
+  // tick it was applied before, so a match can be replayed from its seed (Sim.replay). Input and UI
+  // call this; the AI orders its units directly, since it is part of the seeded simulation.
+  const entById = id => G.unitById.get(id) || G.buildingById.get(id) || null;
+  function unloadOne(b, u) {
+    if (!b || !u || !b.garrison.includes(u.id)) return false;
+    b.garrison = b.garrison.filter(x => x !== u.id); placeOutside(u, b, b.garrison.length); return true;
+  }
+  function command(c) {
+    G.orders.push(Object.assign({ tick: G.tick }, c));
+    const us = (c.units || []).map(entById).filter(u => u instanceof Unit && !u.dead);
+    const b = c.building != null ? entById(c.building) : null, q = !!c.queue, pid = c.player || 1;
+    switch (c.kind) {
+      case 'move': orderMove(us, c.x, c.y, c.mode || 'move', q); return true;
+      case 'attack': { const t = entById(c.target); if (t && !t.dead) orderAttack(us, t, q); return true; }
+      case 'bombard': orderBombard(us, c.x, c.y, q); return true;
+      case 'stop': orderStop(us); return true;
+      case 'hold': orderHold(us, q); return true;
+      case 'retreat': orderRetreat(us, q); return true;
+      case 'work': return b ? orderWork(us, b, q) : 0;
+      case 'garrison': return b ? orderGarrison(us, b, q) : 0;
+      case 'enqueue': return !!b && enqueue(b, c.type);
+      case 'cancel': if (b) cancelQueue(b, c.index); return true;
+      case 'research': return startResearch(pid, c.research);
+      case 'build': return placeBuilding(c.type, pid, c.x, c.y);
+      case 'rally': if (b) b.rally = { x: c.x, y: c.y }; return true;
+      case 'upgrade': return !!b && upgradeTower(b);
+      case 'unload': return b ? unloadBuilding(b) : 0;
+      case 'unloadOne': return unloadOne(b, entById(c.unit));
+    }
+    return false;
+  }
+
   function update(dt) {
+    G.tick++;
     G.time += dt;
     updateResearch(dt); updateBuildings(dt);
     for (const u of G.units) if (!u.dead) updateUnit(u, dt);
@@ -578,12 +665,12 @@ const Game = (() => {
   }
 
   return {
-    init, update, toast, setSpeed, togglePause,
-    canAfford, researchState, startResearch, statsFor,
+    init, update, command, toast, setSpeed, togglePause,
+    canAfford, researchState, startResearch, statsFor, prodTime,
     spawnUnit, addBuilding, canPlace, placeBuilding,
     orderMove, orderAttack, orderBombard, orderStop, orderHold, orderWork, orderRetreat, orderGarrison,
     canEnter, unloadBuilding, upgradeTower,
     enqueue, cancelQueue, harvestRate, activeWorkers, effRange,
-    _dbg: { validTarget, acquire, inRange, canSee, tryFire, applyDamage, kill },
+    _dbg: { validTarget, acquire, inRange, canSee, tryFire, applyDamage, kill, addStress, rangeMult, dmgMult, hitMult, heightDiff },
   };
 })();

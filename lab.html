@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dot War Balance Lab</title>
+<link rel="stylesheet" href="style.css">
+<style>
+  html, body { height: auto; overflow: auto; user-select: text; }   /* the game's stylesheet pins the page to one screen */
+  body { background: var(--bg); padding: 20px 24px 60px; max-width: 1100px; margin: 0 auto; }
+  h1 { margin: 0 0 4px; font-size: 22px; color: var(--brass2); letter-spacing: 3px; text-transform: uppercase; }
+  .lead { color: var(--muted); margin: 0 0 18px; line-height: 1.5; }
+  .test { background-color: var(--panel); background-image: var(--stripes); border: 1px solid var(--line); border-left: 3px solid var(--edge); padding: 12px 16px; margin-bottom: 14px; }
+  .test h2 { margin: 0 0 6px; font-size: 13px; text-transform: uppercase; letter-spacing: 1.6px; color: var(--brass2); }
+  .test p { margin: 0 0 10px; color: var(--muted); line-height: 1.45; }
+  .controls { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 10px; }
+  .controls label { display: flex; gap: 6px; align-items: center; color: var(--text); }
+  select, input[type=number] { background: #1f2219; color: var(--text); border: 1px solid var(--line); padding: 3px 6px; font: inherit; }
+  input[type=number] { width: 64px; }
+  table { border-collapse: collapse; width: 100%; margin-top: 6px; font-family: Consolas, "Cascadia Mono", monospace; font-size: 12px; }
+  th, td { text-align: left; padding: 4px 8px; border-bottom: 1px dotted #33382c; }
+  th { color: var(--muted); font-weight: 500; }
+  td.num { text-align: right; font-variant-numeric: tabular-nums; }
+  .ok { color: var(--good); } .bad { color: var(--bad); font-weight: 600; } .pending { color: var(--muted); }
+  .targets td:first-child { font-family: "Segoe UI", Arial, sans-serif; }
+  .bar { height: 4px; margin-top: 8px; } .bar > div { width: 0; background: var(--brass); transition: width 0.2s; }
+  canvas.chart { width: 100%; height: 220px; background: #1a1c16; border: 1px solid var(--line); margin-top: 8px; display: block; }
+  .legend { display: flex; gap: 14px; font-size: 12px; color: var(--muted); margin-top: 4px; }
+  .legend i { display: inline-block; width: 10px; height: 3px; margin-right: 5px; vertical-align: middle; }
+</style>
+</head>
+<body>
+<h1>Balance Lab</h1>
+<p class="lead">Runs the real game rules with no map drawing. Pick a test, press Run, read the tables. Every run is seeded, so the same settings give the same result. Targets live in <code>lab/balance-targets.js</code>; a result outside its range is red. Red results are reported, not hidden by retuning numbers.</p>
+
+<div class="test">
+  <h2>Targets</h2>
+  <table class="targets" id="targets"><tr><th>Check</th><th>Target</th><th>Result</th><th>Required green for</th></tr></table>
+</div>
+
+<div class="test">
+  <h2>Unit duels</h2>
+  <p>Side A against side B on a small test ground, 110 m apart, both attack-moving towards each other, until one side is gone or 3 minutes pass. "Height" puts side B 30 m higher at the crest of a ramp; "forest" puts side B inside a forest strip.</p>
+  <div class="controls">
+    <label>A <input type="number" id="nA" value="5" min="1" max="20"> × <select id="tA"></select></label>
+    <label>B <input type="number" id="nB" value="5" min="1" max="20"> × <select id="tB"></select></label>
+    <label>Ground <select id="ground"><option value="flat">flat</option><option value="height">B +30 m</option><option value="forest">B in forest</option></select></label>
+    <label>Runs <input type="number" id="runs" value="100" min="1" max="500"></label>
+    <button class="btn" id="runDuel">Run</button>
+    <button class="btn" id="runGates">Run the target duels</button>
+  </div>
+  <div class="bar" id="duelBar"><div></div></div>
+  <table id="duelOut"></table>
+</div>
+
+<div class="test">
+  <h2>Economy timeline</h2>
+  <p>A standard opening on Highland Pass with the enemy and neutrals removed: a Lumber Camp at the nearest forest, a Mine on the nearest iron, two Workers each, then Workers from the HQ until there are eight. Nothing else is bought. "Tier II affordable" uses the Heavy Machine Gun's cost, a Tier II item in the agreed tech tree.</p>
+  <div class="controls">
+    <label>Minutes <input type="number" id="ecoMin" value="15" min="1" max="60"></label>
+    <label>Seed <input type="number" id="ecoSeed" value="1"></label>
+    <button class="btn" id="runEco">Run</button>
+  </div>
+  <canvas class="chart" id="ecoChart" width="1000" height="220"></canvas>
+  <div class="legend"><span><i style="background:#c9a227"></i>wood</span><span><i style="background:#8fa2b5"></i>metal</span><span><i style="background:#7fb86a"></i>workers × 100</span></div>
+  <table id="ecoOut"></table>
+</div>
+
+<div class="test">
+  <h2>AI versus AI</h2>
+  <p>The scripted commander plays both sides of Highland Pass. Side 1 gets the same start as the enemy (resources, Barracks, Ordnance Works, garrison). The map is not symmetric, so this also shows whether the base or the mountain is favoured. These results only describe the scripted AI until it follows the player's economic rules. Early minutes run at about five game minutes per real second; once both armies march it slows to about five game minutes per real minute, so a full match takes several minutes. Fog of war is the cost; patch 0.7 makes it incremental. Two identical scripted AIs currently stall with no winner, so the match-length target waits until the AI plays by the player's economy.</p>
+  <div class="controls">
+    <label>Matches <input type="number" id="aiN" value="1" min="1" max="20"></label>
+    <label>Difficulty <select id="aiDiff"><option>easy</option><option selected>normal</option><option>hard</option></select></label>
+    <label>Stop after (min) <input type="number" id="aiMax" value="75" min="10" max="240"></label>
+    <button class="btn" id="runAi">Run</button>
+  </div>
+  <div class="bar" id="aiBar"><div></div></div>
+  <table id="aiOut"></table>
+</div>
+
+<script src="js/util.js"></script>
+<script src="js/data.js"></script>
+<script src="js/icons.js"></script>
+<script src="js/terrain.js"></script>
+<script src="js/path.js"></script>
+<script src="js/fog.js"></script>
+<script src="js/entities.js"></script>
+<script src="js/game.js"></script>
+<script src="js/ai.js"></script>
+<script src="js/maps.js"></script>
+<script src="js/sim.js"></script>
+<script src="lab/balance-targets.js"></script>
+<script src="lab/lab-tests.js"></script>
+<script src="lab/lab.js"></script>
+</body>
+</html>

@@ -55,57 +55,58 @@ not designed yet. Read `assets/paintings/README.md` before starting.
 Goal: the game plays at the new core values, and every run can be repeated exactly.
 
 **Determinism and tools**
-- [ ] Replace `Math.random` in the simulation with a seeded `Util.mulberry32` stream; store the
+- [x] Replace `Math.random` in the simulation with a seeded `Util.mulberry32` stream; store the
       seed per match. Move visual-only randomness (decals, corpses) to a separate stream.
-- [ ] Pick the AI's army from the match seed, and seed portraits with
+- [x] Pick the AI's army from the match seed, and seed portraits with
       `Portraits.seedFor(G.seed, u.id)` [K].
-- [ ] Record orders as descriptors with a tick number (`{tick, kind, ...}`). This prepares replays
-      and multiplayer.
-- [ ] Headless runner: advance the simulation N ticks with no renderer.
-- [ ] `lab.html` Balance Lab [H4]:
-  - [ ] Unit duels: A × n vs B × m, on flat, uphill +30 m or forest ground, 100 runs.
-  - [ ] Economy timeline for a standard opening build order.
-  - [ ] AI vs AI mirror match.
-  - [ ] `balance-targets.js`; results outside a target range show in red.
-- [ ] Shared stacking helper: multiply, then cap [I].
+- [x] Record orders as descriptors with a tick number (`{tick, kind, ...}`). This prepares replays
+      and multiplayer. (`Game.command`, `G.orders`, `Sim.replay`.)
+- [x] Headless runner: advance the simulation N ticks with no renderer. (`js/sim.js`.)
+- [x] `lab.html` Balance Lab [H4]:
+  - [x] Unit duels: A × n vs B × m, on flat, uphill +30 m or forest ground, 100 runs.
+  - [x] Economy timeline for a standard opening build order.
+  - [x] AI vs AI mirror match.
+  - [x] `balance-targets.js`; results outside a target range show in red. (`lab/balance-targets.js`.)
+- [x] Shared stacking helper: multiply, then cap [I]. (`Util.stack`.)
 
 **Combat values**
-- [ ] Elevation [Q8, I]:
-  - [ ] Range: `1 + 0.04·√dh`, max +50%. Uphill: `1 − 0.03·√|dh|`, floor −20%.
-  - [ ] Damage and hit chance from steepness `s = dh / max(d, 20)`.
-  - [ ] 3 m dead zone.
-  - [ ] Indirect fire gets half the range bonus, max +25%.
-- [ ] Stress decay 0.06/s [Q9].
-- [ ] Retreat: no suppression slowdown, 2× decay [Q10].
-- [ ] Moving fire 0.35; Machine Gunners can't fire while moving [Q11].
-- [ ] Snipers: half stress, never panic, can be suppressed, keep obeying target orders [Q12, I].
+- [x] Elevation [Q8, I]:
+  - [x] Range: `1 + 0.04·√dh`, max +50%. Uphill: `1 − 0.03·√|dh|`, floor −20%.
+  - [x] Damage and hit chance from steepness `s = dh / max(d, 20)`.
+  - [x] 3 m dead zone.
+  - [x] Indirect fire gets half the range bonus, max +25%.
+- [x] Stress decay 0.06/s [Q9].
+- [x] Retreat: no suppression slowdown, 2× decay [Q10].
+- [x] Moving fire 0.35; Machine Gunners can't fire while moving [Q11].
+- [x] Snipers: half stress, never panic, can be suppressed, keep obeying target orders [Q12, I].
 
 **Roster and start**
-- [ ] Remove the Musketeer. Rifling is done at init [Q1, Q15].
-- [ ] Worker unit [A], trained at the HQ at full speed. HQ trains Riflemen at 0.7× [I].
-- [ ] Soldiers assigned to a camp count as 0.5 of a worker [Q4].
-- [ ] Start with 6 Riflemen and 4 Workers.
+- [x] Remove the Musketeer. Rifling is done at init [Q1, Q15].
+- [x] Worker unit [A], trained at the HQ at full speed. HQ trains Riflemen at 0.7× [I].
+- [x] Soldiers assigned to a camp count as 0.5 of a worker [Q4].
+- [x] Start with 6 Riflemen and 4 Workers.
 
 **AI**
-- [ ] Musketeers → Riflemen in AI unit weights and map garrisons.
-- [ ] Time-gated AI unlocks, scaled by difficulty: MG about 8 game min, Sniper about 12,
+- [x] Musketeers → Riflemen in AI unit weights and map garrisons.
+- [x] Time-gated AI unlocks, scaled by difficulty: MG about 8 game min, Sniper about 12,
       Mortar about 15 [G7].
-- [ ] First raid = walking time from the enemy base + 300 s; scale the raid interval the same
+- [x] First raid = walking time from the enemy base + 300 s; scale the raid interval the same
       way [Q2].
 
 **Controls** [9]
-- [ ] WASD pans the camera.
-- [ ] Move the old order keys: F attack-move, R defend, G retreat, X stop, E enter, Q exit,
+- [x] WASD pans the camera.
+- [x] Move the old order keys: F attack-move, R defend, G retreat, X stop, E enter, Q exit,
       T tower upgrade.
-- [ ] Z X C V train from a factory; Tab pages when a factory has more than 4 blueprints.
-- [ ] Smart right-click.
-- [ ] Minimap click jumps the camera.
+- [x] Z X C V train from a factory; Tab pages when a factory has more than 4 blueprints.
+- [x] Smart right-click.
+- [x] Minimap click jumps the camera.
 
 **Done when**
-- [ ] Running the same seed twice gives identical results.
-- [ ] Balance Lab green, or reds reported to Kaan: 1 MG pins a Rifleman in 3.5–5.5 s; 5 v 5
-      Riflemen, the side with +30 m height wins 65–80%.
-- [ ] `GAME_DESIGN.md` updated.
+- [x] Running the same seed twice gives identical results.
+- [x] Balance Lab green, or reds reported to Kaan: 1 MG pins a Rifleman in 3.5–5.5 s; 5 v 5
+      Riflemen, the side with +30 m height wins 65–80%. Pin about 4.9 s; height duel about 74%
+      after Kaan chose to soften the steepness bonuses (DD section L).
+- [x] `GAME_DESIGN.md` updated.
 
 ---
 
@@ -248,7 +249,8 @@ Goal: the game plays at the new core values, and every run can be repeated exact
   1. [ ] Probe towers first.
   2. [ ] Move to the weakest outpost toward the HQ.
   3. [ ] Ignore unrelated outposts.
-- [ ] AI vs AI match length 45–75 game min in the Balance Lab.
+- [ ] AI vs AI match length 45–75 game min: moved to Later, it needs the AI on the player's economy
+      (two identical scripted AIs stall; DD section L).
 
 **Done when**
 - [ ] A full match on a big map runs without frame drops on an ordinary laptop.
@@ -272,7 +274,8 @@ Goal: the game plays at the new core values, and every run can be repeated exact
 
 ## Later (not scheduled)
 
-- The AI plays by the same economic rules as the player [Q23].
+- The AI plays by the same economic rules as the player [Q23]. Then the Balance Lab's AI vs AI
+  match length (45–75 game min) becomes a real target.
 - Multiplayer lockstep, built on the seeded randomness and tick orders from 0.2.1.
 - Replays built on the same order log.
 - Save and load, sound effects, a tutorial.
