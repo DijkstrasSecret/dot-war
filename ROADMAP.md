@@ -1,5 +1,10 @@
 # Roadmap
 
+> **Superseded (28 September 2026).** The agreed patch order and scope are now in
+> `IMPLEMENTATION_PLAN.md` (infantry first: 0.2.1 foundations, 0.3 squadrons, 0.4 fortifications,
+> 0.5 vehicles and tech tree, 0.6 weather, 0.7 big maps, 0.8 designer), with the decisions in
+> `DESIGN_DECISIONS.md`. The file hints below (which functions to reuse) are still useful.
+
 What exists today (patch 0.2): four maps (Highland Pass, Western Ridge, Southern Reach and the
 Open Valley sandbox) picked from a start menu with three difficulties; five infantry blueprints
 (musket, rifle, machine gun, sniper, mortar); six buildings including a three-level Scout Tower
