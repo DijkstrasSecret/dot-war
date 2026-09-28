@@ -49,6 +49,14 @@ const Render = (() => {
       ctx.lineWidth = 3; ctx.strokeStyle = '#111'; ctx.strokeText(txt, 0, -s - 12 + bob);
       ctx.fillStyle = u.flee > 0 ? '#ff3b2f' : '#ffd230'; ctx.fillText(txt, 0, -s - 12 + bob);
     }
+    // Rank chevrons under the shape, the squadron number and the leader's star beside it (DD E, H1).
+    if (u.rank) { ctx.strokeStyle = '#e0bb45'; ctx.lineWidth = 1.2; for (let i = 0; i < u.rank; i++) { const y0 = s + 3 + i * 2.6; ctx.beginPath(); ctx.moveTo(-3, y0); ctx.lineTo(0, y0 + 1.8); ctx.lineTo(3, y0); ctx.stroke(); } }
+    if (u.squad && u.owner === 1) {
+      const sq = G.squads[u.squad];
+      ctx.font = 'bold 8px Consolas, monospace'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.lineWidth = 2.5; ctx.strokeStyle = '#111'; ctx.strokeText(String(u.squad), -s - 3.5, -s - 1.5); ctx.fillStyle = '#fff'; ctx.fillText(String(u.squad), -s - 3.5, -s - 1.5);
+      if (sq && sq.leader === u.id) { ctx.fillStyle = '#e0bb45'; ctx.strokeStyle = '#111'; ctx.lineWidth = 0.8; ctx.beginPath(); for (let i = 0; i < 10; i++) { const r = i % 2 ? 1.4 : 3.2, a = -Math.PI / 2 + i * Math.PI / 5; ctx[i ? 'lineTo' : 'moveTo'](s + 3.5 + Math.cos(a) * r, s + 2 + Math.sin(a) * r); } ctx.closePath(); ctx.fill(); ctx.stroke(); }
+    }
     const hp = u.hp / u.stats.hp;
     if (hp < 1 || selected) {
       const bw = s * 2 + 4;
@@ -194,6 +202,7 @@ const Render = (() => {
     for (const u of G.selection) if (u instanceof Unit && u.queue.length) { ctx.strokeStyle = 'rgba(60,60,60,0.5)'; ctx.setLineDash([2, 4]); ctx.beginPath(); ctx.moveTo(u.order && u.order.x != null ? u.order.x : u.x, u.order && u.order.y != null ? u.order.y : u.y); for (const o of u.queue) if (o.x != null) ctx.lineTo(o.x, o.y); ctx.stroke(); ctx.setLineDash([]); }
     // screen-space overlays
     ctx.setTransform(1, 0, 0, 1, 0, 0);
+    if (st.rdrag) { const [x0, y0] = toScreen(st.rdrag.wx, st.rdrag.wy), [x1, y1] = toScreen(st.rdrag.ex, st.rdrag.ey); ctx.strokeStyle = '#3c3'; ctx.lineWidth = 2; ctx.setLineDash([6, 4]); ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x1, y1); ctx.stroke(); ctx.setLineDash([]); }   // arrival line being dragged
     if (st.box) { const b = st.box; ctx.strokeStyle = '#fff'; ctx.fillStyle = 'rgba(255,255,255,0.15)'; ctx.lineWidth = 1; ctx.fillRect(b.x0, b.y0, b.x1 - b.x0, b.y1 - b.y0); ctx.strokeRect(b.x0, b.y0, b.x1 - b.x0, b.y1 - b.y0); }
     let ty = h - 30;   // toasts rise from the bottom centre, between the two bottom panels
     ctx.font = '14px "Segoe UI", Arial, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';

@@ -237,7 +237,7 @@ tower garrisons it. F attack-move, R defend position, G retreat, X stop, E enter
 tower), Q exit (unload a tower), T upgrade a tower. With a factory selected Z X C V train, and Tab
 flips to the next four when a factory has more (otherwise Tab cycles factories). B build (L Lumber
 Camp, M Mine, C Barracks, O Ordnance Works, T Scout Tower), N research, H headquarters, Shift queues
-orders, Ctrl+1..9 groups (squadrons replace them in 0.3), Space pauses, comma and period change
+orders, Ctrl+1..9 squadrons (section 9a), right-drag sets a squadron's line, Space pauses, comma and period change
 speed, F1 help. New features take free keys; existing ones don't move without asking.
 
 ## 10. Presentation
@@ -263,6 +263,36 @@ white logo, player blue (#2458d6), enemy red (#c8302e), neutral grey. Yellow rin
 "!" when fire starts, "!!" while panicking, bleeding under 50% health, blood splashes and
 corpses persist (capped at 400 decals). Background music is a Grieg violin sonata with a toggle
 and volume.
+
+## 9a. Squadrons and veterancy (patch 0.3)
+
+**Squadrons** replace the old number-key groups. Ctrl+1..9 with 2 to 12 soldiers selected makes
+squadron 1..9, replacing it; with nothing selected it clears it. A soldier is in one squadron at a
+time, and a squadron with one soldier left disbands. Any order to one member moves the whole
+squadron. On arrival it forms a line facing the direction of travel (or the right-drag's direction
+and width), ranked by range: Riflemen in front, Machine Gunners and Snipers behind them, Workers in
+the centre behind those, Mortar Crews 60 m back. Members travel along the path in file.
+
+| Setting (squad panel) | Options | Default |
+| --- | --- | --- |
+| Movement | `>` everyone at the slowest member's pace · `>>` each at his own pace | `>` |
+| Spacing | tight 15 m · loose 25 m | loose |
+| Contact | react: the whole squadron halts when a member finds a target · keep moving | react |
+
+Riflemen, Machine Gunners and Mortar Crews fire at the squadron's shared target; Snipers pick
+their own. Within 40 m of a squadmate stress drains at 0.08/s instead of 0.06/s. A panicking
+member runs towards the squadron as well as away from the fire. Retreat (G) is a fighting
+withdrawal: the rear ranks fall back at once while the front rank holds 4 s, then follows. A
+factory's rally point set on a squad member (right click it) sends new units into that squadron,
+up to 12. In the Balance Lab a squadron of 6 Riflemen beats 6 loose Riflemen about 82% of the time.
+
+**Veterancy.** Soldiers earn XP: 10 per kill, 1 per 10 damage, 5 when a target they are shooting
+becomes suppressed (once per target every 30 s), 1 per 10 s spent with stress above 0.3, and for
+Workers 1 per 60 s of work. Ranks come at 30, 80 and 160 XP. Each rank gives +5% accuracy, -10%
+stress taken and +5% health; rank 3 also reloads 10% faster. A Worker's rank adds 10% labour instead.
+Ranks show as chevrons under the shape, and portrait titles follow them (Pvt., Cpl., Sgt., Sgt. Maj.).
+Rank is never lost. The highest-ranked member leads the squadron (star): within 60 m of him stress
+drains 20% faster, and his death shocks squadmates within 60 m by +0.3 instead of the usual +0.2.
 
 ## 10a. Factions and portraits (patch 0.2a)
 

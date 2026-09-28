@@ -193,6 +193,14 @@ move with `retreat: true`, which `updateUnit` reads for the DD Q10 bonuses.
 - Production queues live on buildings; cost paid on enqueue, refunded on cancel; new units walk
   to `b.rally`. Training time is `Game.prodTime(b, type)`: `def.prodMult` maps unit types to a speed
   (the HQ trains Riflemen at 0.7), anything missing trains at full speed.
+- Squadrons (`game.js`, DD E): `G.squads[n] = { id, members: [ids], move, spacing, contact, target,
+  leader }`, `u.squad` on each member. `setSquad`/`disband`/`leaveSquad`/`joinSquad` keep both sides in
+  step; `updateSquads` (every tick) prunes the dead, picks the leader, keeps the shared target and
+  applies react-on-contact. `Game.command` expands a unit list to whole squadrons (`expandSquads`),
+  so any order to one member moves all of them; `orderMove` places squad members with `formation`
+  (ranks by `def.role`). Numbers in `Data.SQUAD`.
+- Veterancy: `addXp(u, n)` raises `u.rank` at `Data.VETERANCY.ranks` and grows `u.stats.hp`; the
+  accuracy, stress and reload bonuses are read from `u.rank` where those are computed.
 - The AI (`ai.js`) keeps one state per commanded player (`AI.reset([2])` normally, `[1, 2]` in the
   lab). It unlocks units at `Data.DIFFICULTY[d].unlocks` game seconds, and times raids from the
   Rifleman walking time between the HQs (flow-field cost divided by speed) plus `buildUp`.

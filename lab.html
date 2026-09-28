@@ -40,11 +40,13 @@
 
 <div class="test">
   <h2>Unit duels</h2>
-  <p>Side A against side B on a small test ground, 110 m apart, both attack-moving towards each other, until one side is gone or 3 minutes pass. "Height" puts side B 30 m higher at the crest of a ramp; "forest" puts side B inside a forest strip.</p>
+  <p>Side A against side B on a small test ground, 110 m apart, either side optionally as one squadron (cohesion, shared targets, halting on contact), both attack-moving towards each other, until one side is gone or 3 minutes pass. "Height" puts side B 30 m higher at the crest of a ramp; "forest" puts side B inside a forest strip.</p>
   <div class="controls">
     <label>A <input type="number" id="nA" value="5" min="1" max="20"> × <select id="tA"></select></label>
     <label>B <input type="number" id="nB" value="5" min="1" max="20"> × <select id="tB"></select></label>
     <label>Ground <select id="ground"><option value="flat">flat</option><option value="height">B +30 m</option><option value="forest">B in forest</option></select></label>
+    <label><input type="checkbox" id="sqA"> A as a squadron</label>
+    <label><input type="checkbox" id="sqB"> B as a squadron</label>
     <label>Runs <input type="number" id="runs" value="100" min="1" max="500"></label>
     <button class="btn" id="runDuel">Run</button>
     <button class="btn" id="runGates">Run the target duels</button>

@@ -14,7 +14,8 @@ class Unit {
     this.order = null; this.field = null; this.forced = null; this.target = null;
     this.micro = null;                  // short direct move (cover seeking)
     this.facing = G.vrng() * Math.PI * 2; this.moving = false; this.wasMoving = false;   // facing is looks only
-    this.work = null; this.group = 0; this.dead = false; this.queue = [];
+    this.work = null; this.squad = 0; this.dead = false; this.queue = [];
+    this.xp = 0; this.rank = 0; this.fireT = 0; this.workT = 0; this.suppXp = null;   // veterancy (DD H1)
     this.inside = null; this.hBonus = 0;   // garrisoned building id and the extra height it gives
     this.recoil = 0; this.alertT = 0; this.bleedT = 0; this.lastAttackedT = -99;   // presentation timers
     this.cls = Data.MOVE_CLASSES[this.def.cls];

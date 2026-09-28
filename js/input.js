@@ -77,6 +77,9 @@ const Input = (() => {
     const { wx, wy } = state.mouse; const q = e.shiftKey;
     if (e.button === 2) {
       if (state.mode !== 'normal') { setMode('normal'); return; }
+      // On open ground with soldiers selected, wait for the release: a drag sets the arrival line (DD E).
+      const ent = entityAt(wx, wy);
+      if (selectedUnits().length && !ent) { state.rdrag = { wx, wy, sx: state.mouse.x, sy: state.mouse.y, q, ex: wx, ey: wy }; return; }
       contextOrder(wx, wy, q); return;
     }
     if (e.button !== 0) return;
@@ -107,6 +110,7 @@ const Input = (() => {
   }
   function onMove(e) {
     updateMouse(e);
+    if (state.rdrag) { state.rdrag.ex = state.mouse.wx; state.rdrag.ey = state.mouse.wy; }
     if (pan) {
       if (e.buttons & 4) { Render.cam.x = pan.cx - (e.clientX - pan.x) / Render.cam.zoom; Render.cam.y = pan.cy - (e.clientY - pan.y) / Render.cam.zoom; Render.clampCam(); return; }
       pan = null;
@@ -117,6 +121,7 @@ const Input = (() => {
   }
   function onUp(e) {
     if (e.button === 1) { pan = null; return; }
+    if (e.button === 2 && state.rdrag) { updateMouse(e); finishLine(); return; }
     if (e.button !== 0 || !dragStart) return;
     const add = dragStart.shift;
     if (state.box) {
@@ -138,6 +143,16 @@ const Input = (() => {
     }
     dragStart = null; state.box = null;
   }
+  // Right-drag from A to B: the squad forms its arrival line along AB, facing away from where it stands.
+  function finishLine() {
+    const r = state.rdrag; state.rdrag = null; const units = selectedUnits(); if (!units.length) return;
+    if (Math.hypot(state.mouse.x - r.sx, state.mouse.y - r.sy) < 12) { contextOrder(r.wx, r.wy, r.q); return; }
+    const mx = (r.wx + r.ex) / 2, my = (r.wy + r.ey) / 2, width = Math.hypot(r.ex - r.wx, r.ey - r.wy);
+    let cx = 0, cy = 0; for (const u of units) { cx += u.x; cy += u.y; } cx /= units.length; cy /= units.length;
+    let facing = Math.atan2(r.ey - r.wy, r.ex - r.wx) + Math.PI / 2;
+    if (Math.cos(facing) * (mx - cx) + Math.sin(facing) * (my - cy) < 0) facing += Math.PI;   // face away from the squad's side
+    cmd({ kind: 'move', units: ids(units), x: mx, y: my, queue: r.q, facing, width }); marker(mx, my, '#3c3');
+  }
   function contextOrder(wx, wy, q) {
     const units = selectedUnits(); const ent = entityAt(wx, wy);
     if (units.length) {
@@ -147,7 +162,8 @@ const Input = (() => {
       cmd({ kind: 'move', units: ids(units), x: wx, y: wy, queue: q }); marker(wx, wy, '#3c3'); return;
     }
     const b = selectedBuilding();
-    if (b && b.def.produces) { cmd({ kind: 'rally', building: b.id, x: wx, y: wy }); marker(wx, wy, '#fff'); }
+    // A rally point on one of your squad members makes new units join that squadron (DD E).
+    if (b && b.def.produces) { const sq = ent instanceof Unit && ent.owner === 1 && ent.squad ? ent.squad : 0; cmd({ kind: 'rally', building: b.id, x: wx, y: wy, squad: sq }); marker(wx, wy, sq ? '#e0bb45' : '#fff'); if (sq) Game.toast('New units will join squadron ' + sq); }
   }
   function onWheel(e) {
     e.preventDefault(); updateMouse(e);
@@ -199,28 +215,25 @@ const Input = (() => {
       select(G.units.filter(u => !u.dead && u.owner === 1 && u.work == null && u.x >= x0 && u.x <= x1 && u.y >= y0 && u.y <= y1), false); return;
     }
     if (k >= '1' && k <= '9') {
-      if (e.ctrlKey || e.metaKey) { e.preventDefault(); if (units.length) setGroup(k, units); }
-      else selectGroup(k, e.shiftKey);
+      if (e.ctrlKey || e.metaKey) { e.preventDefault(); setSquad(+k, units); }
+      else selectSquad(+k, e.shiftKey);
     }
   }
 
-  // A soldier belongs to one group only: putting him in group k takes him out of any other
-  // (as agreed for the squadrons of patch 0.3, DD E). An emptied group disappears.
-  function setGroup(k, units) {
-    for (const g of Object.keys(G.groups)) {
-      if (g === k) continue;
-      G.groups[g] = G.groups[g].filter(u => !units.includes(u));
-      if (!G.groups[g].some(u => !u.dead)) delete G.groups[g];
-    }
-    G.groups[k] = units.slice(); for (const u of units) u.group = +k;
-    Game.toast('Group ' + k + ' set');
+  // Squadrons (DD E): Ctrl+number with 2-12 soldiers selected makes squadron n, replacing it; with
+  // nothing selected it clears n. Soldiers leave any squadron they were in (one squadron per soldier).
+  function setSquad(n, units) {
+    if (!units.length) { if (G.squads[n]) { cmd({ kind: 'squadClear', squad: n }); Game.toast('Squadron ' + n + ' cleared'); } return; }
+    if (units.length < Data.SQUAD.min || units.length > Data.SQUAD.max) { Game.toast('A squadron takes ' + Data.SQUAD.min + ' to ' + Data.SQUAD.max + ' soldiers'); return; }
+    if (cmd({ kind: 'squadSet', squad: n, units: ids(units) })) Game.toast('Squadron ' + n + ' formed');
   }
-  // Select group k (key or group-bar tile); a second press within 350 ms centres the view on it.
-  function selectGroup(k, add = false) {
-    const g = (G.groups[k] || []).filter(u => !u.dead); if (!g.length) return;
+  // Select squadron n (key or squadron bar); a second press within 350 ms centres the view on it.
+  function selectSquad(n, add = false) {
+    const s = G.squads[n]; if (!s) return;
+    const g = Game.membersOf(s).filter(u => !u.inside); if (!g.length) return;
     select(g, add);
-    if (now() - state.lastGroupT < 350 && state.lastGroupK === k) { let cx = 0, cy = 0; for (const u of g) { cx += u.x; cy += u.y; } Render.centerOn(cx / g.length, cy / g.length); }
-    state.lastGroupT = now(); state.lastGroupK = k;
+    if (now() - state.lastGroupT < 350 && state.lastGroupK === n) { let cx = 0, cy = 0; for (const u of g) { cx += u.x; cy += u.y; } Render.centerOn(cx / g.length, cy / g.length); }
+    state.lastGroupT = now(); state.lastGroupK = n;
   }
 
   function update(dt) {
@@ -233,5 +246,5 @@ const Input = (() => {
     if (dx || dy) { Render.cam.x += dx; Render.cam.y += dy; Render.clampCam(); const [wx, wy] = Render.toWorld(state.mouse.x, state.mouse.y); state.mouse.wx = wx; state.mouse.wy = wy; }
   }
 
-  return { init, update, state, setMode, select, selectGroup, setGroup, selectedUnits, selectedBuilding, entityAt, trainable };
+  return { init, update, state, setMode, select, selectSquad, setSquad, selectedUnits, selectedBuilding, entityAt, trainable };
 })();

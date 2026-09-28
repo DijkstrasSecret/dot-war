@@ -42,8 +42,8 @@
   }
   const name = t => Data.UNITS[t].name;
   $('runDuel').onclick = async () => {
-    const o = { typeA: $('tA').value, nA: +$('nA').value, typeB: $('tB').value, nB: +$('nB').value, ground: $('ground').value };
-    await runDuels(o, +$('runs').value, `${o.nA} ${name(o.typeA)} v ${o.nB} ${name(o.typeB)}, ${$('ground').selectedOptions[0].textContent}`);
+    const o = { typeA: $('tA').value, nA: +$('nA').value, typeB: $('tB').value, nB: +$('nB').value, ground: $('ground').value, squadA: $('sqA').checked, squadB: $('sqB').checked };
+    await runDuels(o, +$('runs').value, `${o.nA} ${name(o.typeA)}${o.squadA ? ' (squadron)' : ''} v ${o.nB} ${name(o.typeB)}${o.squadB ? ' (squadron)' : ''}, ${$('ground').selectedOptions[0].textContent}`);
   };
   $('runGates').onclick = async () => {
     // The pin test keeps the Rifleman alive: it measures stress alone (the MG would kill it first).
