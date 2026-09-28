@@ -11,9 +11,9 @@ play-testing. Everything else was decided explicitly.
 
 | Question | Decision |
 | --- | --- |
-| Era and tone | Grounded 1910–1945: riflemen, trucks, mortars, bunkers. Drones and EMP arrive very late as experimental tech. |
+| Era and tone | Grounded, starting in WW2: riflemen, trucks, mortars, bunkers. The game is a WW2-and-beyond sim: later research moves soldiers' kit into the Cold War and modern eras (section K). Drones and EMP arrive late. |
 | Mode | Single-player skirmish against the AI first; multiplayer is the long-term goal. |
-| Sides | Symmetric. Everyone shares one tech tree; the blueprint designer creates the differences. |
+| Sides | Symmetric. Everyone shares one tech tree; the blueprint designer creates the differences. Factions (section K) change looks only. |
 | Player focus | An equal mix of tactics (squads, terrain, morale) and strategy (economy, logistics, tech). |
 
 ---
@@ -855,7 +855,42 @@ A design that uses more than half its chassis limit loses **3% speed per weight 
 ### Which section wins
 
 Some tables repeat an item with different values. When they disagree, sections take precedence in
-this order: **J, then I, then G, then F**, then everything else.
+this order: **J, then I, then G, then F**, then everything else. Section K adds new cosmetic rules
+and conflicts with none of them.
+
+---
+
+## K. Factions, portraits and names
+
+Agreed on 28 September 2026. Built as `js/portraits.js` (visual only, own random stream).
+
+### Factions
+
+| Topic | Decision |
+| --- | --- |
+| What a faction changes | **Looks only**: uniform, headgear, camouflage and soldiers' names. Stats, units and the tech tree stay identical, so sides stay symmetric. |
+| Realism | **Real nations**, with real-looking uniforms and helmets but **no flags, party or political insignia**. The only markings are the player's team colour on collar tabs and cap bands. |
+| Roster | British, American, French, German, Italian, Polish, Soviet, Turkish, Spanish. |
+| Choosing | Each player picks a faction at match start (proposed). The AI gets a random faction different from the player's (proposed). Team colour stays a separate choice. |
+| Who serves | About **85%** of a faction's soldiers have names from their own nation. The rest are **volunteers** with names from neighbouring nations, wearing the faction's uniform. |
+
+### Kit eras
+
+| Topic | Decision |
+| --- | --- |
+| Eras | **WW2**, **Cold War**, **Modern**. Each faction has its own headgear mix and uniform per era (Cold War and Modern add berets, boonie hats, field caps, modern helmets and camouflage). |
+| When kit changes | **With research**, like a blueprint (tag B): a soldier gets the kit era his player has reached **when he is trained**. Veterans keep their old kit. |
+| Cold War trigger | The player owns an R&D Lab and has finished any **2 Tier III** research items (proposed). |
+| Modern trigger | The player has researched the Blueprint Designer's **EMP part** (proposed). Revisit when drones get their own research. |
+
+### Portraits and names
+
+| Topic | Decision |
+| --- | --- |
+| Face | Built from the unit id. The same id always gives the same face, whatever the faction or era; only the kit changes. |
+| Name | Built from the same unit id: first name, last name and sometimes a nickname that matches the face (red hair gives "Red", glasses give "Specs"). |
+| Rank title | Follows veterancy (H1): no rank Pvt., rank 1 Cpl., rank 2 Sgt., rank 3 Sgt. Maj. The name never changes; only the title does. |
+| Headgear fit | Every helmet and cap is sized from the face it sits on. No chin straps. |
 
 ---
 
@@ -863,3 +898,5 @@ this order: **J, then I, then G, then F**, then everything else.
 
 - Every value marked (proposed): tune in the Balance Lab.
 - Exact extra weights (1 or 2) per designer extra, and the designer's chassis cost factors.
+- The research that triggers Cold War and Modern kit (section K, proposed triggers).
+- Where portraits appear in the UI: selection panel, squadron bar, or both.

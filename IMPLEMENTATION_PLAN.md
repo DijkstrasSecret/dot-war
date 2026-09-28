@@ -1,10 +1,31 @@
 # Dot War: implementation plan
 
-Patch order agreed on 28 September 2026: **infantry first**. The patches build on each other, so do
-them in this order. All numbers and rules come from `DESIGN_DECISIONS.md`; the references in
+Patch order agreed on 28 September 2026: **infantry first**. Patch 0.2a (portraits) was added
+in front of 0.2.1 the same day, so the coming UI rework is built with portraits already in place.
+The patches build on each other, so do them in this order. All numbers and rules come from `DESIGN_DECISIONS.md`; the references in
 brackets point to its sections. Work rules are in `CLAUDE.md`.
 
 Tick each box when it's done and checked in the game.
+
+---
+
+## Patch 0.2a: Portraits, names and factions
+
+Guide and ready-made diff: `PATCH_0.2a_PORTRAITS.md` and `patches/patch-0.2a-portraits.diff`.
+
+- [ ] Add `js/portraits.js` (visual only, own random stream; never called from the simulation) [K].
+- [ ] "Your army" picker in the start menu; the AI gets a different random army; neutrals stay
+      mixed [K].
+- [ ] `faction` and `kitEra` stored on each unit when it is trained; `kitEra` stays `'ww2'` until
+      the era triggers exist [K].
+- [ ] Selection panel shows the portrait and name; garrison icons show the short name. Nothing
+      else in the UI changes.
+
+**Done when**
+- [ ] Tested in the browser with no console errors; headless run still works.
+- [ ] `grep Portraits` finds nothing in the simulation files.
+- [ ] Repo docs updated (`CLAUDE.md`, `DEVELOPMENT.md`, `GAME_DESIGN.md`, `README.md`, `ROADMAP.md`).
+- [ ] `patches/patch-0.2a-portraits.diff` deleted once the code is in.
 
 ---
 
@@ -15,6 +36,8 @@ Goal: the game plays at the new core values, and every run can be repeated exact
 **Determinism and tools**
 - [ ] Replace `Math.random` in the simulation with a seeded `Util.mulberry32` stream; store the
       seed per match. Move visual-only randomness (decals, corpses) to a separate stream.
+- [ ] Pick the AI's army from the match seed, and seed portraits with
+      `Portraits.seedFor(G.seed, u.id)` [K].
 - [ ] Record orders as descriptors with a tick number (`{tick, kind, ...}`). This prepares replays
       and multiplayer.
 - [ ] Headless runner: advance the simulation N ticks with no renderer.
@@ -88,7 +111,8 @@ Goal: the game plays at the new core values, and every run can be repeated exact
 
 **Veterancy** [H1, I]
 - [ ] XP sources (suppression XP at most once per target every 30 s).
-- [ ] Ranks 1–3 at 30, 80 and 160 XP, with chevrons.
+- [ ] Ranks 1–3 at 30, 80 and 160 XP, with chevrons. Set `u.rank` so portrait names show the
+      title (Pvt., Cpl., Sgt., Sgt. Maj.) [K].
 - [ ] Leader: highest rank, star marker, aura ×1.2 decay within 60 m. Death shock +0.3 replaces
       the normal +0.2.
 
@@ -163,6 +187,7 @@ Goal: the game plays at the new core values, and every run can be repeated exact
 - [ ] Signals: last-seen markers [J]. Intelligence: raid warning.
 - [ ] Logistics boosts every harvest building; Deep Shafts applies to Mines only [J].
 - [ ] Mermaid tree in the docs updated if items move.
+- [ ] Cold War kit trigger (R&D Lab + 2 Tier III items, proposed) [K].
 
 **Done when**
 - [ ] Balance Lab economy timeline: first Tier II research affordable at 6–10 game min.
@@ -219,6 +244,7 @@ Goal: the game plays at the new core values, and every run can be repeated exact
   - [ ] Speed penalty over half the limit.
   - [ ] Parts researched at the R&D Lab; each needs its branch unlock first [G6].
   - [ ] EMP and the extras.
+- [ ] Modern kit trigger (EMP part researched, proposed) [K].
 - [ ] Balance Lab tests for designed units against stock units.
 
 ---

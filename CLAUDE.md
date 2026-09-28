@@ -10,11 +10,16 @@ reminders.
 
 ## Design documents and the build plan
 
+New session? Read `PROJECT_SUMMARY.md` first: it sums up every planned change and lists the things
+that are easy to mix up.
+
 | File | Role |
 | --- | --- |
+| `PROJECT_SUMMARY.md` | Overview of the design work so far, the build order and the next steps. |
 | `GAME_DESIGN.md` | The game **as built**. When a balance number or rule changes, update it too, so it keeps describing the code. |
 | `DESIGN_DECISIONS.md` | Everything **agreed but not yet built** (28 September 2026). When its sections disagree: **J > I > G > F > the rest**. |
-| `IMPLEMENTATION_PLAN.md` | The patch order (0.2.1 → 0.8, infantry first) with task checklists. Tick boxes as you finish. It supersedes the patch order in `ROADMAP.md`. |
+| `IMPLEMENTATION_PLAN.md` | The patch order (0.2a → 0.8, infantry first) with task checklists. Tick boxes as you finish. It supersedes the patch order in `ROADMAP.md`. |
+| `PATCH_0.2a_PORTRAITS.md` | Step-by-step guide for patch 0.2a, with a ready-made diff in `patches/`. |
 
 If a decision contradicts itself in a way the precedence doesn't settle, or proves broken in play:
 
@@ -33,6 +38,10 @@ step-by-step instructions for anything he has to run or check.
   formulas in `js/game.js` with a short comment naming the decision (e.g. `// DD Q9`).
 - Simulation code (`game.js`, `path.js`, `fog.js`, `terrain.js` logic, `ai.js`) must not touch the
   DOM or canvas, so it can run headless in a loop for testing and in the Balance Lab (`lab.html`).
+- **Portraits** (from patch 0.2a): `js/portraits.js` is visual only. It builds faces, faction
+  uniforms and names from a unit id, with its own random stream. Only `UI`, `Menu` and `Main` may
+  call it; the simulation only stores the cosmetic `faction` and `kitEra` fields. Factions change
+  looks and names, never stats (`DESIGN_DECISIONS.md` section K).
 - **Randomness** (from patch 0.2.1): the simulation uses a seeded `Util.mulberry32` stream, never
   `Math.random`. Visual-only randomness (decals, corpses) uses a separate stream.
 - **Time:** every "minute" in the design docs is a game minute (30 simulation steps per game
@@ -43,8 +52,9 @@ step-by-step instructions for anything he has to run or check.
 - Player ids: 0 neutral, 1 human, 2 AI. Civilians get their own id (patch 0.7) that nothing
   auto-targets. Buildings use `b.maxHp`, never `def.hp`.
 - **Hotkeys:** the key layout is `DESIGN_DECISIONS.md` section 9. WASD pans the camera, and the
-  orders move to F / R / G / X / E / Q. This replaces the old "fixed, do not remap" rule. New
-  features take free keys; existing ones don't move without asking.
+  orders move to F / R / G / X / E / Q. This replaces the old "fixed, do not remap" rule. It is
+  built in patch 0.2.1; until then the game keeps W A D S X E for orders. New features take free
+  keys; existing ones don't move without asking.
 - **Git:**
   - One branch per patch (e.g. `patch-0.2.1`), merged by pull request.
   - Ask before force-pushing, deleting branches or files, or rewriting history.
