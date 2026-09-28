@@ -249,7 +249,8 @@ Goal: the game plays at the new core values, and every run can be repeated exact
   1. [ ] Probe towers first.
   2. [ ] Move to the weakest outpost toward the HQ.
   3. [ ] Ignore unrelated outposts.
-- [ ] AI vs AI match length 45–75 game min in the Balance Lab.
+- [ ] AI vs AI match length 45–75 game min: moved to Later, it needs the AI on the player's economy
+      (two identical scripted AIs stall; DD section L).
 
 **Done when**
 - [ ] A full match on a big map runs without frame drops on an ordinary laptop.
@@ -273,7 +274,8 @@ Goal: the game plays at the new core values, and every run can be repeated exact
 
 ## Later (not scheduled)
 
-- The AI plays by the same economic rules as the player [Q23].
+- The AI plays by the same economic rules as the player [Q23]. Then the Balance Lab's AI vs AI
+  match length (45–75 game min) becomes a real target.
 - Multiplayer lockstep, built on the seeded randomness and tick orders from 0.2.1.
 - Replays built on the same order log.
 - Save and load, sound effects, a tutorial.

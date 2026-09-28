@@ -6,5 +6,6 @@ const BALANCE_TARGETS = {
   mgPin: { label: '1 MG pins a Rifleman', unit: 's', min: 3.5, max: 5.5, gate: '0.2.1' },
   heightDuel: { label: '5 v 5 Riflemen, side with +30 m height wins', unit: '%', min: 65, max: 80, gate: '0.2.1' },
   firstTier2: { label: 'First Tier II research affordable', unit: 'min', min: 6, max: 10, gate: '0.5' },
-  aiMatchLength: { label: 'AI vs AI match length', unit: 'min', min: 45, max: 75, gate: '0.7' },
+  // Waits for the AI to play by the player's economy (DD Q23, DD L): two identical scripted AIs stall.
+  aiMatchLength: { label: 'AI vs AI match length', unit: 'min', min: 45, max: 75, gate: 'Later (AI economy, Q23)' },
 };

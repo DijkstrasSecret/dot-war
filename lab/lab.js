@@ -14,7 +14,7 @@
     for (const [id, t] of Object.entries(BALANCE_TARGETS)) {
       const ok = inRange(id), v = results[id];
       const tr = document.createElement('tr');
-      tr.innerHTML = `<td>${t.label}</td><td>${t.min}–${t.max} ${t.unit}</td><td class="${ok == null ? 'pending' : ok ? 'ok' : 'bad'}">${v == null ? 'not run' : fmt(v) + ' ' + t.unit + (ok ? '' : ' (red)')}</td><td>patch ${t.gate}</td>`;
+      tr.innerHTML = `<td>${t.label}</td><td>${t.min}–${t.max} ${t.unit}</td><td class="${ok == null ? 'pending' : ok ? 'ok' : 'bad'}">${v == null ? 'not run' : fmt(v) + ' ' + t.unit + (ok ? '' : ' (red)')}</td><td>${/^\d/.test(t.gate) ? 'patch ' + t.gate : t.gate}</td>`;
       tb.appendChild(tr);
     }
   }
