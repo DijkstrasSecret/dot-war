@@ -371,7 +371,7 @@ Every army also has rare peaked caps, head bandages and bare heads.
 ## 5b. Menu and loading-screen paintings
 
 - **What exists:** nine paintings (three menu, six loading) and the `PaintingFx` engine, on `main`
-  in `assets/paintings/`. Approved look; not wired into the game yet. Read
+  in `assets/paintings/`. Wired into the game in patch 0.2b (`js/menu.js`, `js/loading.js`). Read
   `assets/paintings/README.md` first.
 - **Menu:** one of *The calling*, *The letter* and *The wounded*, picked at random each time the
   menu opens. The left 40% of every menu painting is empty near-black space for the
@@ -387,8 +387,8 @@ Every army also has rare peaked caps, head bandages and bare heads.
   - Insignia follow section K (below).
 - **Known issue:** `06-the-light.jpg` shows a WW2 German cap eagle, which holds a swastika.
   Regenerate that image before release, keeping the file name and framing.
-- **Build slot:** the UI rework (after patch 0.2a), which owns `js/menu.js`. Added to
-  `IMPLEMENTATION_PLAN.md` as "Patch 0.2b: UI rework (to be designed)".
+- **Build slot:** patch 0.2b. The menu and loading screen are built; the panel layout (and where
+  portraits go) is still to be designed, and the light painting still needs regenerating.
 
 ---
 

@@ -41,7 +41,8 @@ DEPLOY_HOST=user@dotwarz.duckdns.org DEPLOY_PATH=/var/www/dotwar ./deploy.sh
 
 ## Playing
 
-The start menu offers four maps and three difficulties. Hard is the original tuning; Easy and
+The game opens on a painted start menu: New game, Continue, Music and Controls. New game offers
+four maps and three difficulties. Hard is the original tuning; Easy and
 Normal shrink the enemy garrison, slow its production and space out its raids. Open Valley is a
 sandbox with neutral guards and no enemy commander.
 
@@ -83,6 +84,8 @@ index.html        page shell, help overlay, script load order
 style.css         theme: olive panels, brass accents, stencil headings
 serve.py          no-cache development server
 assets/music/     background music (Grieg, Violin Sonata No. 3, performed by Gregor Quendel)
+assets/paintings/ menu and loading paintings, their animation engine (painting-fx.js) and README
+assets/fonts/     the two serif faces of the painted screens, bundled under the Open Font License
 attic/editor.js   the map editor, shelved for now (see ROADMAP.md)
 js/util.js        math helpers, seeded noise, binary heap
 js/data.js        all game data: units, buildings (incl. tower levels), research, difficulty, hotkeys
@@ -95,11 +98,13 @@ js/game.js        simulation: economy, production, research, orders, movement, c
 js/ai.js          enemy commander and raids, scaled by difficulty
 js/render.js      canvas drawing, decals, fog overlay, minimap
 js/input.js       mouse and keyboard, command modes, camera
+js/portraits.js   soldier faces, faction kit and names from a unit id (visual only)
 js/ui.js          side panel and top bar (DOM)
 js/maps.js        map generator and the four map specs
 js/audio.js       music player
-js/menu.js        start menu (map, difficulty, music)
-js/main.js        startup and the fixed-step game loop
+js/loading.js     loading screen over a painting, bar driven by the build steps
+js/menu.js        start menu over a painting (front page and the map, difficulty, army setup)
+js/main.js        startup, match build steps and the fixed-step game loop
 ```
 
 See `DEVELOPMENT.md` for how everything fits together and how to add content, and

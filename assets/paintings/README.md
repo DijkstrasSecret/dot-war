@@ -7,8 +7,9 @@ screens feel alive without looking edited: candle flicker, dust drifting in ligh
 cigarette and battlefield smoke, rising embers, falling snow, sparkles on water, birds, and an
 occasional glint on helmets and metal.
 
-Status: approved look, not wired into the game yet. The menu buttons, the loading indicator and
-any click or hover effects are to be built in the game UI (see "For Claude Code" below).
+Status: approved look, wired into the game in patch 0.2b: `js/menu.js` draws the start menu over
+a random menu painting and `js/loading.js` runs the loading screen. The decisions under "For
+Claude Code" below still apply when those screens change.
 
 ## Files
 
@@ -53,9 +54,9 @@ which side survives the crop on narrow screens: the menu uses 0.75 to keep the f
 `prefers-reduced-motion` draws the still image with no effects (override with
 `{ reducedMotion: false }`).
 
-## For Claude Code: building the real screens
+## For Claude Code: the real screens (built in patch 0.2b)
 
-Main menu (`js/menu.js`, the planned UI rework):
+Main menu (`js/menu.js`):
 - Background: every time the menu opens, pick one menu painting at random with
   `PaintingFx.pick('menu')`. All menu paintings have an equal chance (1 in 3 now); a painting
   added with `use: 'menu'` joins the draw and the odds adjust by themselves.

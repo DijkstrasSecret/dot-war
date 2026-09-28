@@ -3,7 +3,8 @@
 Browser RTS in plain JavaScript. No build, no dependencies, no modules: files are classic scripts
 loaded in the order listed in `index.html`, each defining one global (`Util`, `Data`, `Icons`,
 `Terrain`, `Path`, `Fog`, `Game`/`G`, `AI`, `Render`, `Input`, `Portraits`, `UI`, `MapGen`, `Music`,
-`Menu`, `Main`). The map editor lives in `attic/editor.js`, shelved but kept for a later patch.
+`PaintingFx` from `assets/paintings/`, `Loading`, `Menu`, `Main`). The map editor lives in
+`attic/editor.js`, shelved but kept for a later patch.
 
 Read `DEVELOPMENT.md` before changing simulation code; `grep -rn "TODO(" js` lists the per-module
 reminders.
@@ -19,7 +20,7 @@ that are easy to mix up.
 | `GAME_DESIGN.md` | The game **as built**. When a balance number or rule changes, update it too, so it keeps describing the code. |
 | `DESIGN_DECISIONS.md` | Everything **agreed but not yet built** (28 September 2026). When its sections disagree: **J > I > G > F > the rest**. |
 | `IMPLEMENTATION_PLAN.md` | The patch order (0.2a → 0.8, infantry first) with task checklists. Tick boxes as you finish. It supersedes the patch order in `ROADMAP.md`. |
-| `PATCH_0.2a_PORTRAITS.md` | Step-by-step guide for patch 0.2a, with a ready-made diff in `patches/`. |
+| `PATCH_0.2a_PORTRAITS.md` | Step-by-step guide for patch 0.2a (built and merged; the diff it mentions is gone, the notes for later patches still apply). |
 
 If a decision contradicts itself in a way the precedence doesn't settle, or proves broken in play:
 

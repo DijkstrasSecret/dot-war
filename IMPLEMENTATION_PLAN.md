@@ -34,18 +34,19 @@ Guide and ready-made diff: `PATCH_0.2a_PORTRAITS.md` and `patches/patch-0.2a-por
 The menu and loading screens are designed and their art is on `main`; the rest of the layout is
 not designed yet. Read `assets/paintings/README.md` before starting.
 
-- [ ] Main menu over a random menu painting (`PaintingFx.pick('menu')`, three exist: *The
+- [x] Main menu over a random menu painting (`PaintingFx.pick('menu')`, three exist: *The
       calling*, *The letter*, *The wounded*): white serif buttons on the dark left 40%, hover
       underline, click flash; stop the engine when a match starts.
-- [ ] Loading screen: random loading painting, title plaque, gold progress bar from real loading
+- [x] Loading screen: random loading painting, title plaque, gold progress bar from real loading
       progress, fade in from black.
-- [ ] Regenerate `06-the-light.jpg` without the cap eagle (section K marking rules).
+- [ ] Regenerate `06-the-light.jpg` without the cap eagle (section K marking rules). Kaan's task
+      (image generation); drop the new file in with the same name and framing.
 - [ ] Panel layout, and where portraits go (design first, in a project chat).
 
 **Done when**
-- [ ] Menu and loading screen tested in the browser with no console errors; the game loop is
+- [x] Menu and loading screen tested in the browser with no console errors; the game loop is
       unaffected during play.
-- [ ] `GAME_DESIGN.md` section 10 (Presentation) updated.
+- [x] `GAME_DESIGN.md` section 10 (Presentation) updated.
 
 ---
 

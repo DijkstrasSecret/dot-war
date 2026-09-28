@@ -14,6 +14,7 @@ and towers; an enemy commander scaled by difficulty; neutral creeps; fog of war;
 combat flavour (recoil, alerts, bleeding, blood, corpses, morale shock); the W/A/D/S/X/E command
 scheme with Shift queuing and middle-mouse panning. The map editor is shelved in `attic/`.
 Patch 0.2a added nine cosmetic armies with a portrait and name for every soldier (`js/portraits.js`).
+Patch 0.2b put the start menu and a loading screen on the oil paintings in `assets/paintings/`.
 
 The list below is in the order that seems most useful. Each item names the files it touches, and
 each module carries a `TODO(...)` reminder at the top.
