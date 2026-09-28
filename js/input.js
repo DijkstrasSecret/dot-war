@@ -199,16 +199,28 @@ const Input = (() => {
       select(G.units.filter(u => !u.dead && u.owner === 1 && u.work == null && u.x >= x0 && u.x <= x1 && u.y >= y0 && u.y <= y1), false); return;
     }
     if (k >= '1' && k <= '9') {
-      if (e.ctrlKey || e.metaKey) { e.preventDefault(); if (units.length) { G.groups[k] = units.slice(); for (const u of units) u.group = +k; Game.toast('Group ' + k + ' set'); } }
-      else {
-        const g = (G.groups[k] || []).filter(u => !u.dead);
-        if (g.length) {
-          select(g, e.shiftKey);
-          if (now() - state.lastGroupT < 350 && state.lastGroupK === k) { let cx = 0, cy = 0; for (const u of g) { cx += u.x; cy += u.y; } Render.centerOn(cx / g.length, cy / g.length); }
-          state.lastGroupT = now(); state.lastGroupK = k;
-        }
-      }
+      if (e.ctrlKey || e.metaKey) { e.preventDefault(); if (units.length) setGroup(k, units); }
+      else selectGroup(k, e.shiftKey);
     }
+  }
+
+  // A soldier belongs to one group only: putting him in group k takes him out of any other
+  // (as agreed for the squadrons of patch 0.3, DD E). An emptied group disappears.
+  function setGroup(k, units) {
+    for (const g of Object.keys(G.groups)) {
+      if (g === k) continue;
+      G.groups[g] = G.groups[g].filter(u => !units.includes(u));
+      if (!G.groups[g].some(u => !u.dead)) delete G.groups[g];
+    }
+    G.groups[k] = units.slice(); for (const u of units) u.group = +k;
+    Game.toast('Group ' + k + ' set');
+  }
+  // Select group k (key or group-bar tile); a second press within 350 ms centres the view on it.
+  function selectGroup(k, add = false) {
+    const g = (G.groups[k] || []).filter(u => !u.dead); if (!g.length) return;
+    select(g, add);
+    if (now() - state.lastGroupT < 350 && state.lastGroupK === k) { let cx = 0, cy = 0; for (const u of g) { cx += u.x; cy += u.y; } Render.centerOn(cx / g.length, cy / g.length); }
+    state.lastGroupT = now(); state.lastGroupK = k;
   }
 
   function update(dt) {
@@ -221,5 +233,5 @@ const Input = (() => {
     if (dx || dy) { Render.cam.x += dx; Render.cam.y += dy; Render.clampCam(); const [wx, wy] = Render.toWorld(state.mouse.x, state.mouse.y); state.mouse.wx = wx; state.mouse.wy = wy; }
   }
 
-  return { init, update, state, setMode, select, selectedUnits, selectedBuilding, entityAt, trainable };
+  return { init, update, state, setMode, select, selectGroup, setGroup, selectedUnits, selectedBuilding, entityAt, trainable };
 })();

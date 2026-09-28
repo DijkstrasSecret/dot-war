@@ -1,9 +1,12 @@
 'use strict';
-// Side panel and top bar (DOM). Rebuilds a tab only when its content signature changes.
+// The HUD panels of the open-map layout (DOM): selection/build/research panel bottom left, command
+// card bottom right, group bar top centre, resources and clock on top. Each rebuilds only when its
+// content signature changes.
 // TODO(patch 0.5): blueprint designer tab (chassis + weapon + armour, saved logos) once custom blueprints exist.
 // TODO(patch 0.8): unit tooltips on hover and an in-game tutorial overlay for Highland Pass.
 const UI = (() => {
   let tab = 'sel', content, clockEl, speedBtns, sig = '', tick = null, refreshT = 0;
+  let cmdBox, cmdSig = '', groupBar, groupSig = '', groupTick = null;
   const resEls = {};
 
   function el(tag, cls, text) { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
@@ -39,6 +42,7 @@ const UI = (() => {
 
   function init() {
     content = document.getElementById('tabcontent'); clockEl = document.getElementById('clock');
+    cmdBox = document.getElementById('cmdBox'); groupBar = document.getElementById('groupBar');
     const resBox = document.getElementById('resources');
     for (const r of Data.RES) {
       const d = el('div', 'res'); d.title = r.charAt(0).toUpperCase() + r.slice(1);
@@ -59,7 +63,7 @@ const UI = (() => {
   function refreshSpeed() { for (const b of speedBtns) b.classList.toggle('on', +b.dataset.speed === G.speed); }
   function refreshMusic() { const b = document.getElementById('musicBtn'); if (b) b.classList.toggle('on', Music.enabled); }
   function refresh() {
-    sig = ''; refreshT = 0;
+    sig = ''; cmdSig = ''; groupSig = ''; refreshT = 0;
     document.querySelectorAll('#tabs button').forEach(b => b.classList.toggle('on', b.dataset.tab === tab));
     refreshSpeed();
   }
@@ -75,6 +79,48 @@ const UI = (() => {
     const s = signature();
     if (s !== sig) { sig = s; build(); }
     if (tick) tick();
+    updateCommands(); updateGroups();
+  }
+  // Command card, bottom right: shown whenever you have soldiers selected, whatever the tab.
+  function updateCommands() {
+    const units = G.selection.filter(e => e instanceof Unit && !e.dead && e.owner === 1);
+    const s = units.map(u => u.id).join(',') + '|' + Input.state.mode;
+    if (s === cmdSig) return; cmdSig = s;
+    cmdBox.innerHTML = ''; cmdBox.classList.toggle('hidden', !units.length);
+    if (units.length) cmdBox.appendChild(commandCard(units));
+  }
+  // Class badge: the unit's logo on its shape in team colour, as drawn on the map.
+  function badge(u, px) { const c = Icons.makeCanvas(u.def.icon, px, '#fff', Data.PLAYER_COLORS[u.owner], u.def.shape); c.className = 'badge'; return c; }
+  // Group bar, top centre: one tile per control group with a count per unit class, health and stress.
+  function updateGroups() {
+    const keys = Object.keys(G.groups).filter(k => G.groups[k].some(u => !u.dead)).sort();
+    const sel = new Set(G.selection);
+    const alive = k => G.groups[k].filter(u => !u.dead);
+    const isSelected = k => { const us = alive(k); return us.length === sel.size && us.every(u => sel.has(u)); };
+    const s = keys.map(k => k + ':' + alive(k).map(u => u.id).join('.') + (isSelected(k) ? '*' : '')).join('|');
+    if (s !== groupSig) {
+      groupSig = s; groupBar.innerHTML = ''; const bars = [];
+      for (const k of keys) {
+        const us = alive(k);
+        const t = el('div', 'gtile' + (isSelected(k) ? ' on' : ''));
+        t.title = 'Group ' + k + ': press ' + k + ' to select, twice to centre the view';
+        t.appendChild(el('span', 'gnum', k));
+        const counts = el('div', 'gcount'); const by = {};
+        for (const u of us) by[u.type] = (by[u.type] || 0) + 1;
+        for (const type of Object.keys(Data.UNITS)) if (by[type]) {
+          const d = Data.UNITS[type], sp = el('span'); sp.title = by[type] + ' ' + d.name + (by[type] > 1 ? 's' : '');
+          sp.appendChild(Icons.makeCanvas(d.icon, 28, '#fff', Data.PLAYER_COLORS[1], d.shape)); sp.appendChild(document.createTextNode('×' + by[type])); counts.appendChild(sp);
+        }
+        t.appendChild(counts);
+        const hp = el('div', 'gbar'), hf = el('div'); hf.style.background = 'var(--good)'; hp.appendChild(hf);
+        const st = el('div', 'gbar'), sf = el('div'); sf.style.background = '#ffb000'; st.appendChild(sf);
+        t.appendChild(hp); t.appendChild(st); bars.push([us, hf, sf]);
+        t.onclick = () => Input.selectGroup(k);
+        groupBar.appendChild(t);
+      }
+      groupTick = () => { for (const [us, hf, sf] of bars) { const alive = us.filter(u => !u.dead); if (!alive.length) continue; hf.style.width = (alive.reduce((a, u) => a + u.hp / u.stats.hp, 0) / alive.length * 100) + '%'; sf.style.width = (alive.reduce((a, u) => a + u.stress, 0) / alive.length * 100) + '%'; } };
+    }
+    if (groupTick) groupTick();
   }
   function signature() {
     const p = G.players[1];
@@ -113,10 +159,8 @@ const UI = (() => {
   function buildSel() {
     const sel = G.selection.filter(e => !e.dead);
     if (!sel.length) {
-      content.appendChild(el('h3', null, 'Nothing selected'));
-      content.appendChild(el('div', 'small', 'Drag to select units. Right click moves, attacks, or sends them to work or into a tower. F attack-move, R defend, G retreat, X stop, E enter. Hold Shift to queue orders back to back.'));
-      content.appendChild(el('div', 'small', 'B build, N research, H headquarters, Tab cycles factories. WASD, arrow keys, screen edge or middle-mouse drag pan the map. Press F1 for all controls.'));
-      content.appendChild(el('div', 'small', 'Hold high ground: units see farther, shoot farther and hit harder downhill. Ridges block sight and bullets. Forests hide and protect.'));
+      // Kept short: with nothing selected the panel stays small so the map shows.
+      content.appendChild(el('div', 'small', 'Drag to select. Right click moves, attacks, works or garrisons. B build, N research, H headquarters, WASD pans, F1 all controls.'));
       const sum = el('div'); sum.style.marginTop = '10px';
       const mine = G.units.filter(u => u.owner === 1 && !u.dead);
       sum.appendChild(statRow('Your units', String(mine.length)));
@@ -131,7 +175,8 @@ const UI = (() => {
   }
   function unitPanel(u) {
     const own = u.owner === 1;
-    content.appendChild(card({ img: portraitEl(u, 72), name: soldierName(u).full, cost: u.def.name + ' · ' + armyLabel(u.owner), desc: u.def.desc }));
+    const pw = el('div', 'pwrap'); pw.appendChild(portraitEl(u, 72)); pw.appendChild(badge(u, 40));
+    content.appendChild(card({ img: pw, name: soldierName(u).full, cost: u.def.name + ' · ' + armyLabel(u.owner), desc: u.def.desc }));
     const hp = bar('#5ad65a'), st = bar('#ffb000');
     content.appendChild(el('div', 'small', 'Health')); content.appendChild(hp);
     content.appendChild(el('div', 'small', 'Stress')); content.appendChild(st);
@@ -148,7 +193,6 @@ const UI = (() => {
     box.appendChild(statRow('Armor', u.def.armor));
     if (w && w.ammo) box.appendChild(statRow('Ammo per shot', Util.costStr(w.ammo)));
     content.appendChild(box);
-    if (own) content.appendChild(commandCard([u]));
     tick = () => {
       hp.fill.style.width = (u.hp / u.stats.hp * 100) + '%'; st.fill.style.width = (u.stress * 100) + '%';
       const h = Terrain.hAt(u.x, u.y).toFixed(0);
@@ -161,19 +205,22 @@ const UI = (() => {
   }
   function groupPanel(units) {
     content.appendChild(el('h3', null, units.length + ' units selected'));
-    const counts = {}; for (const u of units) counts[u.type] = (counts[u.type] || 0) + 1;
-    const row = el('div', 'row');
-    for (const [t, n] of Object.entries(counts)) {
-      const d = Data.UNITS[t]; const q = el('div', 'q'); q.title = d.name + ' ×' + n + ' (click to select only these)';
-      q.appendChild(Icons.makeCanvas(d.icon, 60, '#fff', Data.PLAYER_COLORS[1], d.shape));
-      const lab = el('div', null, String(n)); lab.style.cssText = 'position:absolute;right:1px;bottom:0;font-size:10px;color:#fff;text-shadow:0 0 2px #000';
-      q.appendChild(lab); q.onclick = () => Input.select(units.filter(u => u.type === t), false);
-      const wrap = el('div', 'queue'); wrap.appendChild(q); row.appendChild(wrap);
+    // One face per soldier with a class badge and a health bar; click a face to select only them.
+    const faces = el('div', 'faces'), fills = [];
+    for (const u of units.slice(0, 24)) {
+      const f = el('div', 'face'); f.title = soldierName(u).short + ', ' + u.def.name + ' (click to select only this soldier)';
+      f.appendChild(portraitEl(u, 64)); f.appendChild(badge(u, 34));
+      const hb = el('div', 'hpbar'), hf = el('div'); hb.appendChild(hf); f.appendChild(hb); fills.push([u, hf]);
+      f.onclick = () => Input.select([u], false);
+      faces.appendChild(f);
     }
-    content.appendChild(row);
+    content.appendChild(faces);
+    if (units.length > 24) content.appendChild(el('div', 'small', '+' + (units.length - 24) + ' more'));
     const status = el('div', 'small'); content.appendChild(status);
-    content.appendChild(commandCard(units));
-    tick = () => { const sup = units.filter(u => u.suppressed).length, hp = units.reduce((a, u) => a + u.hp / u.stats.hp, 0) / units.length; status.textContent = 'Average health ' + Math.round(hp * 100) + '%' + (sup ? ', ' + sup + ' suppressed' : ''); };
+    tick = () => {
+      for (const [u, hf] of fills) hf.style.width = (Math.max(0, u.hp) / u.stats.hp * 100) + '%';
+      const sup = units.filter(u => u.suppressed).length, hp = units.reduce((a, u) => a + u.hp / u.stats.hp, 0) / units.length; status.textContent = 'Average health ' + Math.round(hp * 100) + '%' + (sup ? ', ' + sup + ' suppressed' : '');
+    };
   }
   function buildingPanel(b) {
     const own = b.owner === 1; const p = G.players[1];

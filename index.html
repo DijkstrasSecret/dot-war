@@ -7,8 +7,14 @@
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<div id="top">
+<!-- Open-map layout (patch 0.2b, Kaan's pick): the map fills the window; small panels float over it. -->
+<div id="main">
+  <canvas id="game"></canvas>
+</div>
+<div id="top" class="hud">
   <div id="resources"></div>
+</div>
+<div id="topRight" class="hud">
   <div id="clock">00:00</div>
   <div id="speedbox">
     <button data-speed="0" title="Pause (Space)">❚❚</button>
@@ -16,22 +22,21 @@
     <button data-speed="2" title="Fast">2×</button>
     <button data-speed="4" title="Very fast">4×</button>
   </div>
-  <button id="menuBtn" title="Map and difficulty">Menu</button>
+  <button id="menuBtn" title="Menu (Esc from the menu returns)">Menu</button>
   <button id="musicBtn" title="Music on / off">♫</button>
   <button id="helpBtn" title="Controls (F1)">?</button>
 </div>
-<div id="main">
-  <canvas id="game"></canvas>
-  <div id="panel">
-    <div id="tabs">
-      <button data-tab="sel" class="on">Selection</button>
-      <button data-tab="build">Build</button>
-      <button data-tab="research">Research</button>
-    </div>
-    <div id="tabcontent"></div>
-    <canvas id="minimap" width="284" height="284"></canvas>
+<div id="miniBox" class="hud"><canvas id="minimap" width="284" height="284"></canvas></div>
+<div id="groupBar" aria-label="Groups"></div>
+<div id="panel" class="hud">
+  <div id="tabs">
+    <button data-tab="sel" class="on">Selection</button>
+    <button data-tab="build">Build</button>
+    <button data-tab="research">Research</button>
   </div>
+  <div id="tabcontent"></div>
 </div>
+<div id="cmdBox" class="hud hidden"></div>
 <!-- Start menu over a painting (js/menu.js builds the columns next to the canvas). -->
 <div id="menu" class="hidden"><canvas aria-hidden="true"></canvas></div>
 <!-- Loading screen over a painting (js/loading.js fills the plaque and drives the bar). -->
@@ -56,7 +61,7 @@
     <li>Suppressed units (yellow ring) ignore target orders and fire at the closest enemy. Snipers keep their orders, take half the stress and never panic. Retreating units shed stress twice as fast and are not slowed by it.</li>
     <li><b>B</b> build tab, then <b>L</b> Lumber Camp, <b>M</b> Mine, <b>C</b> Barracks, <b>O</b> Ordnance Works, <b>T</b> Scout Tower. <b>N</b> research tab. <b>H</b> jump to headquarters. <b>Tab</b> cycles factories.</li>
     <li>With a factory selected: <b>Z X C V</b> train the listed units (<b>Tab</b> shows the next four if there are more), right click sets the rally point. With a tower selected: <b>T</b> upgrade, <b>Q</b> unload everyone.</li>
-    <li><b>Groups:</b> <b>Ctrl+1..9</b> assign, <b>1..9</b> select, press twice to centre the view.</li>
+    <li><b>Groups:</b> <b>Ctrl+1..9</b> assign (a soldier is in one group at a time), <b>1..9</b> or a click on the group bar selects, press twice to centre the view.</li>
     <li><b>Camera:</b> <b>W A S D</b>, arrow keys, screen edge, or hold the <b>middle mouse button</b> and drag. <b>Mouse wheel</b> zooms. Click or right click the minimap.</li>
     <li><b>Time:</b> <b>Space</b> pause, <b>,</b> slower, <b>.</b> faster. 1× is a calm pace; 2× is the original tempo.</li>
     <li>High ground: more vision, more range and damage firing downhill. Ridges block sight and bullets. Steep slopes crawl or are impassable. Forests hide units and give cover. A Scout Tower adds height to whoever is inside.</li>

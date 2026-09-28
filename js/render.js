@@ -195,7 +195,7 @@ const Render = (() => {
     // screen-space overlays
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     if (st.box) { const b = st.box; ctx.strokeStyle = '#fff'; ctx.fillStyle = 'rgba(255,255,255,0.15)'; ctx.lineWidth = 1; ctx.fillRect(b.x0, b.y0, b.x1 - b.x0, b.y1 - b.y0); ctx.strokeRect(b.x0, b.y0, b.x1 - b.x0, b.y1 - b.y0); }
-    let ty = h - 30;
+    let ty = h - 30;   // toasts rise from the bottom centre, between the two bottom panels
     ctx.font = '14px "Segoe UI", Arial, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
     for (let i = G.toasts.length - 1; i >= 0; i--) {
       const t = G.toasts[i]; ctx.globalAlpha = Math.min(1, t.t);
@@ -203,16 +203,17 @@ const Render = (() => {
       ctx.fillStyle = '#fff'; ctx.fillText(t.msg, w / 2, ty); ty -= 28;
     }
     ctx.globalAlpha = 1;
-    const banner = { build: st.buildType ? 'Click to place ' + Data.BUILDINGS[st.buildType].name + ' (right click cancels)' : '', walk: 'Walk: click where to go (hold Shift to queue)', attack: 'Attack: click an enemy or a point (hold Shift to queue)', work: 'Work or garrison: click a Lumber Camp, Mine or Scout Tower' }[st.mode];
-    if (banner) { ctx.font = '12px "Segoe UI", Arial, sans-serif'; const bw = ctx.measureText(banner).width + 24; ctx.fillStyle = 'rgba(0,0,0,0.55)'; ctx.fillRect(w / 2 - bw / 2, 8, bw, 22); ctx.fillStyle = '#fff'; ctx.fillText(banner, w / 2, 19); }
-    if (G.speed === 0 && !G.over) { ctx.fillStyle = 'rgba(0,0,0,0.5)'; ctx.fillRect(w / 2 - 50, 40, 100, 26); ctx.fillStyle = '#fff'; ctx.font = 'bold 14px "Segoe UI", Arial, sans-serif'; ctx.fillText('PAUSED', w / 2, 53); }
-    // terrain readout under the cursor
+    const banner = { build: st.buildType ? 'Click to place ' + Data.BUILDINGS[st.buildType].name + ' (right click cancels)' : '', walk: 'Move: click where to go (hold Shift to queue)', attack: 'Attack-move: click an enemy or a point (hold Shift to queue)', work: 'Enter: click a Lumber Camp, Mine or Scout Tower' }[st.mode];
+    // Below the group bar, which floats at the top centre in the open-map layout.
+    if (banner) { ctx.font = '12px "Segoe UI", Arial, sans-serif'; const bw = ctx.measureText(banner).width + 24; ctx.fillStyle = 'rgba(0,0,0,0.55)'; ctx.fillRect(w / 2 - bw / 2, 66, bw, 22); ctx.fillStyle = '#fff'; ctx.fillText(banner, w / 2, 77); }
+    if (G.speed === 0 && !G.over) { ctx.fillStyle = 'rgba(0,0,0,0.5)'; ctx.fillRect(w / 2 - 50, 96, 100, 26); ctx.fillStyle = '#fff'; ctx.font = 'bold 14px "Segoe UI", Arial, sans-serif'; ctx.fillText('PAUSED', w / 2, 109); }
+    // terrain readout under the cursor, top left under the resources panel
     if (st.mouse.inside && st.mouse.wx >= 0 && st.mouse.wy >= 0 && st.mouse.wx < mw && st.mouse.wy < mh) {
       const el = Terrain.hAt(st.mouse.wx, st.mouse.wy), tt = Terrain.typeAt(st.mouse.wx, st.mouse.wy);
       const tname = Terrain.roadAt(st.mouse.wx, st.mouse.wy) ? 'Road' : ['Open ground', 'Forest', 'Water', 'Swamp'][tt];
       const txt = 'Elevation ' + el.toFixed(0) + ' m  ·  ' + tname + '  ·  slope ' + Math.round(Terrain.slopeAt(st.mouse.wx, st.mouse.wy) * 100) + '%';
       ctx.font = '12px "Segoe UI", Arial, sans-serif'; ctx.textAlign = 'left'; const tw = ctx.measureText(txt).width + 16;
-      ctx.fillStyle = 'rgba(0,0,0,0.5)'; ctx.fillRect(8, h - 30, tw, 22); ctx.fillStyle = '#fff'; ctx.fillText(txt, 16, h - 19);
+      ctx.fillStyle = 'rgba(0,0,0,0.5)'; ctx.fillRect(8, 50, tw, 22); ctx.fillStyle = '#fff'; ctx.fillText(txt, 16, 61);
     }
     drawMinimap();
   }
