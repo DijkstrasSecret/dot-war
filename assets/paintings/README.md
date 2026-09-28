@@ -1,8 +1,8 @@
 # Paintings: main menu and loading screens
 
-Oil-painting backgrounds for Dot War. Each one restages a famous painting with WW2-era soldiers
-(no insignia, no flags of real nations), generated with ChatGPT from the prompts at the bottom of
-this file. On top of each still image, `painting-fx.js` animates a few small details so the
+Oil-painting backgrounds for Dot War. Each one restages a famous painting with WW2-era soldiers,
+generated with ChatGPT from the prompts at the bottom of this file. The current images have no
+insignia; national insignia are allowed from now on (see "Insignia" below). On top of each still image, `painting-fx.js` animates a few small details so the
 screens feel alive without looking edited: candle flicker, dust drifting in light beams,
 cigarette and battlefield smoke, rising embers, falling snow, sparkles on water, birds, and an
 occasional glint on helmets and metal.
@@ -74,19 +74,22 @@ Decisions already made, keep them:
   particles on top.
 - In `the-light` the ember at the cigarette tip stays tiny; a bigger glow read as the cigarette
   catching fire.
-- No insignia anywhere. Known issue: in `06-the-light.jpg` the officer's cap still shows an
-  eagle badge. Regenerate that image with "plain cap with no badge or emblem" before release and
-  keep the file name and framing so the effect coordinates still line up.
+- Insignia follow `DESIGN_DECISIONS.md` section K (Hearts of Iron approach): national markings,
+  flags, rank badges and unit patches are fine; the swastika, SS runes, anything built around them
+  and party symbols of any nation are never shown.
+- Known issue: in `06-the-light.jpg` the officer's cap shows the WW2 German eagle, which holds a
+  swastika. Regenerate that image before release (plain cap, or a cap with no eagle) and keep the
+  file name and framing so the effect coordinates still line up.
 
 ## Making more paintings
 
 Prompt formula that worked (ChatGPT image generation, 16:9):
 
 > Oil painting in the style of [artist]'s "[painting]", exact composition: [the same scene with
-> WW2-era soldiers in olive drab uniforms and steel helmets with no insignia, plain unmarked
-> flags]. [Period style words: sfumato / chiaroscuro / tenebrism / Romantic brushwork], thick
-> oil brushwork, aged varnish, fine craquelure, museum masterpiece. 16:9, no text, no symbols,
-> no patches, no emblems.
+> WW2-era soldiers of [army] in period uniforms and steel helmets with accurate national
+> insignia and rank badges]. [Period style words: sfumato / chiaroscuro / tenebrism / Romantic brushwork], thick
+> oil brushwork, aged varnish, fine craquelure, museum masterpiece. 16:9, no text, no swastikas,
+> no SS runes, no Nazi eagles, no party symbols.
 
 For a menu background, add: "The entire left 40% of the canvas is deep, near-black shadow,
 completely empty of figures and detail, as negative space." When adding a painting, add an
