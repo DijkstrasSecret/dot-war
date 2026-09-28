@@ -947,10 +947,11 @@ Balance Lab results when 0.2.1 was finished (100 seeded runs each):
 | --- | --- |
 | Squadrons replace groups | The number keys now make and select squadrons; the old control groups are gone. |
 | Travel shape | The arrival line (ranks by range, facing, right-drag width) is built. On the way, members follow the path in file: a column on roads and passes, but no line across open ground while travelling. Kept for a later pass. |
-| React on contact | "Halts and faces the enemy": every member switches to Defend position, so the squadron stops and fires; the next order moves it on. |
+| React on contact | Built first as a halt (every member switched to Defend position); replaced after play by shared targeting without a halt, see "Squad strength" below. |
 | Fighting withdrawal | Only when the squadron has a rear rank: an all-Rifleman squadron has nobody to cover, so all fall back together. |
 | Squad strength | In the Balance Lab a squadron of 6 Riflemen beats 6 loose Riflemen about 82% of the time (focused fire and cohesion). No target was set for this; say if it should be weaker. |
 | AI | The scripted AI does not use squadrons yet. |
+| Squad strength (Kaan, after play) | Squads are a utility, not an outright advantage: 6 Riflemen in a squadron should beat 6 loose ones 55–60% of the time (Balance Lab target). Measured: the halt on contact gave most of the old 80%, shared targeting 3–4 points, cohesion nothing measurable. So **react no longer halts the squad**: members share the squad's target only when it is no farther than their own nearest enemy (`Data.SQUAD.shareRange` 1.0). Result: 59% over the lab's 100 runs, 56% over 300. Each soldier stops for his own target as a loose one would. |
 | Keep moving (Kaan, after play) | On "keep moving" members do not share the squad's target: each fires at the closest enemy he can hit, while walking at moving-fire accuracy. On "react" the shared target stays. |
 
 ---
