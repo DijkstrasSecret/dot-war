@@ -56,6 +56,19 @@
 </div>
 
 <div class="test">
+  <h2>Fortifications</h2>
+  <p>Trench hold: 5 Riflemen hold a 120 m trench (or the same spot in the open, for comparison) against attack-moving Riflemen; with grenades, the attackers are sent in again and again to throw at the nearest defender. Bunker assault: a Bunker with 4 Riflemen and a Machine Gunner against Riflemen who are sent in again and again to throw grenades at it (1 sulfur each, 20 s cooldown). The attackers win when the Bunker falls or everyone inside is dead. There are no agreed targets for these yet.</p>
+  <div class="controls">
+    <label>Attackers <input type="number" id="fortA" value="8" min="1" max="30"></label>
+    <label>Bunker attackers <input type="number" id="fortBA" value="10" min="1" max="30"></label>
+    <label>Runs <input type="number" id="fortRuns" value="50" min="1" max="300"></label>
+    <button class="btn" id="runFort">Run</button>
+  </div>
+  <div class="bar" id="fortBar"><div></div></div>
+  <table id="fortOut"></table>
+</div>
+
+<div class="test">
   <h2>Economy timeline</h2>
   <p>A standard opening on Highland Pass with the enemy and neutrals removed: a Lumber Camp at the nearest forest, a Mine on the nearest iron, two Workers each, then Workers from the HQ until there are eight. Nothing else is bought. "Tier II affordable" uses the Heavy Machine Gun's cost, a Tier II item in the agreed tech tree.</p>
   <div class="controls">

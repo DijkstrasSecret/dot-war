@@ -39,6 +39,7 @@ const Sim = (() => {
     mix(G.tick);
     for (const u of G.units) { mix(u.id); mix(u.x); mix(u.y); mix(u.hp); mix(u.stress); mix(u.dead); }
     for (const b of G.buildings) { mix(b.id); mix(b.hp); mix(b.queue.length); }
+    for (const sg of G.segs) { mix(sg.id); mix(sg.progress); mix(sg.hp); }
     for (const p of Object.values(G.players)) for (const k of Data.RES) mix(p.res[k]);
     return h.toString(16);
   }

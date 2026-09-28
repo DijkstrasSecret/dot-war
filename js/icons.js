@@ -119,6 +119,16 @@ const Icons = (() => {
     oil(ctx) { ctx.beginPath(); ctx.moveTo(0, -0.95); ctx.bezierCurveTo(0.9, 0.2, 0.6, 0.95, 0, 0.95); ctx.bezierCurveTo(-0.6, 0.95, -0.9, 0.2, 0, -0.95); ctx.fill(); },
     wood(ctx) { ctx.fillRect(-0.95, -0.3, 1.9, 0.6); ctx.beginPath(); ctx.ellipse(0.95, 0, 0.15, 0.3, 0, 0, Math.PI * 2); ctx.fill(); },
     creep(ctx) { poly(ctx, [0, -0.9, 0.8, 0.7, -0.8, 0.7], true); },
+    // patch 0.4
+    medic(ctx) { ctx.fillRect(-0.25, -0.85, 0.5, 1.7); ctx.fillRect(-0.85, -0.25, 1.7, 0.5); },
+    hospital(ctx) { ctx.lineWidth = 0.14; ctx.strokeRect(-0.9, -0.9, 1.8, 1.8); ctx.fillRect(-0.2, -0.65, 0.4, 1.3); ctx.fillRect(-0.65, -0.2, 1.3, 0.4); },
+    bunker(ctx) { ctx.beginPath(); ctx.moveTo(-0.95, 0.7); ctx.lineTo(-0.95, -0.1); ctx.quadraticCurveTo(0, -0.95, 0.95, -0.1); ctx.lineTo(0.95, 0.7); ctx.closePath(); ctx.fill();
+      ctx.save(); ctx.globalCompositeOperation = 'destination-out'; ctx.fillRect(-0.55, -0.15, 1.1, 0.22); ctx.restore(); },
+    trench(ctx) { ctx.lineWidth = 0.16; ctx.beginPath(); ctx.moveTo(-0.95, -0.3); for (let i = 0; i < 5; i++) ctx.lineTo(-0.95 + (i + 0.5) * 0.38, i % 2 ? -0.3 : -0.55); ctx.lineTo(0.95, -0.3); ctx.stroke(); ctx.fillRect(-0.95, 0.05, 1.9, 0.5); },
+    barricade(ctx) { line(ctx, -0.9, 0.7, 0.9, -0.3, 0.2); line(ctx, -0.9, -0.3, 0.9, 0.7, 0.2); line(ctx, -0.95, 0.2, 0.95, 0.2, 0.16); },
+    wire(ctx) { ctx.lineWidth = 0.1; ctx.beginPath(); for (let i = 0; i < 7; i++) { const x = -0.9 + i * 0.3; ctx[i ? 'lineTo' : 'moveTo'](x, i % 2 ? 0.35 : -0.35); } ctx.stroke();
+      for (let i = 0; i < 4; i++) { const x = -0.9 + i * 0.6; line(ctx, x - 0.12, -0.5, x + 0.12, -0.2, 0.08); line(ctx, x + 0.12, -0.5, x - 0.12, -0.2, 0.08); } line(ctx, -0.95, 0.6, 0.95, 0.6, 0.08); },
+    grenade(ctx) { circ(ctx, 0, 0.2, 0.62, true); ctx.fillRect(-0.22, -0.72, 0.44, 0.35); line(ctx, 0.2, -0.6, 0.6, -0.85, 0.12); },
   };
 
   function drawIcon(ctx, name, x, y, s, color) {

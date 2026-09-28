@@ -53,7 +53,7 @@ const Fog = (() => {
     }
   }
 
-  function buildingVision(b) { const lv = b.levelDef; return { range: lv ? lv.vision : b.def.vision, eye: 2.2 + (lv ? lv.height : 0) }; }
+  function buildingVision(b) { const lv = b.levelDef, sl = b.slots; return { range: lv ? lv.vision : b.def.vision, eye: 2.2 + (sl ? sl.height : 0) }; }   // towers and the HQ see from their garrison height
 
   function castCached(v, e, x, y, r, eye) {
     const c = castCache.get(e);

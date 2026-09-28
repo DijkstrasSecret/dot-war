@@ -1,5 +1,6 @@
 'use strict';
-// Core simulation: players, economy, production, research, orders, movement, combat, towers.
+// Core simulation: players, economy, production, research, orders, movement, combat, garrisons,
+// line defences, grenades and healing.
 // TODO(patch 0.3): vehicles use cls 'vehicle' (Data.MOVE_CLASSES); transport = reuse enterBuilding/unloadBuilding with a unit as the container.
 // TODO(patch 0.4): replace the direct harvest credit in updateBuildings with workers carrying loads and trucks hauling to the HQ.
 // Randomness (patch 0.2.1): everything that can change a match's outcome draws from G.rng, a seeded
@@ -7,7 +8,7 @@
 // arrive through Game.command and are logged with their tick in G.orders, ready for replays.
 const G = {
   time: 0, tick: 0, speed: 1, lastSpeed: 1, over: false, winner: 0, seed: 1,
-  units: [], buildings: [], projectiles: [], effects: [],
+  units: [], buildings: [], projectiles: [], effects: [], segs: [],
   unitById: new Map(),
   players: {}, selection: [], squads: {}, toasts: [], orders: [],
   cleanupT: 0,
@@ -16,14 +17,14 @@ const G = {
 
 const Game = (() => {
   const { clamp, dist } = Util;
-  const C = Data.COMBAT, SQ = Data.SQUAD, VET = Data.VETERANCY;
+  const C = Data.COMBAT, SQ = Data.SQUAD, VET = Data.VETERANCY, DIG = Data.DIG, LINES = Data.LINES, NADE = Data.GRENADE;
   const R = () => G.rng();    // simulation stream: anything that can change the outcome
   const V = () => G.vrng();   // visual stream: decals and other looks
 
   function newPlayer(id, res) {
     const r = {}; for (const k of Data.RES) r[k] = res[k] || 0;
     // DD Q1: Rifling is researched from the start, so Riflemen and Workers are open to everyone.
-    return { id, res: r, blueprints: JSON.parse(JSON.stringify(Data.UNITS)), unlocked: new Set(['rifle', 'worker']), done: new Set(), research: null, harvestMult: 1,
+    return { id, res: r, blueprints: JSON.parse(JSON.stringify(Data.UNITS)), unlocked: new Set(['rifle', 'worker']), done: new Set(), research: null, harvestMult: 1, digMult: 1,
       faction: null, kitEra: 'ww2' };   // DD K: cosmetic only; set by Main, read by UI portraits
   }
   // A new match. The same seed and the same logged commands give the same match, tick for tick.
@@ -35,6 +36,7 @@ const Game = (() => {
     G.stats = { 0: { kills: 0, lost: 0 }, 1: { kills: 0, lost: 0 }, 2: { kills: 0, lost: 0 } };
     G.buildingById = new Map(); G.sandbox = false; G.difficulty = G.difficulty || 'hard';
     G.decals = [];   // blood, splats and corpses left on the ground
+    G.segs = []; G.segById = new Map(); G.segGrid = new Map(); G.segNext = 1; G.lineNext = 1; G.healT = 0;   // line defences, healing (0.4)
     G.players = { 0: newPlayer(0, {}), 1: newPlayer(1, { wood: 400, metal: 60 }), 2: newPlayer(2, { wood: 3000, metal: 1500, sulfur: 600 }) };
     for (const t of Object.keys(Data.UNITS)) G.players[0].unlocked.add(t);   // neutral guards; the AI unlocks over time (DD G7)
   }
@@ -71,6 +73,7 @@ const Game = (() => {
     if (r.unlock) p.unlocked.add(r.unlock);
     for (const e of r.effects || []) {
       if (e.harvest) { p.harvestMult *= e.harvest; continue; }
+      if (e.dig) { p.digMult *= e.dig; continue; }   // Entrenching Tools: every digger, existing ones too
       for (const [t, bp] of Object.entries(p.blueprints)) {
         const match = e.units === 'all' || (e.units === 'firearms' && bp.weapon && !bp.weapon.indirect) || (Array.isArray(e.units) && e.units.includes(t));
         if (!match) continue;
@@ -93,17 +96,22 @@ const Game = (() => {
     return b;
   }
 
-  // ---- scout towers: garrison, unload, upgrade ----
+  // ---- garrisons (Scout Tower, Bunker, HQ): enter, unload, upgrade ----
   const isHeavy = u => u.def.shape === 'square';
   function canEnter(u, b) {
-    // Unarmed units (Workers) stay out: a tower slot is for firing from.
-    const lv = b.levelDef; if (!lv || b.dead || !b.built || b.owner !== u.owner || u.def.cls !== 'infantry' || !u.stats.weapon) return false;
-    let inf = 0, hv = 0; for (const id of b.garrison) { const g = G.unitById.get(id); if (g && !g.dead) { if (isHeavy(g)) hv++; else inf++; } }
-    return isHeavy(u) ? hv < lv.heavy : inf < lv.cap;
+    // Unarmed units (Workers, Medics) stay out: a slot is for firing from.
+    const lv = b.slots; if (!lv || b.dead || !b.built || b.owner !== u.owner || u.def.cls !== 'infantry' || !u.stats.weapon) return false;
+    let inf = 0, hv = 0, mg = 0;
+    for (const id of b.garrison) { const g = G.unitById.get(id); if (!g || g.dead) continue; if (isHeavy(g)) hv++; else if (g.type === 'hmg') mg++; else inf++; }
+    const mgSlots = lv.mg || 0; inf += Math.max(0, mg - mgSlots);   // DD B: a Bunker's MG slot; extra machine gunners take infantry slots
+    if (isHeavy(u)) return hv < (lv.heavy || 0);
+    if (u.type === 'hmg' && mg < mgSlots) return true;
+    return inf < lv.cap;
   }
+  const slotCount = lv => lv.cap + (lv.heavy || 0) + (lv.mg || 0);
   function enterBuilding(u, b) {
     releaseWork(u); u.queue = []; u.order = null; u.field = null; u.forced = null; u.target = null; u.micro = null; u.flee = 0;
-    u.inside = b.id; u.hBonus = b.levelDef.height; u.x = b.x; u.y = b.y; u.stress = Math.min(u.stress, 0.3);
+    u.inside = b.id; u.hBonus = b.slots.height; u.x = b.x; u.y = b.y; u.stress = Math.min(u.stress, 0.3);
     b.garrison.push(u.id);
     G.selection = G.selection.filter(s => s !== u);
   }
@@ -143,8 +151,11 @@ const Game = (() => {
     if (owner === 1 && !Fog.visible(1, x, y)) return false;
     return true;
   }
+  // Buildings and line types with `requires` need that research first.
+  const hasTech = (p, def) => !def.requires || p.done.has(def.requires);
   function placeBuilding(type, owner, x, y) {
     const p = G.players[owner], def = Data.BUILDINGS[type];
+    if (!hasTech(p, def)) { if (owner === 1) toast('Research ' + Data.RESEARCH[def.requires].name + ' first'); return null; }
     if (!canPlace(type, owner, x, y)) { toast('Cannot build there'); return null; }
     if (!canAfford(p, def.cost)) { toast('Not enough resources'); return null; }
     pay(p, def.cost); return addBuilding(type, owner, x, y, false);
@@ -199,6 +210,14 @@ const Game = (() => {
         u.order = { type: 'work', x: f.tx, y: f.ty, offx: 0, offy: 0, arrive: 6, phase: 0 }; u.field = f;
         break;
       }
+      case 'dig':   // dig (or, Workers only, fill) the segments of one drawn line, nearest first
+        if (u.def.cls !== 'infantry' || (o.fill && !u.def.labour)) break;
+        u.order = { type: 'dig', line: o.line, fill: !!o.fill, seg: null, fseg: null };
+        break;
+      case 'grenade':
+        if (!canThrow(u)) break;
+        u.order = { type: 'grenade', x: o.x, y: o.y, target: o.target || null };
+        break;
     }
   }
   function nextOrder(u) { u.order = null; u.field = null; u.forced = null; if (u.queue.length) applyOrder(u, u.queue.shift()); }
@@ -234,6 +253,16 @@ const Game = (() => {
   }
   function orderStop(units) { for (const u of units) { u.queue = []; releaseWork(u); u.order = null; u.field = null; u.forced = null; u.micro = null; } }
   function orderHold(units, queue = false) { for (const u of units) issue(u, { kind: 'hold' }, queue); }
+  function orderDig(units, line, fill, queue = false) {
+    let n = 0;
+    for (const u of units) { if (u.dead || u.inside || u.def.cls !== 'infantry' || (fill && !u.def.labour)) continue; issue(u, { kind: 'dig', line, fill }, queue); n++; }
+    return n;
+  }
+  function orderGrenade(units, x, y, target, queue = false) {
+    let n = 0;
+    for (const u of units) { if (u.dead || u.inside || !canThrow(u)) continue; issue(u, { kind: 'grenade', x, y, target }, queue); n++; }
+    return n;
+  }
   function orderWork(units, b, queue = false) {
     let n = 0;
     for (const u of units) { if (u.dead || u.def.cls !== 'infantry' || u.work === b.id) continue; issue(u, { kind: 'work', building: b }, queue); n++; }
@@ -347,9 +376,11 @@ const Game = (() => {
   function dmgMult(u, tx, ty) { return 1 + clamp(C.dmgSteep * steepness(u, tx, ty), C.dmgMin, C.dmgMax); }
   function hitMult(u, tx, ty) { return 1 + clamp(C.hitSteep * steepness(u, tx, ty), C.hitMin, C.hitMax); }
   // Every source of stress goes through here. DD Q12: snipers take half; DD I: stress taken is at least x0.25.
-  function addStress(u, amt) {
-    if (u.dead || u.inside || amt <= 0) return;
-    u.stress = Math.min(1, u.stress + amt * Util.stack('stressTaken', u.def.stressTaken || 1, Math.pow(VET.perRank.stressTaken, u.rank)));   // DD H1: -10% per rank
+  // Garrisoned units take none, except from a grenade in a Bunker (force, DD G13). DD B: half in a trench.
+  function addStress(u, amt, force) {
+    if (u.dead || (u.inside && !force) || amt <= 0) return;
+    const ls = u.inside ? null : lineAt(u.x, u.y);
+    u.stress = Math.min(1, u.stress + amt * Util.stack('stressTaken', u.def.stressTaken || 1, Math.pow(VET.perRank.stressTaken, u.rank), ls ? LINES[ls.type].stress : 1));   // DD H1: -10% per rank
   }
   function canSee(u, e) {
     if (u.stats.weapon && u.stats.weapon.indirect && u.owner !== 0) return Fog.visible(u.owner, e.x, e.y);
@@ -416,9 +447,13 @@ const Game = (() => {
   function fireBullet(u, e) {
     const w = u.stats.weapon; const d = dist(u.x, u.y, e.x, e.y); const range = effRange(u, e.x, e.y);
     // All factors multiply, then the hit cap applies (DD I). u.wasMoving: the unit moved last tick (DD Q11).
+    // DD B: trenches and barricades cover the target; a Bunker's occupants shoot x1.1 (DD I).
+    const ls = e instanceof Unit ? lineAt(e.x, e.y) : null, gb = u.inside ? G.buildingById.get(u.inside) : null;
     const p = Util.stack('hit', w.acc, 1 - 0.55 * Math.pow(Math.min(1, d / range), 2), Terrain.coverAt(e.x, e.y), 1 - 0.5 * u.stress,
-      u.wasMoving ? C.movingAcc : 1, hitMult(u, e.x, e.y), e instanceof Building ? 2.5 : 1, Math.pow(VET.perRank.acc, u.rank));
+      u.wasMoving ? C.movingAcc : 1, hitMult(u, e.x, e.y), e instanceof Building ? 2.5 : 1, Math.pow(VET.perRank.acc, u.rank),
+      ls ? LINES[ls.type].hit : 1, (gb && gb.slots && gb.slots.acc) || 1);
     const hit = R() < p;
+    if (!hit && ls && ls.type === 'barricade') damageSeg(ls, w.dmg * DIG.smallArms);   // DD G12: small arms chip barricades
     const dmg = hit ? w.dmg * Data.ARMOR_MULT[w.dtype][e.armor] * dmgMult(u, e.x, e.y) : 0;
     const ang = R() * Math.PI * 2, off = hit ? 0 : 8 + R() * 18;
     const tx = e.x + Math.cos(ang) * off, ty = e.y + Math.sin(ang) * off;
@@ -451,8 +486,16 @@ const Game = (() => {
     }
     for (const b of G.buildings) {
       if (b.dead) continue; const d = Math.max(0, dist(b.x, b.y, x, y) - b.size * 0.7); if (d > splash) continue;
+      // DD G13: a grenade reaches a Bunker's occupants for 30% damage and full stress.
+      if (pr.grenade && b.slots && b.slots.grenadeReach) for (const id of b.garrison.slice()) {
+        const u = G.unitById.get(id); if (!u || u.dead) continue;
+        addStress(u, 0.3 * (1 - d / splash) + 0.1, true); u.lastHitBy = shooter;
+        applyDamage(u, dmg * (0.35 + 0.65 * (1 - d / splash)) * Data.ARMOR_MULT[dtype][u.armor] * NADE.bunkerDmg, shooter);
+      }
       applyDamage(b, dmg * (0.5 + 0.5 * (1 - d / splash)) * Data.ARMOR_MULT[dtype].building, shooter);
     }
+    // DD I: explosives deal full damage to barricades and wire; trenches cannot be destroyed.
+    for (const sg of G.segs) { if (!sg.done || !sg.maxHp) continue; const d = segDist(sg, x, y); if (d <= splash) damageSeg(sg, dmg * (0.5 + 0.5 * (1 - d / splash))); }
   }
   function applyDamage(e, dmg, by) {
     if (e.dead || dmg <= 0) return;
@@ -491,6 +534,173 @@ const Game = (() => {
       G.effects.push({ kind: 'explosion', x: e.x, y: e.y, r: e.size * 1.4, t: 0, dur: 1.1 });
       if (e.type === 'hq') toast(e.owner === 1 ? 'Your headquarters has fallen' : 'Enemy headquarters destroyed!');
       else if (e.owner === 1) toast(e.def.name + ' destroyed');
+    }
+  }
+
+  // ---- line defences (DD B, G12, I, J) ----
+  // A drawn line is cut into 10 m segments { id, line, type, owner, x0, y0, x1, y1, x, y, progress,
+  // paid, done, hp, maxHp }. G.segGrid maps a cell to the segments within reach of it, so "does this
+  // unit stand in a trench?" is one lookup. Only finished segments have effects.
+  const INF = Data.MOVE_CLASSES.infantry, LINE_HALF = 6;   // a unit within 6 m of the line stands in it
+  function segDist(sg, x, y) {
+    const dx = sg.x1 - sg.x0, dy = sg.y1 - sg.y0, t = clamp(((x - sg.x0) * dx + (y - sg.y0) * dy) / (dx * dx + dy * dy || 1), 0, 1);
+    return dist(x, y, sg.x0 + dx * t, sg.y0 + dy * t);
+  }
+  function segNear(x, y, doneOnly, skipLine) {
+    const a = G.segGrid.get(Terrain.cellIdxAt(x, y)); if (!a) return null;
+    for (const sg of a) if (!sg.dead && sg.line !== skipLine && (!doneOnly || sg.done) && segDist(sg, x, y) <= LINE_HALF) return sg;
+    return null;
+  }
+  function lineAt(x, y) { return G.segs.length ? segNear(x, y, true) : null; }
+  // Cells under points sampled every 3 m along the segment, shifted sideways by each offset and run
+  // `ext` metres past both ends.
+  function segCells(sg, offs, ext) {
+    const L = dist(sg.x0, sg.y0, sg.x1, sg.y1) || 1, ux = (sg.x1 - sg.x0) / L, uy = (sg.y1 - sg.y0) / L, n = Math.ceil((L + 2 * ext) / 3), out = new Set();
+    for (let i = 0; i <= n; i++) { const t = -ext + (L + 2 * ext) * i / n; for (const o of offs) out.add(Terrain.cellIdxAt(sg.x0 + ux * t - uy * o, sg.y0 + uy * t + ux * o)); }
+    return [...out];
+  }
+  // Resample the dragged path every 10 m and make one unpaid segment per step. Spots that are
+  // impassable or already hold another line are skipped.
+  function planLine(owner, type, pts) {
+    const res = [pts[0]]; let px = pts[0][0], py = pts[0][1], need = DIG.segment;
+    for (let i = 1; i < pts.length && res.length <= DIG.maxPoints; i++) {
+      const bx = pts[i][0], by = pts[i][1]; let d = dist(px, py, bx, by);
+      while (d >= need && res.length <= DIG.maxPoints) { px += (bx - px) * need / d; py += (by - py) * need / d; res.push([px, py]); d -= need; need = DIG.segment; }
+      need -= d; px = bx; py = by;
+    }
+    if (res.length === 1 && DIG.segment - need >= DIG.segment / 2) res.push([px, py]);   // a short drag still makes one segment
+    const line = G.lineNext++, out = [], T = LINES[type];
+    for (let i = 1; i < res.length; i++) {
+      const [x0, y0] = res[i - 1], [x1, y1] = res[i], x = (x0 + x1) / 2, y = (y0 + y1) / 2;
+      if (![[x0, y0], [x, y], [x1, y1]].every(q => Terrain.passableAt(q[0], q[1], INF))) continue;
+      if (segNear(x, y, false, line)) continue;
+      const sg = { id: G.segNext++, line, type, owner, x0, y0, x1, y1, x, y, progress: 0, paid: false, done: false, hp: 0, maxHp: T.hp || 0, dead: false, seen: owner === 1 };
+      sg.cells = segCells(sg, [-LINE_HALF, 0, LINE_HALF], LINE_HALF); sg.route = segCells(sg, [0], 0);
+      for (const k of sg.cells) { let a = G.segGrid.get(k); if (!a) G.segGrid.set(k, a = []); a.push(sg); }
+      G.segs.push(sg); G.segById.set(sg.id, sg); out.push(sg);
+    }
+    return out;
+  }
+  // Barricades and wire make routes through them dearer, so units path around when they can.
+  function applyRoute(sg, on) {
+    const T = LINES[sg.type]; if (T.slowOwn >= 1) return false;
+    for (const k of sg.route) {
+      let m = 1;
+      if (on) m = 1 / T.slowOwn; else for (const o of G.segGrid.get(k) || []) if (o !== sg && o.done && !o.dead && o.route.includes(k)) m = Math.max(m, 1 / LINES[o.type].slowOwn);
+      Terrain.setPathMult(k, m);
+    }
+    return true;
+  }
+  function removeSeg(sg) {
+    if (sg.dead) return; sg.dead = true;
+    for (const k of sg.cells) { const a = G.segGrid.get(k); if (a) { const i = a.indexOf(sg); if (i >= 0) a.splice(i, 1); if (!a.length) G.segGrid.delete(k); } }
+    G.segs = G.segs.filter(o => o !== sg); G.segById.delete(sg.id);
+    if (sg.done && applyRoute(sg, false)) Path.invalidate();
+  }
+  // DD: paths are recalculated once per finished line, not per segment.
+  function lineCheck(line, type, owner) {
+    if (G.segs.some(o => o.line === line && !o.done)) return;
+    if (LINES[type].slowOwn < 1) Path.invalidate();
+    if (owner === 1 && G.segs.some(o => o.line === line)) toast(LINES[type].name + ' finished');
+  }
+  function finishSeg(sg) { sg.done = true; sg.progress = 1; sg.hp = sg.maxHp; applyRoute(sg, true); lineCheck(sg.line, sg.type, sg.owner); }
+  function damageSeg(sg, dmg) {
+    if (!sg.done || !sg.maxHp || sg.dead || dmg <= 0) return;
+    sg.hp -= dmg;
+    if (sg.hp <= 0) { removeSeg(sg); G.effects.push({ kind: 'shock', x: sg.x, y: sg.y, t: 0, dur: 0.5, r: 12 }); }
+  }
+  // One digger working on one segment. Kaan, for 0.4: the segment is paid when digging on it starts.
+  function digSeg(u, sg, fill, dt) {
+    const p = G.players[u.owner], T = LINES[sg.type];
+    if (!fill && !sg.paid) {
+      if (!canAfford(p, T.cost)) { if (u.owner === 1 && G.time - (p.digToastT || -99) > 8) { p.digToastT = G.time; toast('Not enough resources for the next ' + T.name.toLowerCase() + ' segment'); } return; }
+      pay(p, T.cost); sg.paid = true;
+    }
+    // DD B: 15 s per 10 m for a soldier, Workers 1.5x and +10% per rank (DD H1); Entrenching Tools x1.3.
+    const rate = (u.def.labour ? DIG.workerMult * Math.pow(VET.perRank.work, u.rank) : 1) * p.digMult / DIG.time;
+    u.facing = Math.atan2(sg.y - u.y, sg.x - u.x); u.digT = G.time;
+    const before = sg.progress; sg.progress = clamp(sg.progress + (fill ? -rate : rate) * dt, 0, 1);
+    if (u.def.labour) addXp(u, Math.abs(sg.progress - before) * DIG.xpPerSegment);   // DD H1: 1 XP per 10 m dug
+    if (!fill && sg.progress >= 1) finishSeg(sg);
+    else if (fill && sg.progress <= 0) { removeSeg(sg); lineCheck(sg.line, sg.type, -1); }
+  }
+  // A line nobody is digging any more drops its untouched segments, unpaid (Kaan, for 0.4). Started
+  // segments stay and can be resumed by right clicking them with soldiers or Workers.
+  function updateLines() {
+    if (!G.segs.length) return;
+    const dug = new Set();
+    for (const u of G.units) {
+      if (u.dead) continue;
+      if (u.order && u.order.type === 'dig' && !u.order.fill) dug.add(u.order.line);
+      for (const o of u.queue) if (o.kind === 'dig' && !o.fill) dug.add(o.line);
+    }
+    const lines = new Map();
+    for (const sg of G.segs) if (!sg.done && !sg.paid && !dug.has(sg.line)) { removeSeg(sg); lines.set(sg.line, sg); }
+    for (const sg of lines.values()) lineCheck(sg.line, sg.type, -1);
+    if (G.tick % 15 === 0) for (const sg of G.segs) if (!sg.seen && Fog.visible(1, sg.x, sg.y)) sg.seen = true;
+  }
+  // DD J: the selected infantry dig a drawn line; with none selected, idle Workers within 300 m.
+  function planDig(pid, type, pts, units, queue) {
+    const p = G.players[pid], T = LINES[type]; if (!T || !Array.isArray(pts) || pts.length < 2) return 0;
+    if (!hasTech(p, T)) { if (pid === 1) toast('Research ' + Data.RESEARCH[T.requires].name + ' first'); return 0; }
+    let diggers = units.filter(u => u.owner === pid && u.def.cls === 'infantry' && !u.inside);
+    if (!diggers.length) {
+      const [mx, my] = pts[Math.floor(pts.length / 2)];
+      diggers = G.units.filter(u => !u.dead && u.owner === pid && u.def.labour && !u.inside && u.work == null && !u.order && dist(u.x, u.y, mx, my) <= DIG.idleWorkerRange);
+    }
+    if (!diggers.length) { if (pid === 1) toast('Select soldiers to dig, or have idle Workers within ' + DIG.idleWorkerRange + ' m'); return 0; }
+    const segs = planLine(pid, type, pts);
+    if (!segs.length) { if (pid === 1) toast('Cannot dig there'); return 0; }
+    return orderDig(diggers, segs[0].line, false, queue);
+  }
+
+  // ---- grenades (DD C, G13, I) ----
+  const canThrow = u => !!(u.def.grenade && G.players[u.owner] && G.players[u.owner].done.has('grenades'));
+  function throwGrenade(u, tx, ty) {
+    if (u.owner !== 0) { const p = G.players[u.owner]; if (!canAfford(p, NADE.ammo)) { if (u.owner === 1 && G.time - (u.noAmmoT || -99) > 15) { u.noAmmoT = G.time; toast('No sulfur for grenades'); } return false; } pay(p, NADE.ammo); }
+    u.nadeT = NADE.cooldown; u.facing = Math.atan2(ty - u.y, tx - u.x);
+    const ang = R() * Math.PI * 2, off = R() * 4 * (1 + u.stress);
+    G.projectiles.push(new Projectile({ kind: 'shell', grenade: true, x: u.x, y: u.y, tx: tx + Math.cos(ang) * off, ty: ty + Math.sin(ang) * off, dur: NADE.flight, arc: 12, dmg: NADE.dmg, splash: NADE.splash, dtype: NADE.dtype, shooter: u, owner: u.owner }));
+    return true;
+  }
+  // Thrown on its own at the nearest enemy in a trench, or at an occupied enemy Bunker, within reach.
+  function autoGrenade(u) {
+    let best = null, bd = Infinity;
+    for (const e of G.units) {
+      if (e.dead || e.inside || e.owner === u.owner) continue; const d = dist(u.x, u.y, e.x, e.y); if (d > NADE.range || d >= bd) continue;
+      const ls = lineAt(e.x, e.y); if (ls && ls.type === 'trench') { best = e; bd = d; }
+    }
+    if (!best) for (const b of G.buildings) {
+      if (b.dead || b.owner === u.owner || !b.slots || !b.slots.grenadeReach || !b.garrison.length) continue;
+      const d = dist(u.x, u.y, b.x, b.y) - b.size * 0.7; if (d <= NADE.range && d < bd) { best = b; bd = d; }
+    }
+    if (best) throwGrenade(u, best.x, best.y);
+  }
+
+  // ---- healing (DD A, B, I): sources add up, infantry only ----
+  // A Medic treats one soldier at a time: its squadmates first, then the nearest wounded.
+  function findPatient(m, r) {
+    let best = null, bs = Infinity;
+    for (const u of G.units) {
+      if (u === m || u.dead || u.owner !== m.owner || u.def.cls !== 'infantry' || u.hp >= u.stats.hp) continue;
+      const d = dist(u.x, u.y, m.x, m.y); if (d > r) continue;
+      const sc = d + (m.squad && u.squad === m.squad ? 0 : 1000); if (sc < bs) { bs = sc; best = u; }
+    }
+    return best;
+  }
+  function updateHealing(dt) {
+    G.healT += dt; if (G.healT < Data.HEAL.tick) return; const step = G.healT; G.healT = 0;
+    for (const b of G.buildings) {
+      const h = b.def.heal; if (!h || b.dead || !b.built) continue;
+      for (const u of G.units) if (!u.dead && u.owner === b.owner && u.def.cls === 'infantry' && u.hp < u.stats.hp && dist(u.x, u.y, b.x, b.y) <= h.range) u.hp = Math.min(u.stats.hp, u.hp + h.rate * step);
+    }
+    for (const m of G.units) {
+      const h = m.def.heal; if (!h || m.dead || m.inside || m.flee > 0) continue;
+      let t = m.patient;
+      if (!t || t.dead || t.hp >= t.stats.hp || dist(t.x, t.y, m.x, m.y) > h.range) t = m.patient = findPatient(m, h.range);
+      if (!t) continue;
+      const amt = Math.min(t.stats.hp - t.hp, h.rate * Math.pow(VET.perRank.work, m.rank) * step);   // DD H1: +10% per rank
+      t.hp += amt; addXp(m, amt / Data.HEAL.medicXpPer);   // DD H1: 1 XP per 20 HP healed
     }
   }
 
@@ -590,6 +800,7 @@ const Game = (() => {
       const f = Terrain.moveFactor(u.x, u.y, ndx, ndy, u.cls); if (f === 0) continue;
       const step = Math.min(a === 0 ? d : Math.max(4, d * 0.5), u.stats.speed * speedMult * f * dt);
       const nx = u.x + ndx * step, ny = u.y + ndy * step;
+      if (nx < 1 || ny < 1 || nx > Terrain.W * Terrain.CELL - 1 || ny > Terrain.H * Terrain.CELL - 1) continue;   // never off the map (a panicking unit could run out of it)
       if (!Terrain.passableAt(nx, ny, u.cls)) continue;
       u.x = nx; u.y = ny; u.moving = true; u.facing = Util.lerpAngle(u.facing, Math.atan2(ndy, ndx), 0.25);
       if (a === 0) u.stuck = Math.max(0, u.stuck - dt);
@@ -627,7 +838,7 @@ const Game = (() => {
     u.wasMoving = u.moving; u.moving = false;
     u.muzzle = Math.max(0, u.muzzle - dt); u.recoil = Math.max(0, u.recoil - dt); u.alertT = Math.max(0, u.alertT - dt);
     const retreating = !!(u.order && u.order.retreat);
-    u.cooldown -= dt; u.stress = Math.max(0, u.stress - stressDecay(u) * (retreating ? C.retreatDecayMult : 1) * dt);   // DD Q9, Q10, E, H1
+    u.cooldown -= dt; u.nadeT -= dt; u.stress = Math.max(0, u.stress - stressDecay(u) * (retreating ? C.retreatDecayMult : 1) * dt);   // DD Q9, Q10, E, H1
     if (u.stress > VET.xp.underFireStress) { u.fireT += dt; if (u.fireT >= VET.xp.underFireEvery) { u.fireT -= VET.xp.underFireEvery; addXp(u, 1); } }
     if (u.work != null && u.order && u.order.type === 'hold') { u.workT += dt; if (u.workT >= VET.xp.workEvery) { u.workT -= VET.xp.workEvery; addXp(u, 1); } }
     if (u.hp < u.stats.hp * 0.5 && !u.inside) {   // wounded units leave blood behind (visual only)
@@ -653,9 +864,17 @@ const Game = (() => {
       }
     } else if (u.stress >= C.panicAt && !u.def.neverPanics) { u.flee = 2.5 + R(); u.target = null; return; }   // DD Q12: snipers never panic
     tryFire(u);
+    if (u.def.grenade && u.nadeT <= 0 && G.tick % 10 === u.id % 10 && canThrow(u) && !(u.order && u.order.type === 'grenade')) autoGrenade(u);
+    // An idle Medic walks over to the nearest wounded soldier it can see (squadmates first).
+    if (u.def.heal && !u.order && !u.micro && G.tick % 30 === u.id % 30 && !u.patient) {
+      const t = findPatient(u, u.stats.vision);
+      if (t && dist(u.x, u.y, t.x, t.y) > u.def.heal.range * 0.75 && Terrain.straightPassable(u.x, u.y, t.x, t.y, u.cls)) u.micro = { x: t.x, y: t.y };
+    }
     // DD Q10: no suppression slowdown in retreat. DD E '>': a squad travels at its slowest member's pace.
+    // DD B, G12: barricades and wire slow everyone, trenches slow only the enemy.
     const cap = o0 => o0 && o0.maxSpeed && o0.phase === 0 ? Math.min(1, o0.maxSpeed / u.stats.speed) : 1;
-    const spd = Util.stack('speed', u.suppressed && !retreating ? 0.6 : 1, cap(u.order));
+    const ls = lineAt(u.x, u.y), lineSlow = ls ? (ls.owner === u.owner ? LINES[ls.type].slowOwn : LINES[ls.type].slowEnemy) : 1;
+    const spd = Util.stack('speed', u.suppressed && !retreating ? 0.6 : 1, cap(u.order), lineSlow);
     const o = u.order;
     if (o) {
       switch (o.type) {
@@ -703,6 +922,34 @@ const Game = (() => {
           break;
         }
         case 'hold': if (o.until && G.time >= o.until) nextOrder(u); break;
+        case 'dig': {
+          let sg = o.seg;
+          if (!sg || sg.dead || (o.fill ? !sg.done : sg.done)) {
+            sg = null; let bd = Infinity;
+            for (const c of G.segs) if (c.line === o.line && (o.fill ? c.done : !c.done)) { const d = dist(u.x, u.y, c.x, c.y); if (d < bd) { bd = d; sg = c; } }
+            o.seg = sg; if (!sg) { nextOrder(u); break; }
+          }
+          if (dist(u.x, u.y, sg.x, sg.y) > 16) {
+            if (o.fseg !== sg) { o.fseg = sg; u.field = Path.getField(sg.x, sg.y, u.def.cls, G.time); if (!u.field) { nextOrder(u); break; } }
+            if (followField(u, dt, spd)) moveToward(u, sg.x, sg.y, dt, spd);
+            break;
+          }
+          digSeg(u, sg, o.fill, dt);
+          break;
+        }
+        case 'grenade': {   // walk into reach, throw once the cooldown allows, then carry on
+          const t = o.target && !o.target.dead ? o.target : null, tx = t ? t.x : o.x, ty = t ? t.y : o.y;
+          const reach = NADE.range + (t instanceof Building ? t.size * 0.7 : 0);
+          if (dist(u.x, u.y, tx, ty) > reach) {
+            const ci = Terrain.cellI(tx), cj = Terrain.cellJ(ty);
+            if (!u.field || u.field.ci !== ci || u.field.cj !== cj) u.field = Path.getField(tx, ty, u.def.cls, G.time);
+            if (!u.field) { nextOrder(u); break; }
+            if (followField(u, dt, spd)) moveToward(u, tx, ty, dt, spd);
+            break;
+          }
+          if (u.nadeT <= 0) { throwGrenade(u, tx, ty); nextOrder(u); }
+          break;
+        }
       }
     } else if (u.micro) {
       if (moveToward(u, u.micro.x, u.micro.y, dt, spd) || u.stuck > 1) { u.micro = null; u.stuck = 0; }
@@ -788,6 +1035,13 @@ const Game = (() => {
       case 'upgrade': return !!b && upgradeTower(b);
       case 'unload': return b ? unloadBuilding(b) : 0;
       case 'unloadOne': return unloadOne(b, entById(c.unit));
+      case 'line': return planDig(pid, c.type, c.points, us, q);
+      case 'dig': case 'fill': {   // resume digging a line, or (Workers only) fill a trench, from one of its segments
+        const sg = G.segById.get(c.seg); if (!sg || sg.owner !== pid) return 0;
+        if (c.kind === 'fill' && sg.type !== 'trench') return 0;
+        return orderDig(us, sg.line, c.kind === 'fill', q);
+      }
+      case 'grenade': { const t = c.target != null ? entById(c.target) : null; return orderGrenade(us, c.x, c.y, t && !t.dead ? t : null, q); }
     }
     return false;
   }
@@ -796,7 +1050,7 @@ const Game = (() => {
     G.tick++;
     G.time += dt;
     updateResearch(dt); updateBuildings(dt);
-    updateSquads();
+    updateSquads(); updateLines(); updateHealing(dt);
     for (const u of G.units) if (!u.dead) updateUnit(u, dt);
     separate();
     updateProjectiles(dt); updateEffects(dt);
@@ -812,9 +1066,9 @@ const Game = (() => {
     canAfford, researchState, startResearch, statsFor, prodTime,
     spawnUnit, addBuilding, canPlace, placeBuilding,
     orderMove, orderAttack, orderBombard, orderStop, orderHold, orderWork, orderRetreat, orderGarrison,
-    canEnter, unloadBuilding, upgradeTower,
+    canEnter, unloadBuilding, upgradeTower, slotCount, hasTech, canThrow, lineAt, segNear, orderDig, orderGrenade,
     enqueue, cancelQueue, harvestRate, activeWorkers, effRange,
     squadCentre, membersOf, setSquad,
-    _dbg: { addXp, validTarget, acquire, inRange, canSee, tryFire, applyDamage, kill, addStress, rangeMult, dmgMult, hitMult, heightDiff },
+    _dbg: { enter: enterBuilding, planLine, finishSeg, removeSeg, damageSeg, throwGrenade, addXp, validTarget, acquire, inRange, canSee, tryFire, applyDamage, kill, addStress, rangeMult, dmgMult, hitMult, heightDiff },
   };
 })();

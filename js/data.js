@@ -34,7 +34,8 @@ const Data = {
       name: 'Rifleman', shape: 'circle', icon: 'rifle', cls: 'infantry', size: 6, role: 1,
       hp: 70, armor: 'none', speed: 52, vision: 160, cost: { wood: 12, metal: 10 }, time: 10,
       weapon: { dmg: 20, dtype: 'ballistic', range: 170, minRange: 0, acc: 0.68, reload: 1.5, pspeed: 900, indirect: false, splash: 0, suppress: 0.08 },
-      desc: 'Standard infantry. Good range and accuracy.',
+      grenade: true,   // throws Data.GRENADE once the Grenades research is done
+      desc: 'Standard infantry. Good range and accuracy. Throws grenades once researched.',
     },
     hmg: {
       name: 'Machine Gunner', shape: 'circle', icon: 'hmg', cls: 'infantry', size: 6.5, role: 2,
@@ -55,12 +56,22 @@ const Data = {
       weapon: { dmg: 50, dtype: 'explosive', range: 380, minRange: 90, acc: 0.5, reload: 5, pspeed: 200, indirect: true, splash: 32, suppress: 0.35, ammo: { sulfur: 2 } },
       desc: 'Indirect fire over ridges. Costs sulfur per shell. Needs a spotter to be accurate.',
     },
+    // DD A: heals one unit at a time, squadmates first (DD E). Speed, vision, cost and time proposed.
+    medic: {
+      name: 'Medic', shape: 'circle', icon: 'medic', cls: 'infantry', size: 5.5, role: 0,
+      hp: 50, armor: 'none', speed: 50, vision: 140, cost: { wood: 20, metal: 15 }, time: 10, supply: 1, requires: 'medicine',
+      weapon: null, heal: { rate: 4, range: 40 },
+      desc: 'Unarmed. Heals one wounded soldier at a time within 40 m, 4 HP/s, squadmates first.',
+    },
   },
 
   BUILDINGS: {
+    // garrison: slots for infantry (cap), squares (heavy) and machine gunners (mg), the height it adds,
+    // and the occupants' accuracy multiplier. Scout Towers keep theirs per level.
     hq: { name: 'Headquarters', w: 64, h: 64, hp: 1500, icon: 'hq', produces: ['rifle', 'worker'], prodMult: { rifle: 0.7 },   // DD I: Riflemen at 0.7x, Workers at full speed
-      cost: {}, buildTime: 0, vision: 220, desc: 'Your command post. Lose it and the game is over.' },
-    barracks: { name: 'Barracks', w: 48, h: 40, hp: 600, icon: 'circle', produces: ['rifle', 'hmg', 'sniper'], cost: { wood: 80, metal: 20 }, buildTime: 30, vision: 120, desc: 'Trains infantry (circles).' },
+      garrison: { cap: 6, heavy: 0, height: 6 }, heal: { rate: 0.5, range: 150 },   // DD B, I: a last stand; heals infantry nearby
+      cost: {}, buildTime: 0, vision: 220, desc: 'Your command post. Holds 6 infantry and heals infantry within 150 m. Lose it and the game is over.' },
+    barracks: { name: 'Barracks', w: 48, h: 40, hp: 600, icon: 'circle', produces: ['rifle', 'hmg', 'sniper', 'medic'], cost: { wood: 80, metal: 20 }, buildTime: 30, vision: 120, desc: 'Trains infantry (circles).' },
     ordnance: { name: 'Ordnance Works', w: 52, h: 44, hp: 700, icon: 'square', produces: ['mortar'], cost: { wood: 60, metal: 60 }, buildTime: 40, vision: 120, desc: 'Builds mortars and other heavy weapons (squares).' },
     lumber: { name: 'Lumber Camp', w: 40, h: 32, hp: 350, icon: 'lumber', harvest: 'wood', rate: 1.0, perWorker: 0.6, maxWorkers: 4, cost: { wood: 40 }, buildTime: 20, vision: 100, needs: 'forest', desc: 'Place next to forest. Assign Workers (or soldiers, at half rate) to speed it up.' },
     mine: { name: 'Mine', w: 40, h: 36, hp: 400, icon: 'mine', harvest: 'deposit', rate: 0.5, perWorker: 0.35, maxWorkers: 4, cost: { wood: 60, metal: 10 }, buildTime: 25, vision: 100, needs: 'deposit', desc: 'Place on a metal or sulfur deposit. Assign Workers (or soldiers, at half rate).' },
@@ -73,9 +84,37 @@ const Data = {
       ],
       desc: 'Garrison infantry for height, sight and cover. Upgrade twice; level 3 also holds one mortar.',
     },
+    // DD B. "+10 accuracy" is hit chance x1.1 (DD I). Vision proposed.
+    bunker: { name: 'Bunker', w: 32, h: 32, hp: 1200, icon: 'bunker', cost: { wood: 120, metal: 90 }, buildTime: 45, vision: 160, requires: 'fortification',
+      garrison: { cap: 4, heavy: 0, mg: 1, height: 0, acc: 1.1, grenadeReach: true },
+      desc: 'Holds 4 infantry and a Machine Gunner in its own slot. Occupants shoot 10% more accurately. Grenades still reach them.' },
+    hospital: { name: 'Field Hospital', w: 48, h: 40, hp: 500, icon: 'hospital', cost: { wood: 80, metal: 40 }, buildTime: 35, vision: 120, requires: 'hospital',
+      heal: { rate: 1.5, range: 120 }, desc: 'Heals all your infantry within 120 m at 1.5 HP/s.' },
   },
-  BUILD_LIST: ['lumber', 'mine', 'barracks', 'ordnance', 'tower'],
-  BUILD_HOTKEYS: { lumber: 'L', mine: 'M', barracks: 'C', ordnance: 'O', tower: 'T' },
+  BUILD_LIST: ['lumber', 'mine', 'barracks', 'ordnance', 'tower', 'bunker', 'hospital'],
+  BUILD_HOTKEYS: { lumber: 'L', mine: 'M', barracks: 'C', ordnance: 'O', tower: 'T', bunker: 'U', hospital: 'P', trench: 'Y', barricade: 'I', wire: 'J' },
+
+  // Line defences (DD B, G12, I, J), drawn by dragging and dug in 10 m segments. Each segment is paid
+  // when digging on it starts (Kaan, for 0.4). hit: chance to be hit for units standing in it; stress:
+  // stress taken there; slowEnemy / slowOwn: speed for infantry crossing it; hp: null = indestructible.
+  LINES: {
+    trench: { name: 'Trench', icon: 'trench', cost: { wood: 30 }, hit: 0.6, stress: 0.5, slowEnemy: 0.4, slowOwn: 1, hp: null,
+      desc: 'Soldiers in it are 40% harder to hit and take half stress. Enemies cross it at 0.4x speed. Cannot be destroyed; Workers fill it (K).' },
+    barricade: { name: 'Barricade', icon: 'barricade', cost: { wood: 30, metal: 15 }, hit: 0.7, stress: 1, slowEnemy: 0.5, slowOwn: 0.5, hp: 200, requires: 'fortification',
+      desc: 'Cover 0.7 for soldiers behind it. Every infantryman crosses at half speed. 200 HP per 10 m; explosives break it, rifles only chip it.' },
+    wire: { name: 'Barbed Wire', icon: 'wire', cost: { metal: 20 }, hit: 1, stress: 1, slowEnemy: 0.25, slowOwn: 0.25, hp: 80, requires: 'fortification',
+      desc: 'No cover, does not block fire. Every infantryman crosses at 0.25x speed. 80 HP per 10 m; only explosives cut it.' },
+  },
+  LINE_LIST: ['trench', 'barricade', 'wire'],
+  // Digging: 15 s per 10 m for a soldier, Workers 1.5x (DD B); several diggers add up. A drawn line
+  // with no infantry selected goes to idle Workers within 300 m (DD J). XP: 1 per 10 m dug (DD H1).
+  DIG: { segment: 10, time: 15, workerMult: 1.5, idleWorkerRange: 300, maxPoints: 60, xpPerSegment: 1, smallArms: 0.1 },
+
+  // DD C: thrown by Riflemen once researched, automatically at enemies in trenches or bunkers, or by order.
+  // Bunker occupants take 30% damage and full stress (DD G13). Friendly fire is on (DD I).
+  GRENADE: { range: 35, dmg: 45, dtype: 'explosive', splash: 18, ammo: { sulfur: 1 }, cooldown: 20, bunkerDmg: 0.3, flight: 0.8 },
+  // DD I: healing sources add up, infantry only. Medic XP 1 per 20 HP healed (DD H1).
+  HEAL: { medicXpPer: 20, tick: 0.5 },
   TRAIN_HOTKEYS: ['Z', 'X', 'C', 'V'],   // DD 9: Tab flips to the next four when a factory has more
 
   RESEARCH: {
@@ -88,8 +127,14 @@ const Data = {
     mortar: { name: 'Mortar', cost: { wood: 40, metal: 60 }, time: 50, req: [], unlock: 'mortar', desc: 'Unlocks Mortar Crews (needs sulfur for shells).' },
     powder: { name: 'Improved Powder', cost: { sulfur: 30, metal: 20 }, time: 40, req: [], effects: [{ units: 'firearms', stat: 'range', mult: 1.12 }], desc: '+12% range for newly trained firearm units.' },
     shells: { name: 'HE Shells', cost: { sulfur: 40, metal: 40 }, time: 45, req: ['mortar'], effects: [{ units: ['mortar'], stat: 'dmg', mult: 1.25 }], desc: '+25% mortar damage for new crews.' },
+    // Patch 0.4, on the HQ list until the tech tree arrives in 0.5 (DD F). (p) values from DD F.
+    fortification: { name: 'Fortification', icon: 'bunker', cost: { wood: 60, metal: 60 }, time: 45, req: [], desc: 'Unlocks the Bunker, barricades and barbed wire.' },
+    entrenching: { name: 'Entrenching Tools', icon: 'trench', cost: { wood: 60, metal: 20 }, time: 35, req: [], effects: [{ dig: 1.3 }], desc: 'Digging 30% faster, for every digger.' },
+    grenades: { name: 'Grenades', icon: 'grenade', cost: { metal: 30, sulfur: 40 }, time: 40, req: [], desc: 'Riflemen throw grenades (1 sulfur each) at enemies in trenches and bunkers, or on order (V).' },
+    medicine: { name: 'Field Medicine', cost: { wood: 40, metal: 40 }, time: 40, req: [], unlock: 'medic', desc: 'Unlocks Medics at the Barracks.' },
+    hospital: { name: 'Field Hospital', icon: 'hospital', cost: { wood: 60, metal: 50 }, time: 45, req: ['medicine'], desc: 'Unlocks the Field Hospital building.' },
   },
-  RESEARCH_ORDER: ['drill', 'logistics', 'boots', 'hmg', 'sniper', 'mortar', 'powder', 'shells'],
+  RESEARCH_ORDER: ['drill', 'logistics', 'boots', 'hmg', 'sniper', 'mortar', 'powder', 'shells', 'fortification', 'entrenching', 'grenades', 'medicine', 'hospital'],
 
   DEPOSIT_NAMES: { metal: 'Iron ore', sulfur: 'Sulfur', rubber: 'Rubber trees', oil: 'Oil seep' },
 

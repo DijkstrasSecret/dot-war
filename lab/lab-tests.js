@@ -63,6 +63,49 @@ const LabTests = (() => {
       avgPin: pins.length ? pins.reduce((s, t) => s + t, 0) / pins.length : null, pinnedRuns: pins.length };
   }
 
+  // ---- fortifications (patch 0.4) ----
+  // Trench hold: nB Riflemen (side B) hold a 120 m trench, or the same spot in the open, against nA
+  // attack-moving Riflemen (with grenades: sent again and again to throw at the nearest defender).
+  // Bunker assault: a Bunker with 4 Riflemen and a Machine Gunner against nA Riflemen with grenades,
+  // sent again and again to throw at it (as a player would order). The attackers
+  // win when the Bunker falls or everyone inside is dead. No agreed targets yet: the lab reports them.
+  function fort({ setup = 'trench', nA = 8, nB = 5, seed = 1, maxTime = 240, grenades = setup === 'bunker' }) {
+    Game.init(seed); G.difficulty = 'normal';
+    buildArena('flat');
+    const A = []; for (let i = 0; i < nA; i++) A.push(Game.spawnUnit('rifle', 1, AX - 40, MIDY + (i - (nA - 1) / 2) * 14));
+    if (grenades) { G.players[1].done.add('grenades'); G.players[1].res.sulfur = 1000; }
+    let B = [], bunker = null;
+    if (setup === 'bunker') {
+      bunker = Game.addBuilding('bunker', 2, BX + 20, MIDY, true);
+      B = ['rifle', 'rifle', 'rifle', 'rifle', 'hmg'].map(t => { const u = Game.spawnUnit(t, 2, bunker.x, bunker.y + 30); Game._dbg.enter(u, bunker); return u; });
+    } else {
+      if (setup === 'trench') for (const sg of Game._dbg.planLine(2, 'trench', [[BX, MIDY - 60], [BX, MIDY + 60]])) Game._dbg.finishSeg(sg);
+      for (let i = 0; i < nB; i++) { const u = Game.spawnUnit('rifle', 2, BX, MIDY + (i - (nB - 1) / 2) * 20); u.order = { type: 'hold', x: u.x, y: u.y }; B.push(u); }
+    }
+    // Idle attackers are sent again: at the Bunker, or at the nearest defender still standing (one may have fled).
+    const order = u => {
+      if (bunker) { Game.orderGrenade([u], bunker.x, bunker.y, bunker); return; }
+      let t = null; for (const e of B) if (!e.dead && (!t || Util.dist(u.x, u.y, e.x, e.y) < Util.dist(u.x, u.y, t.x, t.y))) t = e;
+      if (t && grenades && Game.canThrow(u)) Game.orderGrenade([u], t.x, t.y, t); else if (t) Game.orderMove([u], t.x, t.y, 'attackmove');
+    };
+    Game.orderMove(A, BX, MIDY, 'attackmove'); if (grenades) for (const u of A) order(u);
+    Fog.update(0, true);
+    const alive = list => list.filter(u => !u.dead).length;
+    const held = () => bunker ? !bunker.dead && alive(B) : alive(B);
+    let ticks = 0; const maxTicks = Math.round(maxTime / STEP);
+    while (ticks < maxTicks && alive(A) && held()) {
+      Game.update(STEP); ticks++;
+      if (ticks % 30 === 0) for (const u of A) if (!u.dead && !u.order && u.flee <= 0) order(u);
+    }
+    const a = alive(A), b = held() ? alive(B) : 0;
+    return { winner: a && !b ? 1 : b && !a ? 2 : 0, time: G.time, survivorsA: a, survivorsB: b, sulfur: grenades ? 1000 - G.players[1].res.sulfur : 0 };
+  }
+  function forts(opts, runs = 50, seed0 = 1) {
+    const res = []; for (let i = 0; i < runs; i++) res.push(fort(Object.assign({}, opts, { seed: seed0 + i })));
+    const n = res.length, win = w => res.filter(r => r.winner === w).length / n * 100, avg = k => res.reduce((s, r) => s + r[k], 0) / n;
+    return { runs: n, winA: win(1), winB: win(2), draw: win(0), avgTime: avg('time'), avgSurvivorsA: avg('survivorsA'), avgSurvivorsB: avg('survivorsB'), avgGrenades: avg('sulfur') };
+  }
+
   // ---- economy timeline ----
   // A standard opening on Highland Pass with no enemy or neutrals on the map: a Lumber Camp at the
   // nearest forest and a Mine on the nearest iron, two Workers each, then the HQ trains Workers until
@@ -137,5 +180,5 @@ const LabTests = (() => {
     };
   }
 
-  return { buildArena, duel, duels, economy, aiMatch };
+  return { buildArena, duel, duels, fort, forts, economy, aiMatch };
 })();

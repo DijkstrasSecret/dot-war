@@ -13,7 +13,7 @@ const Terrain = (() => {
   };
 
   let W = 0, H = 0;
-  let height, type, road, slope, blocked;
+  let height, type, road, slope, blocked, pathMult;   // pathMult: extra route cost of barricades and wire (patch 0.4)
   let deposits = [];
   let roads = [];   // polylines [[x,y],...] in world units; `road` cell mask is rasterised from them
   let cache, cctx;
@@ -22,7 +22,7 @@ const Terrain = (() => {
 
   function create(w, h) {
     W = w; H = h;
-    height = new Float32Array(w * h); type = new Uint8Array(w * h); road = new Uint8Array(w * h); slope = new Float32Array(w * h); blocked = new Uint8Array(w * h);
+    height = new Float32Array(w * h); type = new Uint8Array(w * h); road = new Uint8Array(w * h); slope = new Float32Array(w * h); blocked = new Uint8Array(w * h); pathMult = new Float64Array(w * h).fill(1);
     deposits = []; roads = [];
     cache = document.createElement('canvas'); cache.width = w * CELL; cache.height = h * CELL; cctx = cache.getContext('2d');
     maskCanvas = document.createElement('canvas'); maskCanvas.width = w; maskCanvas.height = h; maskCtx = maskCanvas.getContext('2d');
@@ -135,8 +135,9 @@ const Terrain = (() => {
     let grade = (height[to] - height[from]) / d;
     if (road[from] && road[to]) grade = clamp(grade, -cls.maxGrade, cls.maxGrade);   // a road never breaks its own connectivity
     else if (Math.abs(grade) > cls.maxGrade) return Infinity;
-    return d / (slopeFactor(grade) * terrainFactor(to, cls));
+    return d * pathMult[to] / (slopeFactor(grade) * terrainFactor(to, cls));
   }
+  function setPathMult(k, v) { pathMult[k] = v; }
   function passableAt(x, y, cls) { return cellPassable(cellIdxAt(x, y), cls); }
   // straight-line walkability check used for path smoothing
   function straightPassable(x0, y0, x1, y1, cls) {
@@ -411,7 +412,7 @@ const Terrain = (() => {
     get W() { return W; }, get H() { return H; }, get height() { return height; }, get type() { return type; }, get road() { return road; }, get slope() { return slope; },
     get deposits() { return deposits; }, get roads() { return roads; }, get cache() { return cache; }, rasterizeRoads, eraseRoads,
     idx, inb, cellI, cellJ, cellIdxAt, cx, cy, hAt, gradAt, typeAt, roadAt, slopeAt,
-    cellPassable, terrainFactor, slopeFactor, moveFactor, edgeCost, passableAt, straightPassable, setBlocked, get blocked() { return blocked; },
+    cellPassable, terrainFactor, slopeFactor, moveFactor, edgeCost, passableAt, straightPassable, setBlocked, setPathMult, get blocked() { return blocked; },
     los, coverAt, ridgeCover, forestCellsNear, depositNear, areaOk,
     markDirty, flushDirty, recomputeDerived, smoothRegion, renderRegion,
   };

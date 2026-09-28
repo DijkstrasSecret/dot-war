@@ -55,6 +55,28 @@
     results.squadVsLoose = sq.winA; drawTargets();
   };
 
+  // ---- fortifications ----
+  $('runFort').onclick = async () => {
+    const runs = +$('fortRuns').value, nA = +$('fortA').value, nBA = +$('fortBA').value;
+    const cases = [
+      [`${nA} Riflemen attack 5 Riflemen in the open`, { setup: 'open', nA }],
+      [`${nA} Riflemen attack 5 Riflemen in a trench`, { setup: 'trench', nA }],
+      [`${nA} Riflemen with grenades attack 5 Riflemen in a trench`, { setup: 'trench', nA, grenades: true }],
+      [`${nBA} Riflemen with grenades assault a Bunker (4 Riflemen + 1 MG)`, { setup: 'bunker', nA: nBA }],
+    ];
+    const tb = $('fortOut'); tb.innerHTML = '<tr><th>Test</th><th>Runs</th><th>Attackers win</th><th>Defenders win</th><th>Draws</th><th>Avg time</th><th>Survivors att. / def.</th><th>Grenades</th></tr>';
+    let done = 0;
+    for (const [label, o] of cases) {
+      const res = [];
+      for (let i = 0; i < runs; i++) { res.push(LabTests.fort(Object.assign({ seed: 1 + i }, o))); done++; if (i % 2 === 1) { setBar('fortBar', done / (runs * cases.length)); await pause(); } }
+      const n = res.length, win = w => res.filter(r => r.winner === w).length / n * 100, avg = k => res.reduce((s, r) => s + r[k], 0) / n;
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td>${label}</td><td class="num">${n}</td><td class="num">${fmt(win(1))}%</td><td class="num">${fmt(win(2))}%</td><td class="num">${fmt(win(0))}%</td><td class="num">${fmt(avg('time'))} s</td><td class="num">${fmt(avg('survivorsA'))} / ${fmt(avg('survivorsB'))}</td><td class="num">${o.grenades || o.setup === 'bunker' ? fmt(avg('sulfur')) : '–'}</td>`;
+      tb.appendChild(tr);
+    }
+    setBar('fortBar', 1);
+  };
+
   // ---- economy ----
   function chart(log) {
     const c = $('ecoChart'), x = c.getContext('2d'), W = c.width, H = c.height, pad = 28;

@@ -952,7 +952,49 @@ Balance Lab results when 0.2.1 was finished (100 seeded runs each):
 | Squad strength | In the Balance Lab a squadron of 6 Riflemen beats 6 loose Riflemen about 82% of the time (focused fire and cohesion). No target was set for this; say if it should be weaker. |
 | AI | The scripted AI does not use squadrons yet. |
 | Squad strength (Kaan, after play) | Squads are a utility, not an outright advantage: 6 Riflemen in a squadron should beat 6 loose ones 55–60% of the time (Balance Lab target). Measured: the halt on contact gave most of the old 80%, shared targeting 3–4 points, cohesion nothing measurable. So **react no longer halts the squad**: members share the squad's target only when it is no farther than their own nearest enemy (`Data.SQUAD.shareRange` 1.0). Result: 59% over the lab's 100 runs, 56% over 300. Each soldier stops for his own target as a loose one would. |
+| Line defence cost (Kaan, for 0.4) | Paid per 10 m segment when digging on that segment starts; cancelling or losing the diggers leaves the undug segments unpaid. You never pay for a line you can't finish. |
 | Keep moving (Kaan, after play) | On "keep moving" members do not share the squad's target: each fires at the closest enemy he can hit, while walking at moving-fire accuracy. On "react" the shared target stays. |
+
+### Built in patch 0.4 (notes for Kaan)
+
+Choices made while building where the design left a gap. All proposed; say if any should change.
+
+| Topic | What 0.4 does |
+| --- | --- |
+| Grenade key | Every key of section 9 was taken, so **V** (with Riflemen selected) throws a grenade: click an enemy or a point, the Rifleman walks into reach and throws. V still trains with a factory selected. |
+| Who stands "in" a line | A unit within 6 m of a line's centre. Only finished 10 m segments count. |
+| Abandoned lines | When nobody is digging a line any more, its untouched segments disappear unpaid; started segments stay and are resumed by right clicking them with soldiers or Workers. Diggers always go to the nearest unfinished segment; several on one segment add up. |
+| Routes | Barricades and wire make routes through them dearer (cost ÷ their slowdown), so units walk around when there is a way. Trenches are left out of route costs because both sides share one set of routes and a trench slows only the enemy. |
+| Small arms against barricades | Nothing aims at lines, so a rifle or MG bullet that **misses** a soldier behind a barricade hits the barricade for 10% of its damage. |
+| Research that applies at once | Grenades (an ability) and Entrenching Tools apply to soldiers already in the field; stat research still applies to new units only. |
+| Bunker slots | The MG slot takes only a Machine Gunner; further Machine Gunners use infantry slots. Bunker vision 160 (proposed). Mortar shells do not reach inside; only grenades do (G13). |
+| HQ garrison sight | The HQ now sees from 6 m up (its garrison height) with its 220 vision, garrisoned or not. |
+| Medic | An idle Medic walks over to the nearest wounded soldier it can see (its vision, 140 m), squadmates first, and heals within 40 m. |
+| AI | The scripted AI does not dig, research, throw grenades, train Medics or garrison yet. |
+| Bug fixed | A panicking unit could run off the edge of the map; units now stay on it. |
+
+Balance Lab, 50 seeded runs each (new "Fortifications" section; no targets agreed yet):
+
+| Test | Attackers win | Avg time | Survivors att. / def. |
+| --- | --- | --- | --- |
+| 8 Riflemen attack 5 in the open | 100% | 17 s | 6.5 / 0 |
+| 8 Riflemen attack 5 in a trench | 58% | 25 s | 2.7 / 1.5 |
+| 6 Riflemen attack 5 in the open | 66% | 21 s | 2.5 / 1.2 |
+| 6 Riflemen attack 5 in a trench | 10% | 23 s | 0.3 / 3.7 |
+| 8 Riflemen with grenades attack 5 in a trench | 100% | 4 s | 8.0 / 0 |
+| 10 Riflemen with grenades assault a full Bunker (4 Riflemen + 1 MG) | 100% | 4 s | 8.4 / 0 |
+| 5 Riflemen with grenades assault a full Bunker | 0% | 11 s | 0 / 5 |
+| 10 Riflemen without grenades against a full Bunker | 0% | 34 s | 0 / 5 |
+
+Target duels after 0.4: MG pin 4.9 s, height 74%, squadron 59%, all green.
+
+**Question for Kaan: grenades look too strong.** Units cross 170 m in about 3 game seconds, so a
+grenade rush reaches 35 m almost unharmed. One volley then empties a trench (45 explosive damage;
+the trench does not reduce blast damage) or a Bunker (6 grenades at 30% kill a Rifleman inside).
+Bunkers are all-or-nothing: 5 grenadiers always lose, 10 always win in 4 s. Possible fixes, not
+built: a trench halves blast damage; bunker occupants take 15% instead of 30%, or one grenade hurts
+one occupant; the thrower must stand still about 1 s to throw; a shorter reach (25 m). Numbers are
+in `Data.GRENADE` and `Data.LINES`, so any of these is quick.
 
 ---
 
