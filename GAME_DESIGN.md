@@ -253,7 +253,12 @@ that follows the real build steps (charting the thumbnails, surveying the map, p
 drawing the map, deploying). The screen fades in from black once the painting has loaded and stays
 up at least 1.4 seconds so the fade completes even when the build is quick.
 
-In play: olive field-map panels with brass accents and stencil headings. Units are flat shapes with a
+In play the map fills the window and small translucent olive panels with brass edges float over
+it: resources top left, clock, speed and menu top right with the minimap below, the group bar top
+centre, the selection panel with its Build and Research tabs bottom left, and the command card
+bottom right. With several soldiers selected the panel shows one face each, with a class badge and
+a health bar; the group bar shows each group's number, a count per class and its health and stress.
+A soldier is in one group at a time. Headings use stencil lettering. Units are flat shapes with a
 white logo, player blue (#2458d6), enemy red (#c8302e), neutral grey. Yellow ring for suppressed,
 "!" when fire starts, "!!" while panicking, bleeding under 50% health, blood splashes and
 corpses persist (capped at 400 decals). Background music is a Grieg violin sonata with a toggle

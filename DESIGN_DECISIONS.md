@@ -932,6 +932,15 @@ Balance Lab results when 0.2.1 was finished (100 seeded runs each):
 | AI-v-AI match length target | Waits for Q23 (the AI on the player's economy, "Later"). Until then the lab's AI-v-AI test is a stability check only; its target no longer gates patch 0.7. |
 | Raid escalation | Kept: it makes late-game raids against the player heavier, which counters turtling. |
 
+### Screen layout (Kaan, 28 September 2026)
+
+| Topic | Decision |
+| --- | --- |
+| Layout (0.2b) | **Open map** (option C of the mockup): the map fills the window; small translucent panels float over it. Resources top left, clock and menu top right, minimap under them, group bar top centre, selection panel (with the Build and Research tabs) bottom left, command card bottom right. |
+| Portraits in a group | When several soldiers are selected, the panel shows one face per soldier with a **class badge** (the unit's logo on its shape, as on the map) and a health bar. The single-soldier card has the badge too. |
+| Group bar | One tile per group: its number, a **count per class** with the class icon (for example rifle ×5, machine gun ×2) instead of "8 units", and health and stress bars. The squadron bar of 0.3 takes over the same place and look. |
+| One group per soldier | Putting soldiers into a group takes them out of any other group (reported by Kaan in play: soldier 3 stayed in group 1 after joining group 2). Same rule as squadrons (E). |
+
 ---
 
 ## Still open
@@ -939,6 +948,5 @@ Balance Lab results when 0.2.1 was finished (100 seeded runs each):
 - Every value marked (proposed): tune in the Balance Lab.
 - Exact extra weights (1 or 2) per designer extra, and the designer's chassis cost factors.
 - The research that triggers Cold War and Modern kit (section K, proposed triggers).
-- Where portraits appear in the UI: selection panel, squadron bar, or both.
 - National insignia on portraits and in-game art (helmet decals, cap badges) per army and era, under
   the section K marking rules. Patch 0.2a has none yet.

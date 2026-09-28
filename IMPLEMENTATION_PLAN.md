@@ -41,7 +41,8 @@ not designed yet. Read `assets/paintings/README.md` before starting.
       progress, fade in from black.
 - [ ] Regenerate `06-the-light.jpg` without the cap eagle (section K marking rules). Kaan's task
       (image generation); drop the new file in with the same name and framing.
-- [ ] Panel layout, and where portraits go (design first, in a project chat).
+- [x] Panel layout, and where portraits go: the open-map layout with class badges on portraits
+      and a group bar with class counts (DD, "Screen layout").
 
 **Done when**
 - [x] Menu and loading screen tested in the browser with no console errors; the game loop is

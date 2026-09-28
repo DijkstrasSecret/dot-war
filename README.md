@@ -76,7 +76,7 @@ portrait and name in the selection panel.
 | Research | N opens the Research tab |
 | Factory | Z X C V train the listed units (Tab shows the next four if there are more), right click sets the rally point, Tab cycles factories |
 | Tower | T upgrade, Q unload everyone, click a unit icon in the panel to unload just that one |
-| Groups | Ctrl+1..9 assign, 1..9 select, press twice to centre |
+| Groups | Ctrl+1..9 assign (a soldier is in one group at a time), 1..9 or the group bar selects, press twice to centre |
 | Camera | W A S D, arrow keys, screen edge, middle mouse drag, mouse wheel zoom, minimap click |
 | Time | Space pause, `,` slower, `.` faster |
 | Other | H jump to headquarters, F1 help, Menu button for a new game, ♫ toggles music |
