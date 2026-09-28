@@ -919,6 +919,7 @@ Balance Lab results when 0.2.1 was finished (100 seeded runs each):
 | 1 MG pins a Rifleman, 3.5–5.5 s | about 4.9 s | green |
 | 5 v 5 Riflemen, the side 30 m higher wins 65–80% | about 91% | red: height is stronger than the target. Not retuned; waiting for Kaan's call. |
 | First Tier II research affordable, 6–10 min (gate 0.5) | under 1 min | red, expected until the tech tree's costs arrive in 0.5 |
+| AI vs AI match length, 45–75 min (gate 0.7) | seed 1 on Normal: no winner after 75 min, 184 v 201 kills | red: neither scripted AI can break the other's base. One run only; a full match takes about 14 real minutes. |
 
 ---
 
