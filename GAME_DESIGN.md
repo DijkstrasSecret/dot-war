@@ -279,8 +279,8 @@ the centre behind those, Mortar Crews 60 m back. Members travel along the path i
 | Spacing | tight 15 m · loose 25 m | loose |
 | Contact | react: the whole squadron halts when a member finds a target · keep moving | react |
 
-Riflemen, Machine Gunners and Mortar Crews fire at the squadron's shared target; Snipers pick
-their own. Within 40 m of a squadmate stress drains at 0.08/s instead of 0.06/s. A panicking
+On react, Riflemen, Machine Gunners and Mortar Crews fire at the squadron's shared target;
+Snipers pick their own. On keep moving each member fires at the closest enemy he can hit. Within 40 m of a squadmate stress drains at 0.08/s instead of 0.06/s. A panicking
 member runs towards the squadron as well as away from the fire. Retreat (G) is a fighting
 withdrawal: the rear ranks fall back at once while the front rank holds 4 s, then follows. A
 factory's rally point set on a squad member (right click it) sends new units into that squadron,

@@ -951,6 +951,7 @@ Balance Lab results when 0.2.1 was finished (100 seeded runs each):
 | Fighting withdrawal | Only when the squadron has a rear rank: an all-Rifleman squadron has nobody to cover, so all fall back together. |
 | Squad strength | In the Balance Lab a squadron of 6 Riflemen beats 6 loose Riflemen about 82% of the time (focused fire and cohesion). No target was set for this; say if it should be weaker. |
 | AI | The scripted AI does not use squadrons yet. |
+| Keep moving (Kaan, after play) | On "keep moving" members do not share the squad's target: each fires at the closest enemy he can hit, while walking at moving-fire accuracy. On "react" the shared target stays. |
 
 ---
 

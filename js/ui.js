@@ -136,7 +136,7 @@ const UI = (() => {
     };
     row('Movement', 'move', [['slow', '>', 'Everyone moves at the slowest member\'s pace'], ['own', '>>', 'Each at his own pace; they regroup at the destination']]);
     row('Spacing', 'spacing', [['tight', 'Tight 15 m'], ['loose', 'Loose 25 m']]);
-    row('Contact', 'contact', [['react', 'React', 'The whole squad halts and faces the enemy'], ['keep', 'Keep moving', 'Members fire on the move at lower accuracy']]);
+    row('Contact', 'contact', [['react', 'React', 'The whole squad halts and faces the enemy'], ['keep', 'Keep moving', 'Members keep walking and each fires at the closest enemy, at lower accuracy']]);
     return box;
   }
   function signature() {

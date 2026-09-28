@@ -367,7 +367,8 @@ const Game = (() => {
     const w = u.stats.weapon; if (!w) { u.target = null; return; }   // unarmed: never picks a target
     if (u.forced && !u.forced.dead && keepsOrders(u) && validTarget(u, u.forced)) { u.target = u.forced; return; }
     // DD E: riflemen, machine gunners and mortars fire at the squad's target; snipers pick their own.
-    const sq = u.squad && !u.def.obeysWhenSuppressed ? G.squads[u.squad] : null;
+    // On 'keep moving' each member fires at the closest enemy he can hit instead (Kaan, after play).
+    const sq = u.squad && !u.def.obeysWhenSuppressed && G.squads[u.squad] && G.squads[u.squad].contact === 'react' ? G.squads[u.squad] : null;
     if (sq && sq.target && validTarget(u, sq.target)) { u.target = sq.target; return; }
     const maxR = w.range * 1.3;
     let best = null, bestS = Infinity;
