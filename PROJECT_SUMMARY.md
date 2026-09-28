@@ -36,7 +36,7 @@ Claude Code reads the same versions.
 | Branch | Contents |
 | --- | --- |
 | `main` | The game as built (patch 0.2), commit `d329ba3`. Old `CLAUDE.md`, `ROADMAP.md`, `DEVELOPMENT.md`, `README.md`. No design docs. |
-| `design-decisions` | **Docs only, not merged yet.** Holds `GAME_DESIGN.md`, the newest `DESIGN_DECISIONS.md` and `IMPLEMENTATION_PLAN.md`, the updated `CLAUDE.md`, `PROJECT_SUMMARY.md`, `PATCH_0.2a_PORTRAITS.md`, `patches/patch-0.2a-portraits.diff` and `deploy.sh`. Built on top of `main-f0qn7m`. |
+| `design-decisions` | **Docs only, open as pull request #2, not merged yet.** Holds `GAME_DESIGN.md`, the newest `DESIGN_DECISIONS.md` and `IMPLEMENTATION_PLAN.md`, the updated `CLAUDE.md`, `PROJECT_SUMMARY.md`, `PATCH_0.2a_PORTRAITS.md`, `patches/patch-0.2a-portraits.diff` and `deploy.sh`. Built on top of `main-f0qn7m`. |
 | `main-f0qn7m` | Older branch that added `deploy.sh` (open pull request #1) and `GAME_DESIGN.md`. The first design chat read from here. Merging `design-decisions` brings these in too. |
 
 ### Other
@@ -380,8 +380,8 @@ section 11.
 
 ## 7. Next steps for Kaan
 
-1. On GitHub, open a pull request from `design-decisions` into `main` and merge it. It changes
-   docs only (plus `deploy.sh` from pull request #1, which then closes as merged).
+1. On GitHub, merge pull request #2 (`design-decisions` into `main`). It changes docs only, plus
+   `deploy.sh` from pull request #1, which then closes as merged.
 2. In Claude Code, pull `main`, ask it to read `PROJECT_SUMMARY.md` and report back, then say:
    "Do patch 0.2a following PATCH_0.2a_PORTRAITS.md."
 3. Plan the UI rework in a new chat in this project. Start by pointing it at this summary.
