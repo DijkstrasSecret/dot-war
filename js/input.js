@@ -1,11 +1,16 @@
 'use strict';
 // Mouse and keyboard: selection, command modes (walk / attack / work / build), camera, hotkeys.
-// Hold Shift to queue orders back to back. Middle mouse drag pans the map.
-// The W/A/D/S/X/E/B scheme is a fixed design decision; add keys, do not remap these.
+// Hold Shift to queue orders back to back. WASD, arrow keys or middle mouse drag pan the map.
+// Key layout: DESIGN_DECISIONS.md section 9 (F attack-move, R defend, G retreat, X stop, E enter,
+// Q exit, T tower upgrade, Z X C V train). New features take free keys; existing ones don't move.
+// Every order goes through Game.command, which logs it with its tick for replays.
 // TODO(patch 0.3): load/unload keys for transports (reuse the work/garrison click flow).
 const Input = (() => {
   const { dist } = Util;
-  const state = { mode: 'normal', buildType: null, box: null, mouse: { x: 0, y: 0, wx: 0, wy: 0, inside: false, moveT: 0 }, keys: new Set(), lastGroupT: 0, lastGroupK: '' };
+  const state = { mode: 'normal', buildType: null, box: null, mouse: { x: 0, y: 0, wx: 0, wy: 0, inside: false, moveT: 0 }, keys: new Set(), lastGroupT: 0, lastGroupK: '', trainPage: 0 };
+  const PAN_KEYS = { w: 'arrowup', a: 'arrowleft', s: 'arrowdown', d: 'arrowright' };   // DD 9: WASD pans like the arrows
+  const ids = list => list.map(e => e.id);
+  const cmd = c => Game.command(c);
   const BUILD_KEYS = {}; for (const [t, k] of Object.entries(Data.BUILD_HOTKEYS)) BUILD_KEYS[k.toLowerCase()] = t;
   const TRAIN_KEYS = Data.TRAIN_HOTKEYS.map(k => k.toLowerCase());
   let canvas, dragStart = null, pan = null, lastClickT = 0, lastClickType = null;
@@ -21,14 +26,14 @@ const Input = (() => {
     canvas.addEventListener('mouseleave', () => { state.mouse.inside = false; });
     canvas.addEventListener('mouseenter', () => { state.mouse.inside = true; });
     window.addEventListener('keydown', onKey);
-    window.addEventListener('keyup', e => state.keys.delete(e.key.toLowerCase()));
+    window.addEventListener('keyup', e => { const k = e.key.toLowerCase(); state.keys.delete(PAN_KEYS[k] || k); });
     window.addEventListener('blur', () => state.keys.clear());
     const mini = document.getElementById('minimap');
     mini.addEventListener('mousedown', e => { if (e.button !== 0) return; miniNav(e); mini.onmousemove = ev => { if (ev.buttons & 1) miniNav(ev); }; });
     mini.addEventListener('mouseup', () => { mini.onmousemove = null; });
     mini.addEventListener('contextmenu', e => {
       e.preventDefault(); const [wx, wy] = miniWorld(e); const units = selectedUnits();
-      if (units.length) { Game.orderMove(units, wx, wy, 'move', e.shiftKey); marker(wx, wy, '#3c3'); }
+      if (units.length) { cmd({ kind: 'move', units: ids(units), x: wx, y: wy, queue: e.shiftKey }); marker(wx, wy, '#3c3'); }
     });
   }
   function miniWorld(e) { const r = e.currentTarget.getBoundingClientRect(); return [(e.clientX - r.left) / r.width * Terrain.W * Terrain.CELL, (e.clientY - r.top) / r.height * Terrain.H * Terrain.CELL]; }
@@ -55,9 +60,11 @@ const Input = (() => {
   function select(list, add) {
     if (add) { const s = new Set(G.selection); for (const e of list) s.add(e); G.selection = [...s]; }
     else G.selection = list;
+    state.trainPage = 0;
     if (G.selection.some(e => e.owner === 1 && e instanceof Unit)) G.selection = G.selection.filter(e => e.owner === 1 && e instanceof Unit);
     if (G.selection.length && state.mode !== 'build') UI.showTab('sel'); else UI.refresh();
   }
+  const trainable = b => b.def.produces.filter(t => G.players[1].unlocked.has(t));
   function setMode(m, buildType) {
     if ((m === 'walk' || m === 'attack' || m === 'work') && !selectedUnits().length) m = 'normal';
     state.mode = m; state.buildType = buildType || null; UI.refresh();
@@ -75,23 +82,23 @@ const Input = (() => {
     if (e.button !== 0) return;
     const units = selectedUnits();
     if (state.mode === 'build') {
-      const b = Game.placeBuilding(state.buildType, 1, wx, wy);
+      const b = cmd({ kind: 'build', type: state.buildType, x: wx, y: wy });
       if (b && !q) setMode('normal'); else UI.refresh();
       return;
     }
-    if (state.mode === 'walk') { Game.orderMove(units, wx, wy, 'move', q); marker(wx, wy, '#3c3'); if (!q) setMode('normal'); return; }
+    if (state.mode === 'walk') { cmd({ kind: 'move', units: ids(units), x: wx, y: wy, queue: q }); marker(wx, wy, '#3c3'); if (!q) setMode('normal'); return; }
     if (state.mode === 'attack') {
       const ent = entityAt(wx, wy);
-      if (ent && ent.owner !== 1) Game.orderAttack(units, ent, q); else Game.orderBombard(units, wx, wy, q);
+      if (ent && ent.owner !== 1) cmd({ kind: 'attack', units: ids(units), target: ent.id, queue: q }); else cmd({ kind: 'bombard', units: ids(units), x: wx, y: wy, queue: q });
       marker(wx, wy, '#c33'); if (!q) setMode('normal'); return;
     }
     if (state.mode === 'work') {
       const ent = entityAt(wx, wy);
       if (ent instanceof Building && ent.owner === 1 && ent.def.harvest && ent.built) {
-        const n = Game.orderWork(units, ent, q); if (n) Game.toast(n + ' sent to work at the ' + ent.def.name);
+        const n = cmd({ kind: 'work', units: ids(units), building: ent.id, queue: q }); if (n) Game.toast(n + ' sent to work at the ' + ent.def.name);
         marker(ent.x, ent.y, '#3c3'); if (!q) setMode('normal');
       } else if (ent instanceof Building && ent.owner === 1 && ent.def.tower && ent.built) {
-        const n = Game.orderGarrison(units, ent, q); if (n) Game.toast(n + ' heading into the ' + ent.def.name);
+        const n = cmd({ kind: 'garrison', units: ids(units), building: ent.id, queue: q }); if (n) Game.toast(n + ' heading into the ' + ent.def.name);
         marker(ent.x, ent.y, '#3c3'); if (!q) setMode('normal');
       } else Game.toast('Click one of your Lumber Camps, Mines or Scout Towers');
       return;
@@ -134,13 +141,13 @@ const Input = (() => {
   function contextOrder(wx, wy, q) {
     const units = selectedUnits(); const ent = entityAt(wx, wy);
     if (units.length) {
-      if (ent && ent.owner !== 1 && !ent.dead) { Game.orderAttack(units, ent, q); marker(ent.x, ent.y, '#c33'); return; }
-      if (ent instanceof Building && ent.owner === 1 && ent.def.harvest && ent.built) { const n = Game.orderWork(units, ent, q); if (n) Game.toast(n + ' sent to work at the ' + ent.def.name); marker(ent.x, ent.y, '#3c3'); return; }
-      if (ent instanceof Building && ent.owner === 1 && ent.def.tower && ent.built) { const n = Game.orderGarrison(units, ent, q); if (n) Game.toast(n + ' heading into the ' + ent.def.name); marker(ent.x, ent.y, '#3c3'); return; }
-      Game.orderMove(units, wx, wy, 'move', q); marker(wx, wy, '#3c3'); return;
+      if (ent && ent.owner !== 1 && !ent.dead) { cmd({ kind: 'attack', units: ids(units), target: ent.id, queue: q }); marker(ent.x, ent.y, '#c33'); return; }
+      if (ent instanceof Building && ent.owner === 1 && ent.def.harvest && ent.built) { const n = cmd({ kind: 'work', units: ids(units), building: ent.id, queue: q }); if (n) Game.toast(n + ' sent to work at the ' + ent.def.name); marker(ent.x, ent.y, '#3c3'); return; }
+      if (ent instanceof Building && ent.owner === 1 && ent.def.tower && ent.built) { const n = cmd({ kind: 'garrison', units: ids(units), building: ent.id, queue: q }); if (n) Game.toast(n + ' heading into the ' + ent.def.name); marker(ent.x, ent.y, '#3c3'); return; }
+      cmd({ kind: 'move', units: ids(units), x: wx, y: wy, queue: q }); marker(wx, wy, '#3c3'); return;
     }
     const b = selectedBuilding();
-    if (b && b.def.produces) { b.rally = { x: wx, y: wy }; marker(wx, wy, '#fff'); }
+    if (b && b.def.produces) { cmd({ kind: 'rally', building: b.id, x: wx, y: wy }); marker(wx, wy, '#fff'); }
   }
   function onWheel(e) {
     e.preventDefault(); updateMouse(e);
@@ -159,20 +166,20 @@ const Input = (() => {
     if (k === '.') { Game.setSpeed(G.speed === 0 ? 1 : G.speed === 1 ? 2 : 4); UI.refreshSpeed(); return; }
     if (k === 'escape') { if (state.mode !== 'normal') setMode('normal'); else select([], false); return; }
     if (k.startsWith('arrow')) { state.keys.add(k); return; }
+    if (PAN_KEYS[k] && !e.ctrlKey && !e.metaKey) { state.keys.add(PAN_KEYS[k]); return; }
     const units = selectedUnits(); const b = selectedBuilding(); const p = G.players[1];
     if (b && b.built && b.def.produces && TRAIN_KEYS.includes(k)) {
-      const list = b.def.produces.filter(t => p.unlocked.has(t)); const t = list[TRAIN_KEYS.indexOf(k)];
-      if (t) { Game.enqueue(b, t); UI.refresh(); }
+      const t = trainable(b)[state.trainPage * TRAIN_KEYS.length + TRAIN_KEYS.indexOf(k)];
+      if (t) { cmd({ kind: 'enqueue', building: b.id, type: t }); UI.refresh(); }
       return;
     }
-    if (b && b.def.tower && k === 'u') { const n = Game.unloadBuilding(b); if (n) Game.toast(n + ' left the tower'); UI.refresh(); return; }
-    if (b && b.def.tower && k === 'g') { Game.upgradeTower(b); UI.refresh(); return; }
+    if (b && b.def.tower && k === 'q') { const n = cmd({ kind: 'unload', building: b.id }); if (n) Game.toast(n + ' left the tower'); UI.refresh(); return; }
+    if (b && b.def.tower && k === 't') { cmd({ kind: 'upgrade', building: b.id }); UI.refresh(); return; }
     if (units.length) {
-      if (k === 'w') { setMode('walk'); return; }
-      if (k === 'a') { setMode('attack'); return; }
-      if (k === 'd') { Game.orderHold(units, e.shiftKey); return; }
-      if (k === 's') { Game.orderRetreat(units, e.shiftKey); return; }
-      if (k === 'x') { Game.orderStop(units); return; }
+      if (k === 'f') { setMode('attack'); return; }
+      if (k === 'r') { cmd({ kind: 'hold', units: ids(units), queue: e.shiftKey }); return; }
+      if (k === 'g') { cmd({ kind: 'retreat', units: ids(units), queue: e.shiftKey }); return; }
+      if (k === 'x') { cmd({ kind: 'stop', units: ids(units) }); return; }
       if (k === 'e') { setMode('work'); return; }
     }
     if (k === 'b') { UI.showTab('build'); return; }
@@ -180,7 +187,11 @@ const Input = (() => {
     if (BUILD_KEYS[k] && !e.ctrlKey) { setMode('build', BUILD_KEYS[k]); UI.showTab('build'); return; }
     if (k === 'h') { const hq = G.buildings.find(x => x.owner === 1 && x.type === 'hq' && !x.dead); if (hq) { select([hq], false); Render.centerOn(hq.x, hq.y); } return; }
     if (k === 'tab') {
-      e.preventDefault(); const f = G.buildings.filter(x => x.owner === 1 && !x.dead && x.def.produces); if (!f.length) return;
+      e.preventDefault();
+      // DD G15: with a factory of more than four blueprints selected, Tab flips Z X C V to the next page.
+      const pages = b && b.def.produces ? Math.ceil(trainable(b).length / TRAIN_KEYS.length) : 1;
+      if (pages > 1) { state.trainPage = (state.trainPage + 1) % pages; UI.refresh(); return; }
+      const f = G.buildings.filter(x => x.owner === 1 && !x.dead && x.def.produces); if (!f.length) return;
       const i = f.indexOf(G.selection[0]); const nb = f[(i + 1) % f.length]; select([nb], false); Render.centerOn(nb.x, nb.y); return;
     }
     if ((e.ctrlKey || e.metaKey) && k === 'a') {
@@ -210,5 +221,5 @@ const Input = (() => {
     if (dx || dy) { Render.cam.x += dx; Render.cam.y += dy; Render.clampCam(); const [wx, wy] = Render.toWorld(state.mouse.x, state.mouse.y); state.mouse.wx = wx; state.mouse.wy = wy; }
   }
 
-  return { init, update, state, setMode, select, selectedUnits, selectedBuilding, entityAt };
+  return { init, update, state, setMode, select, selectedUnits, selectedBuilding, entityAt, trainable };
 })();

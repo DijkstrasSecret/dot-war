@@ -897,9 +897,35 @@ Agreed on 28 September 2026. Built as `js/portraits.js` (visual only, own random
 
 ---
 
+## L. Gaps filled while building patch 0.2.1 (proposed, for Kaan to confirm)
+
+The sections above left these open. Each was given a starting value so the patch could be built;
+they are data or one-line rules, easy to change.
+
+| Topic | What the docs said | What 0.2.1 does |
+| --- | --- | --- |
+| AI unlock times per difficulty (G7) | "about 8 / 12 / 15 min, scaled by difficulty" | Normal uses 8 / 12 / 15 min; Easy x1.25 (10 / 15 / 18.75); Hard x0.75 (6 / 9 / 11.25). In `Data.DIFFICULTY[d].unlocks`. |
+| Raid interval (Q2) | "scale the raid interval the same way" | Each interval adds the walking time to the difficulty's old interval: walk + raidMin + random x raidVar. |
+| Build-up before the first raid (Q2) | "+300 s" | 300 s on every difficulty (`buildUp`), so Easy raids earlier and Hard later than before. |
+| Mortar uphill (I) | "half the height range bonus" | Only the bonus is halved; shooting uphill costs a mortar the same as a rifle. |
+| Workers in towers | not covered | Units without a weapon cannot garrison a tower; the slot is for firing from. |
+| Pre-placed garrisons (G7) | "Musketeers in map garrisons become Riflemen" | Done. Garrisons are placed, not trained, so they can still hold Machine Gunners and Mortars from minute one. |
+| Economy target | "first Tier II research affordable" | Until the tech tree exists (0.5) the lab measures when a Heavy Machine Gun's cost is on hand, since section F lists it as Tier II. |
+
+Balance Lab results when 0.2.1 was finished (100 seeded runs each):
+
+| Target | Result | Status |
+| --- | --- | --- |
+| 1 MG pins a Rifleman, 3.5–5.5 s | about 4.9 s | green |
+| 5 v 5 Riflemen, the side 30 m higher wins 65–80% | about 91% | red: height is stronger than the target. Not retuned; waiting for Kaan's call. |
+| First Tier II research affordable, 6–10 min (gate 0.5) | under 1 min | red, expected until the tech tree's costs arrive in 0.5 |
+
+---
+
 ## Still open
 
 - Every value marked (proposed): tune in the Balance Lab.
+- Section L: the gaps filled in 0.2.1, and the red height-duel result.
 - Exact extra weights (1 or 2) per designer extra, and the designer's chassis cost factors.
 - The research that triggers Cold War and Modern kit (section K, proposed triggers).
 - Where portraits appear in the UI: selection panel, squadron bar, or both.

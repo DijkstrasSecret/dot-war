@@ -3,27 +3,28 @@
 // TIME_SCALE halves the pace of the whole simulation; balance numbers in data.js are unchanged.
 // TODO(patch 0.8): save/load (serialise G plus the map spec id) and a pause-on-blur option.
 const Main = (() => {
-  const STEP = 1 / 30;
+  const STEP = Sim.STEP;
   const TIME_SCALE = 0.5;   // 1x runs at half real time; 2x matches the original build's pace
   let last = 0, acc = 0, started = false, endShown = false, loading = false;
 
-  // Building a match, as named steps so the loading bar can follow real work.
-  function steps(mapId, difficulty, faction) {
+  // Building a match, as named steps so the loading bar can follow real work. Each match gets a seed
+  // (random unless given), so it can be replayed exactly from G.seed and G.orders.
+  function steps(mapId, difficulty, faction, seed) {
     const spec = MapGen.MAPS.find(m => m.id === mapId) || MapGen.MAPS[0];
+    if (seed == null) seed = Math.floor(Math.random() * 4294967296);   // picking the seed is the one unseeded draw
     return [
       { label: 'Surveying ' + spec.name, run: () => {
-        Game.init();
-        G.difficulty = difficulty || 'normal'; G.mapId = spec.id; G.sandbox = !spec.ai;
-        // DD K: the player's faction, and a different random one for the AI. Neutrals stay mixed (null).
-        // TODO(patch 0.2.1): pick the AI faction from the match seed instead of Math.random.
+        Sim.survey({ map: spec.id, difficulty, seed });
+        // DD K: the player's faction, and a different one for the AI picked from the match seed on
+        // its own stream (so it never shifts the simulation's draws). Neutrals stay mixed (null).
         const ids = Portraits.factions.map(f => f.id);
         G.players[1].faction = ids.includes(faction) ? faction : ids[0];
         const others = ids.filter(f => f !== G.players[1].faction);
-        G.players[2].faction = others[Math.floor(Math.random() * others.length)];
-        MapGen.build(spec, Data.DIFFICULTY[G.difficulty]);
+        G.players[2].faction = others[Math.floor(Util.mulberry32(G.seed ^ 0xfac7)() * others.length)];
+        for (const u of G.units) { const p = G.players[u.owner]; u.faction = p.faction; }   // units placed before the factions were set
       } },
-      { label: 'Plotting routes', run: () => { Path.init(); Fog.init(); AI.reset(); } },
-      { label: 'Drawing the map', run: () => { Terrain.flushDirty(); Fog.update(0, true); } },
+      { label: 'Plotting routes', run: () => Sim.routes() },
+      { label: 'Drawing the map', run: () => Terrain.flushDirty() },
       { label: 'Deploying', run: () => {
         if (!started) { Render.init(); Input.init(); UI.init(); started = true; }
         const hq = G.buildings.find(b => b.owner === 1 && b.type === 'hq');
@@ -35,12 +36,12 @@ const Main = (() => {
     ];
   }
   // Synchronous start, for the console and headless tests. The menu uses load() instead.
-  function start(mapId, difficulty, faction) { for (const s of steps(mapId, difficulty, faction)) s.run(); }
+  function start(mapId, difficulty, faction, seed) { for (const s of steps(mapId, difficulty, faction, seed)) s.run(); }
   // Start behind the loading screen; the game loop idles until the screen is gone.
-  async function load(mapId, difficulty, faction) {
+  async function load(mapId, difficulty, faction, seed) {
     if (loading) return;   // a second click while a build is running would start two overlapping ones
     loading = true;
-    try { await Loading.run(steps(mapId, difficulty, faction)); } finally { loading = false; }
+    try { await Loading.run(steps(mapId, difficulty, faction, seed)); } finally { loading = false; }
   }
 
   function frame(now) {

@@ -102,7 +102,7 @@ const Render = (() => {
     ctx.strokeStyle = e.owner === 1 ? '#ffffff' : '#ffdd55'; ctx.lineWidth = 1.5;
     if (e instanceof Unit) { ctx.beginPath(); ctx.arc(e.x, e.y, e.size + 3.5, 0, Math.PI * 2); ctx.stroke(); }
     else { ctx.strokeRect(e.x - e.w / 2 - 4, e.y - e.h / 2 - 4, e.w + 8, e.h + 8); }
-    if (e instanceof Unit && e.owner === 1) {
+    if (e instanceof Unit && e.owner === 1 && e.stats.weapon) {   // Workers have no weapon, so no range ring
       const w = e.stats.weapon;
       ctx.strokeStyle = 'rgba(40,60,120,0.35)'; ctx.lineWidth = 1; ctx.setLineDash([4, 4]);
       ctx.beginPath(); ctx.arc(e.x, e.y, w.range, 0, Math.PI * 2); ctx.stroke();

@@ -58,8 +58,15 @@ const Util = (() => {
     }
   }
 
+  // DD I stacking: multiply every factor, then apply the cap for that kind (Data.CAPS).
+  function stack(kind, ...factors) {
+    let v = 1; for (const f of factors) v *= f;
+    const c = Data.CAPS[kind]; if (c) { if (c.max != null && v > c.max) v = c.max; if (c.min != null && v < c.min) v = c.min; }
+    return v;
+  }
+
   function fmtTime(t) { t = Math.floor(t); const m = Math.floor(t / 60), s = t % 60; return (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s; }
   function costStr(cost) { return Object.entries(cost || {}).filter(([, v]) => v > 0).map(([k, v]) => v + ' ' + k).join(', ') || 'free'; }
 
-  return { mulberry32, clamp, lerp, dist, dist2, smoothstep, lerpAngle, makeNoise, Heap, fmtTime, costStr };
+  return { mulberry32, clamp, lerp, dist, dist2, smoothstep, lerpAngle, makeNoise, Heap, stack, fmtTime, costStr };
 })();

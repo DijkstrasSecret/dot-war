@@ -20,11 +20,13 @@ const UI = (() => {
   }
   // ---- portraits and names (DD K) ----
   // Kept in one place on purpose: the panel layout will change, these helpers should not.
-  function soldierName(u) { return Portraits.name(u.id, { faction: u.faction, era: u.kitEra, rank: u.rank || 0 }); }
+  // Faces and names come from the match seed plus the unit id, so a replayed match shows the same soldiers.
+  const faceSeed = u => Portraits.seedFor(G.seed, u.id);
+  function soldierName(u) { return Portraits.name(faceSeed(u), { faction: u.faction, era: u.kitEra, rank: u.rank || 0 }); }
   function portraitEl(u, size) {
     const img = el('img', 'portrait');
     img.width = img.height = size; img.alt = soldierName(u).full;
-    img.src = Portraits.dataURL(u.id, { team: Data.PLAYER_COLORS[u.owner], faction: u.faction, era: u.kitEra, size });
+    img.src = Portraits.dataURL(faceSeed(u), { team: Data.PLAYER_COLORS[u.owner], faction: u.faction, era: u.kitEra, size });
     return img;
   }
   function armyLabel(owner) {
@@ -89,15 +91,16 @@ const UI = (() => {
     if (tab === 'sel') buildSel(); else if (tab === 'build') buildBuild(); else buildResearch();
   }
 
+  // DD 9 key layout. Moving is the right click (or this button, then a left click).
   function commandCard(units) {
-    const grid = el('div', 'cmdgrid'); const mode = Input.state.mode;
+    const grid = el('div', 'cmdgrid'); const mode = Input.state.mode; const ids = units.map(u => u.id);
     const items = [
-      ['Walk', 'W', () => Input.setMode('walk'), mode === 'walk', 'Then click where to go. Hold Shift to queue waypoints.'],
-      ['Attack', 'A', () => Input.setMode('attack'), mode === 'attack', 'Then click an enemy or a point. Mortars bombard the point.'],
-      ['Defend', 'D', () => Game.orderHold(units), false, 'Hold this position and fire at anything in range.'],
-      ['Retreat', 'S', () => Game.orderRetreat(units), false, 'Pull back a short way towards your headquarters.'],
-      ['Stop', 'X', () => Game.orderStop(units), false, 'Cancel all orders (also releases workers).'],
-      ['Work', 'E', () => Input.setMode('work'), mode === 'work', 'Then click a Lumber Camp or Mine to staff it.'],
+      ['Move', 'RMB', () => Input.setMode('walk'), mode === 'walk', 'Right click the ground, or press this and left click. Hold Shift to queue waypoints.'],
+      ['Attack', 'F', () => Input.setMode('attack'), mode === 'attack', 'Then click an enemy or a point (attack-move). Mortars bombard the point.'],
+      ['Defend', 'R', () => Game.command({ kind: 'hold', units: ids }), false, 'Hold this position and fire at anything in range.'],
+      ['Retreat', 'G', () => Game.command({ kind: 'retreat', units: ids }), false, 'Pull back a short way towards your headquarters. No suppression slowdown, stress drains twice as fast.'],
+      ['Stop', 'X', () => Game.command({ kind: 'stop', units: ids }), false, 'Cancel all orders (also releases workers).'],
+      ['Enter', 'E', () => Input.setMode('work'), mode === 'work', 'Then click a Lumber Camp or Mine to work there, or a Scout Tower to garrison it.'],
     ];
     for (const [label, key, fn, on, tip] of items) {
       const b = el('button', 'cmd' + (on ? ' on' : '')); b.title = tip;
@@ -111,8 +114,8 @@ const UI = (() => {
     const sel = G.selection.filter(e => !e.dead);
     if (!sel.length) {
       content.appendChild(el('h3', null, 'Nothing selected'));
-      content.appendChild(el('div', 'small', 'Drag to select units. Then W walk, A attack, D defend, S retreat, X stop, E work. Right click also moves or attacks. Hold Shift to queue orders back to back.'));
-      content.appendChild(el('div', 'small', 'B build, N research, H headquarters, Tab cycles factories. Arrow keys, screen edge or middle-mouse drag pan the map. Press F1 for all controls.'));
+      content.appendChild(el('div', 'small', 'Drag to select units. Right click moves, attacks, or sends them to work or into a tower. F attack-move, R defend, G retreat, X stop, E enter. Hold Shift to queue orders back to back.'));
+      content.appendChild(el('div', 'small', 'B build, N research, H headquarters, Tab cycles factories. WASD, arrow keys, screen edge or middle-mouse drag pan the map. Press F1 for all controls.'));
       content.appendChild(el('div', 'small', 'Hold high ground: units see farther, shoot farther and hit harder downhill. Ridges block sight and bullets. Forests hide and protect.'));
       const sum = el('div'); sum.style.marginTop = '10px';
       const mine = G.units.filter(u => u.owner === 1 && !u.dead);
@@ -134,22 +137,24 @@ const UI = (() => {
     content.appendChild(el('div', 'small', 'Stress')); content.appendChild(st);
     const status = el('div', 'small'); status.style.margin = '6px 0'; content.appendChild(status);
     const w = u.stats.weapon; const box = el('div');
-    box.appendChild(statRow('Damage', w.dmg.toFixed(0) + ' ' + w.dtype + (w.splash ? ', splash ' + w.splash : '')));
-    box.appendChild(statRow('Range', (w.minRange ? w.minRange + '–' : '') + w.range.toFixed(0)));
-    box.appendChild(statRow('Accuracy', Math.round(w.acc * 100) + '%'));
-    box.appendChild(statRow('Reload', w.reload.toFixed(1) + ' s'));
+    if (w) {
+      box.appendChild(statRow('Damage', w.dmg.toFixed(0) + ' ' + w.dtype + (w.splash ? ', splash ' + w.splash : '')));
+      box.appendChild(statRow('Range', (w.minRange ? w.minRange + '–' : '') + w.range.toFixed(0)));
+      box.appendChild(statRow('Accuracy', Math.round(w.acc * 100) + '%'));
+      box.appendChild(statRow('Reload', w.reload.toFixed(1) + ' s'));
+    } else box.appendChild(statRow('Weapon', 'none'));
     box.appendChild(statRow('Speed', u.stats.speed.toFixed(0)));
     box.appendChild(statRow('Vision', u.stats.vision.toFixed(0)));
     box.appendChild(statRow('Armor', u.def.armor));
-    if (w.ammo) box.appendChild(statRow('Ammo per shot', Util.costStr(w.ammo)));
+    if (w && w.ammo) box.appendChild(statRow('Ammo per shot', Util.costStr(w.ammo)));
     content.appendChild(box);
     if (own) content.appendChild(commandCard([u]));
     tick = () => {
       hp.fill.style.width = (u.hp / u.stats.hp * 100) + '%'; st.fill.style.width = (u.stress * 100) + '%';
       const h = Terrain.hAt(u.x, u.y).toFixed(0);
       let s = 'Elevation ' + h + ' m. ';
-      if (u.flee > 0) s += 'Panicking! '; else if (u.suppressed) s += 'Suppressed: cannot pick targets. ';
-      if (u.work != null) s += 'Working. '; else if (u.order) s += ({ move: 'Moving', attackmove: 'Attack-moving', attack: 'Attacking target', bombard: 'Bombarding', hold: 'Holding position', work: 'Going to work' })[u.order.type] + '. '; else s += 'Idle. ';
+      if (u.flee > 0) s += 'Panicking! '; else if (u.suppressed) s += u.def.obeysWhenSuppressed ? 'Suppressed: slowed, keeps its orders. ' : 'Suppressed: cannot pick targets. ';
+      if (u.work != null) s += 'Working. '; else if (u.order) s += (u.order.retreat ? 'Retreating' : ({ move: 'Moving', attackmove: 'Attack-moving', attack: 'Attacking target', bombard: 'Bombarding', hold: 'Holding position', work: 'Going to work', garrison: 'Going to the tower' })[u.order.type]) + '. '; else s += 'Idle. ';
       if (u.target) s += 'Firing at ' + (u.target.def.name) + '.';
       status.textContent = s;
     };
@@ -180,16 +185,18 @@ const UI = (() => {
     let qrow = null;
     if (own && b.built && b.def.produces) {
       content.appendChild(el('h3', null, 'Train'));
-      b.def.produces.filter(t => p.unlocked.has(t)).forEach((t, i) => {
-        const bp = p.blueprints[t];
-        content.appendChild(card({ icon: bp.icon, iconBg: Data.PLAYER_COLORS[1], shape: bp.shape, name: '[' + Data.TRAIN_HOTKEYS[i] + '] ' + bp.name, cost: Util.costStr(bp.cost) + ' · ' + Math.round(bp.time / b.def.prodMult) + ' s', desc: bp.desc, disabled: !Game.canAfford(p, bp.cost), onclick: () => { Game.enqueue(b, t); refresh(); } }));
+      // Z X C V train the current page of four; Tab flips pages when there are more (DD G15).
+      const keys = Data.TRAIN_HOTKEYS, list = Input.trainable(b), page = Input.state.trainPage, pages = Math.ceil(list.length / keys.length);
+      list.forEach((t, i) => {
+        const bp = p.blueprints[t]; const onPage = Math.floor(i / keys.length) === page;
+        content.appendChild(card({ icon: bp.icon, iconBg: Data.PLAYER_COLORS[1], shape: bp.shape, name: (onPage ? '[' + keys[i % keys.length] + '] ' : '') + bp.name, cost: Util.costStr(bp.cost) + ' · ' + Math.round(Game.prodTime(b, t)) + ' s', desc: bp.desc, disabled: !Game.canAfford(p, bp.cost), onclick: () => { Game.command({ kind: 'enqueue', building: b.id, type: t }); refresh(); } }));
       });
-      content.appendChild(el('div', 'small', 'Queue (click to cancel). Right click the map to set a rally point. Tab cycles factories.'));
+      content.appendChild(el('div', 'small', 'Queue (click to cancel). Right click the map to set a rally point. ' + (pages > 1 ? 'Tab shows the next four.' : 'Tab cycles factories.')));
       qrow = el('div', 'queue'); content.appendChild(qrow);
       b.queue.forEach((q, i) => {
         const d = Data.UNITS[q.type]; const qe = el('div', 'q'); qe.title = d.name;
         qe.appendChild(Icons.makeCanvas(d.icon, 60, '#fff', Data.PLAYER_COLORS[1], d.shape));
-        const pr = el('div', 'prog'); qe.appendChild(pr); qe.prog = pr; qe.onclick = () => { Game.cancelQueue(b, i); refresh(); };
+        const pr = el('div', 'prog'); qe.appendChild(pr); qe.prog = pr; qe.onclick = () => { Game.command({ kind: 'cancel', building: b.id, index: i }); refresh(); };
         qrow.appendChild(qe);
       });
     }
@@ -197,13 +204,13 @@ const UI = (() => {
     if (own && b.built && b.def.tower) {
       const lv = b.levelDef; const maxLv = b.def.levels.length;
       content.appendChild(el('h3', null, 'Scout Tower, level ' + b.level + ' of ' + maxLv));
-      content.appendChild(el('div', 'small', 'Holds ' + lv.cap + ' infantry' + (lv.heavy ? ' and ' + lv.heavy + ' mortar' : '') + '. Adds ' + lv.height + ' m of height and ' + lv.vision + ' vision. Select infantry and press E or right click the tower to garrison.'));
+      content.appendChild(el('div', 'small', 'Holds ' + lv.cap + ' infantry' + (lv.heavy ? ' and ' + lv.heavy + ' mortar' : '') + '. Adds ' + lv.height + ' m of height and ' + lv.vision + ' vision. Select soldiers and press E or right click the tower to garrison. Workers stay outside.'));
       const g = el('div', 'queue'); g.style.margin = '6px 0';
       for (const id of b.garrison) {
         const u = G.unitById.get(id); if (!u || u.dead) continue;
         const q = el('div', 'q'); q.title = soldierName(u).short + ', ' + u.def.name + ' (click to unload)';
         q.appendChild(Icons.makeCanvas(u.def.icon, 60, '#fff', Data.PLAYER_COLORS[1], u.def.shape));
-        q.onclick = () => { b.garrison = b.garrison.filter(x => x !== id); u.inside = null; u.hBonus = 0; const ang = Math.random() * Math.PI * 2; u.x = b.x + Math.cos(ang) * (b.size + 16); u.y = b.y + Math.sin(ang) * (b.size + 16); refresh(); };
+        q.onclick = () => { Game.command({ kind: 'unloadOne', building: b.id, unit: id }); refresh(); };
         g.appendChild(q);
       }
       if (!b.garrison.length) g.appendChild(el('div', 'small', 'Empty.'));
@@ -211,23 +218,23 @@ const UI = (() => {
       const row = el('div', 'row');
       if (b.level < maxLv) {
         const next = b.def.levels[b.level];
-        const ub = btn('[G] Upgrade: ' + Util.costStr(next.cost) + ' · ' + next.time + ' s', () => { Game.upgradeTower(b); refresh(); }, 'Level ' + (b.level + 1) + ': ' + next.cap + ' infantry' + (next.heavy ? ' + ' + next.heavy + ' mortar' : '') + ', +' + next.height + ' m');
+        const ub = btn('[T] Upgrade: ' + Util.costStr(next.cost) + ' · ' + next.time + ' s', () => { Game.command({ kind: 'upgrade', building: b.id }); refresh(); }, 'Level ' + (b.level + 1) + ': ' + next.cap + ' infantry' + (next.heavy ? ' + ' + next.heavy + ' mortar' : '') + ', +' + next.height + ' m');
         ub.disabled = !!b.upgrading || !Game.canAfford(p, next.cost); row.appendChild(ub);
       }
-      row.appendChild(btn('[U] Unload all', () => { Game.unloadBuilding(b); refresh(); }));
+      row.appendChild(btn('[Q] Unload all', () => { Game.command({ kind: 'unload', building: b.id }); refresh(); }));
       content.appendChild(row);
       if (b.upgrading) { upBar = bar('#ffd257'); content.appendChild(el('div', 'small', 'Upgrading')); content.appendChild(upBar); }
     }
     if (own && b.built && b.def.harvest) {
       content.appendChild(el('h3', null, 'Harvesting'));
-      content.appendChild(el('div', 'small', 'Select infantry and right click this building to assign up to ' + b.def.maxWorkers + ' workers. Each worker adds ' + b.def.perWorker + '/s.'));
-      const row = el('div', 'row'); row.appendChild(btn('Release workers', () => { const ws = b.workers.map(id => G.unitById.get(id)).filter(Boolean); Game.orderStop(ws); refresh(); })); content.appendChild(row);
+      content.appendChild(el('div', 'small', 'Select Workers and right click this building to assign up to ' + b.def.maxWorkers + '. Each Worker adds ' + b.def.perWorker + '/s; a soldier adds half that.'));
+      const row = el('div', 'row'); row.appendChild(btn('Release workers', () => { Game.command({ kind: 'stop', units: b.workers.slice() }); refresh(); })); content.appendChild(row);
     }
     tick = () => {
       hp.fill.style.width = (b.hp / b.def.hp * 100) + '%';
       if (prog) prog.fill.style.width = (b.progress * 100) + '%';
       let s = '';
-      if (b.def.harvest && b.built) s += 'Rate ' + Game.harvestRate(b).toFixed(1) + ' ' + (b.def.harvest === 'wood' ? 'wood' : b.depositType || '?') + '/s, workers ' + Game.activeWorkers(b) + '/' + b.def.maxWorkers + '. ';
+      if (b.def.harvest && b.built) s += 'Rate ' + Game.harvestRate(b).toFixed(1) + ' ' + (b.def.harvest === 'wood' ? 'wood' : b.depositType || '?') + '/s, labour ' + Game.activeWorkers(b) + ', slots ' + b.workers.length + '/' + b.def.maxWorkers + '. ';
       if (b.queue.length) s += 'Training ' + Data.UNITS[b.queue[0].type].name + ' (' + Math.ceil(b.queue[0].total - b.queue[0].t) + ' s).';
       status.textContent = s;
       if (qrow) b.queue.forEach((q, i) => { const qe = qrow.children[i]; if (qe) qe.prog.style.width = (q.t / q.total * 100) + '%'; });
@@ -251,7 +258,7 @@ const UI = (() => {
       let extra = null;
       if (s === 'active') { extra = bar('#5a78c8'); activeBar = extra; }
       const icon = r.unlock ? Data.UNITS[r.unlock].icon : 'flask';
-      content.appendChild(card({ icon, iconBg: s === 'done' ? '#2f6b3a' : '#2a2a2e', shape: r.unlock ? Data.UNITS[r.unlock].shape : null, name: r.name, cost: Util.costStr(r.cost) + ' · ' + r.time + ' s', desc: r.desc + ' — ' + label, disabled: s !== 'ready', extra, onclick: () => { Game.startResearch(1, id); refresh(); } }));
+      content.appendChild(card({ icon, iconBg: s === 'done' ? '#2f6b3a' : '#2a2a2e', shape: r.unlock ? Data.UNITS[r.unlock].shape : null, name: r.name, cost: Util.costStr(r.cost) + ' · ' + r.time + ' s', desc: r.desc + ' — ' + label, disabled: s !== 'ready', extra, onclick: () => { Game.command({ kind: 'research', research: id }); refresh(); } }));
     }
     tick = () => { if (activeBar && p.research) activeBar.fill.style.width = (p.research.t / p.research.total * 100) + '%'; };
   }

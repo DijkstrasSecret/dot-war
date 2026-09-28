@@ -26,6 +26,8 @@ no module system and no framework, so the game runs from `file://` as well as fr
 | `Portraits` | portraits.js | soldier faces, faction kit per era and names from a unit id; visual only, own random stream, called by `UI`, `Menu` and `Main` only |
 | `UI` | ui.js | the side panel and top bar (DOM), rebuilt when a content signature changes |
 | `MapGen` | maps.js | builds terrain and entities from a spec; holds the four map specs |
+| `Sim` | sim.js | headless runner: `survey`/`routes`/`newMatch` build a match with no renderer, `run(ticks)`, `replay(opts, orders, ticks)`, `fingerprint()` |
+| `LabTests` | lab/lab-tests.js | Balance Lab tests (duels on a test arena, economy timeline, AI versus AI); no DOM, loaded only by `lab.html` |
 | `Music` | audio.js | background music with a remembered on/off and volume |
 | `PaintingFx` | assets/paintings/painting-fx.js | draws a menu or loading painting on a canvas and animates its details; `pick`, `info`, `create(canvas).show/start/stop` |
 | `Loading` | loading.js | loading screen: `run(steps)` shows a random loading painting and drives the bar as each `{ label, run }` step executes between frames |
@@ -128,20 +130,28 @@ building itself. Towers use `levels[i].vision` and an eye raised by `levels[i].h
 
 ## 6. Combat
 
-All numbers are in `Data.UNITS[type].weapon`. Each unit stores a snapshot of its blueprint at
-production (`u.stats`), so research affects only new units. `u.hBonus` (tower height) is added to
-the shooter's height for range, damage and sight.
+Weapon numbers are in `Data.UNITS[type].weapon` (a Worker's is `null`: guard every use), the
+formula constants in `Data.COMBAT`, the caps in `Data.CAPS`. Each unit stores a snapshot of its
+blueprint at production (`u.stats`), so research affects only new units. `u.hBonus` (tower height)
+is added to the shooter's height for range, damage and sight. Combine factors with
+`Util.stack(kind, ...factors)`: it multiplies, then applies the cap for `hit`, `stressTaken`,
+`speed` or `vision` (DD I).
 
-- Target acquisition every 0.3 s (`acquire`): a forced target if valid and the unit is not
-  suppressed, else the nearest visible enemy not inside a building, preferring those in range,
-  then buildings.
-- Effective range `range * (1 + clamp(dh / 60, -0.15, 0.3))`, damage `* (1 + clamp(dh / 100, -0.1, 0.2))`.
-- Hit chance `acc * (1 - 0.55 * (d / range)^2) * cover * (1 - 0.5 * stress) * (moving ? 0.6 : 1)`,
-  buildings 2.5x easier. Damage `dmg * Data.ARMOR_MULT[type][armor]`.
-- Stress: `weapon.suppress` per shot at a unit, 20% of that to neighbours within 30, +0.2 from a
-  nearby death, up to +0.4 from a shell; decays 0.09/s. Above 0.6 suppressed (60% speed, 1.4x
-  reload, cannot be force-targeted). At 0.95 the unit panics for about three seconds.
-  `ignoresSuppression` (sniper) skips all of it. Garrisoned units take no stress.
+- Target acquisition every 0.3 s (`acquire`): a forced target if valid and the unit keeps its
+  orders (not suppressed, or `obeysWhenSuppressed`), else the nearest visible enemy not inside a
+  building, preferring those in range, then buildings.
+- Elevation (`heightDiff`, `rangeMult`, `dmgMult`, `hitMult`): 3 m dead zone; range
+  `1 + 0.04 sqrt(dh)` up to +50%, uphill `1 - 0.03 sqrt(|dh|)` down to -20%, indirect fire half the
+  bonus up to +25%; damage and hit chance from steepness `s = dh / max(d, 20)`.
+- Hit chance `Util.stack('hit', acc, falloff, cover, 1 - 0.5 stress, wasMoving ? 0.35 : 1, hitMult,
+  building ? 2.5 : 1)`. `u.wasMoving` is last tick's `u.moving`, because units fire before they
+  move each tick. Damage `dmg * ARMOR_MULT[type][armor] * dmgMult`.
+- Stress goes through `addStress(u, amount)`, which applies `def.stressTaken` (sniper 0.5) and the
+  cap: `weapon.suppress` per shot at a unit, 20% of that to neighbours within 30, +0.2 from a
+  nearby death, up to +0.4 from a shell. Decay 0.06/s, doubled while `u.order.retreat`. Above 0.6
+  suppressed (60% speed unless retreating, 1.4x reload, drops forced targets unless
+  `obeysWhenSuppressed`). At 0.95 the unit panics for about three seconds unless `neverPanics`.
+  Garrisoned units take no stress. `def.noMovingFire` (Machine Gunner) blocks firing on the move.
 - Indirect fire: arc, `minRange`, scatter grows when the point is unspotted, `weapon.ammo` per
   shot, splash with linear falloff, 35% on reverse slopes, friendly fire on.
 - Presentation only: `recoil` (kick along the facing), `alertT` ("!" for 1.6 s when fire starts
@@ -150,18 +160,29 @@ the shooter's height for range, damage and sight.
 
 ## 7. Orders
 
-Orders are descriptors `{ kind, ... }` handed to `Game.issue(unit, order, queue)`:
+Player actions enter through `Game.command({ kind, units: [ids], building, target, ... })`. It logs
+the command with the current tick in `G.orders`, resolves ids to entities and calls the order
+function; `Sim.replay` feeds the same log back to rebuild a match. Kinds: `move` (mode),
+`attack` (target id), `bombard`, `stop`, `hold`, `retreat`, `work`, `garrison`, `enqueue` (type),
+`cancel` (index), `research`, `build` (type, x, y), `rally`, `upgrade`, `unload`, `unloadOne`.
+`Input` and `UI` must use it rather than the order functions, or the action is missing from
+replays. The AI calls the order functions directly: it is part of the seeded simulation.
+
+Inside, orders are descriptors `{ kind, ... }` handed to `Game.issue(unit, order, queue)`:
 `move`, `attackmove`, `attack` (target), `bombard` (x, y), `hold`, `work` (building),
 `garrison` (building). `applyOrder` turns a descriptor into the live `u.order`; `nextOrder`
 finishes it and starts the next queued one. `hold` and `bombard` are standing orders, so a queued
 order behind them starts immediately. `orderMove` computes formation offsets; arrival walks to the
-formation spot and then seeks cover. `orderRetreat` moves the group 180 units towards its HQ.
+formation spot and then seeks cover. `orderRetreat` moves the group 180 units towards its HQ as a
+move with `retreat: true`, which `updateUnit` reads for the DD Q10 bonuses.
 
 ## 8. Buildings, towers, economy, research
 
 - Harvest: `harvest: 'wood'` needs forest within 70 units, `'deposit'` needs a metal or sulfur
-  deposit within 50 (one mine per deposit). Rate = `rate + activeWorkers * perWorker`, times the
-  player's `harvestMult`. Workers stand within 70 units of their camp.
+  deposit within 50 (one mine per deposit). Rate = `rate + activeWorkers(b) * perWorker`, times the
+  player's `harvestMult`. `activeWorkers` is labour, not a head count: `def.labour` (Worker 1) or
+  `Data.ECONOMY.soldierLabour` (0.5) for each assigned unit standing within 70 units of the camp.
+  Units without a weapon cannot garrison (`canEnter`).
 - Scout Tower (`def.tower`, `def.levels`): `Game.orderGarrison` walks infantry to it and
   `enterBuilding` pins them inside (`u.inside`, hidden, untargetable, no separation, position
   follows the tower, `hBonus = level.height`). `canEnter` enforces `cap` infantry and `heavy`
@@ -170,7 +191,11 @@ formation spot and then seeks cover. `orderRetreat` moves the group 180 units to
   Killing a tower halves each occupant's health, adds stress and throws them out.
   Buildings use `b.maxHp` (not `def.hp`) everywhere since towers change it.
 - Production queues live on buildings; cost paid on enqueue, refunded on cancel; new units walk
-  to `b.rally`.
+  to `b.rally`. Training time is `Game.prodTime(b, type)`: `def.prodMult` maps unit types to a speed
+  (the HQ trains Riflemen at 0.7), anything missing trains at full speed.
+- The AI (`ai.js`) keeps one state per commanded player (`AI.reset([2])` normally, `[1, 2]` in the
+  lab). It unlocks units at `Data.DIFFICULTY[d].unlocks` game seconds, and times raids from the
+  Rifleman walking time between the HQs (flow-field cost divided by speed) plus `buildUp`.
 - Research: `Data.RESEARCH[id]` with `cost`, `time`, `req`, and `unlock` or `effects`. Effects
   multiply the player's blueprint copies (`player.blueprints`).
 - Difficulty: `Data.DIFFICULTY[G.difficulty]` gives the AI its unit cap and growth, first raid
@@ -209,28 +234,35 @@ No test runner; use the browser console or the Claude preview's JavaScript tool.
 and you will chase ghosts. Check freshness with `Terrain.cellPassable.toString()`.
 
 ```js
-Menu.hide(); Main.start('valley', 'normal'); Game.setSpeed(0);   // pick a map headlessly
+Sim.newMatch({ map: 'highland', difficulty: 'normal', seed: 42 }); Sim.run(900); Sim.fingerprint();   // no page needed
+Menu.hide(); Main.start('valley', 'normal', 'british', 42); Game.setSpeed(0);   // a map in the page, seeded
 for (let i = 0; i < 30 * 60; i++) Game.update(1/30);              // simulate 60 s (about 1.5 s)
 const f = Path.getField(hq.x, hq.y + 60, 'infantry', 0); Path.reachable(f, x, y);   // connectivity
 Game._dbg.validTarget(u, e); Game._dbg.canSee(u, e); Game._dbg.kill(entity);
-G.stats; AI.st; AI.params();                                        // outcomes and enemy settings
+G.stats; AI.st; AI.params(); G.orders;                             // outcomes, enemy settings, command log
 Render.draw(); UI.update(0.3);                                      // force a frame when the tab is hidden
 ```
 
 Owner ids: 0 neutral, 1 human, 2 enemy AI. Keep console scripts under about two seconds of work
 or the preview tool times out.
 
-The simulation runs headless inside any browser page (the Balance Lab will rely on this), but
-not yet outside one: `Terrain.create` and `Fog.init` each make an off-screen canvas and
-`Terrain.flushDirty` draws icons. Running it in node needs a small `document.createElement`
-stub and skipping `flushDirty`.
+The Balance Lab (`lab.html`) runs the real rules headless in a page: duels on a small generated
+arena, an economy timeline and AI versus AI, with targets in `lab/balance-targets.js`. Its tests are
+in `lab/lab-tests.js` with no DOM. Outside a browser the simulation still needs a small
+`document.createElement` stub, because `Terrain.create` makes the terrain canvases; the fog picture
+is made only when the renderer asks for it. Skip `Terrain.flushDirty` there.
+
+Determinism check: the same seed and the same `G.orders` must give the same `Sim.fingerprint()`.
+Anything that reads `Math.random`, the wall clock, or state that survives between matches (a
+module-level timer, a cache keyed by something other than the match) breaks that.
 
 When something looks wrong in combat, check the terrain between the units first: forest blocks
 sight after three cells, and a rifle fires only every 1.5 game seconds.
 
 ## 11. Performance notes
 
-With about 35 units: one game second costs about 25 ms, a flow field 30 ms, a fog update 5 ms,
+With about 35 units: one game second costs about 25 ms, a flow field 30 ms, a fog update 5 ms
+(units and buildings that have not moved reuse their last cast; see `castCached` in fog.js),
 a full terrain render about 150 ms (once per map build; thumbnails cost four builds at startup,
 about one second). Things that scale badly if you grow the map or unit count: full-map Dijkstra per
 destination (add an early exit for maps over 400 x 400), `acquire` at O(units^2) every 0.3 s
@@ -244,5 +276,5 @@ cache canvas (tile it beyond about 4000 x 4000). Decals are capped at 400.
 - Numbers that affect balance belong in `data.js`; formulas belong in `game.js` with a comment.
 - Anything drawn on the canvas goes through `Render`; anything in the DOM goes through `UI` or
   `Menu`. The simulation never touches either, so it can run headless.
-- `Math.random` is used freely in the simulation today; see the roadmap on determinism before
-  building replays or multiplayer.
+- Randomness: the simulation draws from `G.rng` (seeded per match), looks from `G.vrng`. Never
+  `Math.random` in simulation files; `Main` uses it once to pick a seed when none is given.

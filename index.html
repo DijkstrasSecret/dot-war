@@ -51,13 +51,13 @@
   <h2>Controls</h2>
   <ul>
     <li><b>Select:</b> left click or drag a box. <b>Shift</b> adds to the selection. <b>Double click</b> selects all of that type on screen. <b>Ctrl+A</b> selects everyone on screen.</li>
-    <li><b>Unit commands:</b> <b>W</b> walk, <b>A</b> attack (enemy or point; mortars bombard the point), <b>D</b> defend position, <b>S</b> retreat towards base, <b>X</b> stop, <b>E</b> work or garrison (click a Lumber Camp, Mine or Scout Tower).</li>
-    <li><b>Hold Shift</b> while giving commands to queue them back to back. <b>Right click</b> is a shortcut: ground moves, enemy attacks, own camp assigns workers, own tower garrisons.</li>
-    <li>Suppressed units (yellow ring) ignore target orders and fire at the closest enemy. Snipers always obey.</li>
+    <li><b>Right click</b> is the smart command: ground moves, an enemy attacks, your camp or mine puts them to work, your tower garrisons it.</li>
+    <li><b>Unit commands:</b> <b>F</b> attack-move (click an enemy or a point; mortars bombard the point), <b>R</b> defend position, <b>G</b> retreat towards base, <b>X</b> stop, <b>E</b> enter (click a Lumber Camp, Mine or Scout Tower). <b>Hold Shift</b> to queue orders back to back.</li>
+    <li>Suppressed units (yellow ring) ignore target orders and fire at the closest enemy. Snipers keep their orders, take half the stress and never panic. Retreating units shed stress twice as fast and are not slowed by it.</li>
     <li><b>B</b> build tab, then <b>L</b> Lumber Camp, <b>M</b> Mine, <b>C</b> Barracks, <b>O</b> Ordnance Works, <b>T</b> Scout Tower. <b>N</b> research tab. <b>H</b> jump to headquarters. <b>Tab</b> cycles factories.</li>
-    <li>With a factory selected: <b>Q W E R T</b> train the listed units, right click sets the rally point. With a tower selected: <b>G</b> upgrade, <b>U</b> unload everyone.</li>
+    <li>With a factory selected: <b>Z X C V</b> train the listed units (<b>Tab</b> shows the next four if there are more), right click sets the rally point. With a tower selected: <b>T</b> upgrade, <b>Q</b> unload everyone.</li>
     <li><b>Groups:</b> <b>Ctrl+1..9</b> assign, <b>1..9</b> select, press twice to centre the view.</li>
-    <li><b>Camera:</b> arrow keys, screen edge, or hold the <b>middle mouse button</b> and drag. <b>Mouse wheel</b> zooms. Click or right click the minimap.</li>
+    <li><b>Camera:</b> <b>W A S D</b>, arrow keys, screen edge, or hold the <b>middle mouse button</b> and drag. <b>Mouse wheel</b> zooms. Click or right click the minimap.</li>
     <li><b>Time:</b> <b>Space</b> pause, <b>,</b> slower, <b>.</b> faster. 1× is a calm pace; 2× is the original tempo.</li>
     <li>High ground: more vision, more range and damage firing downhill. Ridges block sight and bullets. Steep slopes crawl or are impassable. Forests hide units and give cover. A Scout Tower adds height to whoever is inside.</li>
     <li><b>Esc</b> cancels a command or clears the selection.</li>
@@ -79,6 +79,7 @@
 <script src="js/portraits.js"></script>
 <script src="js/ui.js"></script>
 <script src="js/maps.js"></script>
+<script src="js/sim.js"></script>
 <script src="js/audio.js"></script>
 <script src="assets/paintings/painting-fx.js"></script>
 <script src="js/loading.js"></script>

@@ -440,10 +440,10 @@ section 11.
 | Topic | Old or other version | Current version |
 | --- | --- | --- |
 | Patch order | `ROADMAP.md` and `GAME_DESIGN.md` §11: 0.3 is vehicles, 0.5 the designer | `IMPLEMENTATION_PLAN.md`: 0.3 squadrons, 0.5 vehicles, 0.8 designer. The plan wins. `DESIGN_DECISIONS.md` still says "Truck in 0.3" (Q16) and "Blueprint designer (0.5)" (section D title); the plan's numbering is the one to follow. |
-| Controls | In the game now: W A D S X E, Q W E R T to train | Agreed in §9, built in 0.2.1: WASD camera, F R G X E Q orders, Z X C V to train |
+| Controls | Before 0.2.1: W A D S X E, Q W E R T to train | Built in 0.2.1 (§9): WASD camera, F R G X E Q orders, T tower upgrade, Z X C V to train |
 | `CLAUDE.md` | Repo `main`: old rules ("hotkeys fixed") | `design-decisions` branch and project copy: new rules. The project copy adds the portraits rule and the `serve.py` fix. |
 | Dev server | `python -m http.server` (was wrong in the project `CLAUDE.md`) | `python serve.py 8765` |
-| Musketeer | Still in the code, and the HQ trains it | Removed in 0.2.1 |
+| Musketeer | In the code up to 0.2b | Removed in 0.2.1; the HQ trains Riflemen and Workers |
 | Signals research | "Squadrons share vision" | Last-seen markers (section J) |
 | Field Hospital research | Tier II | Tier I at the HQ, so the branch building can be built |
 | Supply cap | An early proposal had max 120 and truck supply 3 | No maximum; truck supply 2 |
