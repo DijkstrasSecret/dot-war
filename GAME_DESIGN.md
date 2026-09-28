@@ -109,8 +109,9 @@ least x0.35 (`Util.stack`).
     `x(1 - 0.03 * sqrt(|dh|))`, at most -20%. Mortars get half the bonus, at most +25%, and the
     same uphill penalty.
   - Damage and accuracy use steepness `s = dh / max(d, 20)`, so height matters most up close:
-    damage `x(1 + clamp(0.5 s, -0.10, +0.25))`, hit chance `x(1 + clamp(0.4 s, -0.10, +0.20))`.
-    20 m above a target 50 m away gives +20% damage; the same 20 m at 300 m gives about +3%.
+    damage `x(1 + clamp(0.1 s, -0.03, +0.06))`, hit chance `x(1 + clamp(0.08 s, -0.03, +0.05))`.
+    20 m above a target 50 m away gives +4% damage and +3% hit chance. Most of the high-ground edge
+    is reach: in the Balance Lab the side 30 m higher wins about 74% of 5 v 5 rifle duels.
 - **Hit chance** = `acc * (1 - 0.55 * (d / range)^2) * cover * (1 - 0.5 * stress) * moving * height`,
   capped at 0.95. `moving` is 0.35 if the shooter moved in the last tick. Buildings are 2.5x easier
   to hit. At maximum range accuracy is 45% of the base value.
@@ -209,7 +210,9 @@ mortar 1 (never Workers), keeps a garrison home, and sends raids downhill at the
 has enough units (at least 6, or 70% of its cap). It may train Machine Gunners, Snipers and Mortar
 Crews only after their unlock time. It has passive income instead of workers: 1.5 wood, 0.8 metal
 and 0.35 sulfur per second times the difficulty income factor. Raiders that lose their target walk
-home. The AI does not build, research, expand or use towers.
+home. Raids escalate: each sends 10% more of the army than the last (up to 90%), and once the AI's
+army is twice the enemy soldiers it has seen in the last two minutes (at least 3), it sends
+everyone. The AI does not build, research, expand or use towers.
 
 The first raid comes at the enemy's walking time to the player's HQ plus 300 s of build-up; each
 raid interval adds the walking time too. The walking time is measured over the real terrain for a

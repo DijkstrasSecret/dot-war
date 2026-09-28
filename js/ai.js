@@ -24,7 +24,7 @@ const AI = (() => {
   }
   function reset(pids = [2]) {
     sides = {};
-    for (const pid of pids) { const walk = walkTime(pid); sides[pid] = { thinkT: 0, walk, raidT: walk + params().buildUp, lastDefend: -99 }; }
+    for (const pid of pids) { const walk = walkTime(pid); sides[pid] = { thinkT: 0, walk, raidT: walk + params().buildUp, lastDefend: -99, raids: 0, seen: new Map() }; }
   }
   // DD G7: the AI may train a unit only once its unlock time (per difficulty) has passed.
   function unlockDue(p, D) { for (const [t, at] of Object.entries(D.unlocks || {})) if (G.time >= at) p.unlocked.add(t); }
@@ -53,6 +53,10 @@ const AI = (() => {
         if (choices.length) Game.enqueue(b, pick(choices));
       }
     }
+    // Remember enemy soldiers this side has seen, to judge whether it clearly outnumbers them.
+    const X = Data.AI_RAIDS;
+    for (const u of G.units) if (u.owner === enemyOf(pid) && !u.dead && !u.inside && Fog.visible(pid, u.x, u.y)) st.seen.set(u.id, G.time);
+    for (const [id, t] of st.seen) { const u = G.unitById.get(id); if (!u || u.dead || G.time - t > X.memory) st.seen.delete(id); }
     const threats = G.units.filter(u => u.owner !== pid && !u.dead && !u.inside && Fog.visible(pid, u.x, u.y) && dist(u.x, u.y, hq.x, hq.y) < 480);
     if (threats.length) {
       if (G.time - st.lastDefend > 6) {
@@ -71,8 +75,11 @@ const AI = (() => {
     if (st.raidT <= 0 && mine.length >= Math.max(6, Math.floor(D.cap * 0.7))) {
       st.raidT = st.walk + D.raidMin + R() * D.raidVar;   // DD Q2: the interval adds the walking time too
       const targetHq = hqOf(enemyOf(pid));
-      const raiders = mine.filter(u => !u.raiding).slice(0, Math.max(3, Math.floor(mine.length * D.raidFrac)));
-      if (targetHq && raiders.length) { for (const u of raiders) u.raiding = true; Game.orderMove(raiders, targetHq.x, targetHq.y, 'attackmove'); }
+      // Raids escalate, and a clear numbers advantage commits the whole army (Data.AI_RAIDS).
+      const allIn = mine.length >= X.allInRatio * Math.max(X.minEnemy, st.seen.size);
+      const frac = allIn ? 1 : Math.min(X.raidFracMax, D.raidFrac + st.raids * X.raidGrow);
+      const raiders = mine.filter(u => !u.raiding).slice(0, Math.max(3, Math.ceil(mine.length * frac)));
+      if (targetHq && raiders.length) { st.raids++; for (const u of raiders) u.raiding = true; Game.orderMove(raiders, targetHq.x, targetHq.y, 'attackmove'); }
     }
     for (const u of mine) if (u.raiding && !u.order && !u.target) { u.raiding = false; Game.orderMove([u], hq.x, hq.y + 70, 'move'); }
   }

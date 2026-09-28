@@ -897,10 +897,10 @@ Agreed on 28 September 2026. Built as `js/portraits.js` (visual only, own random
 
 ---
 
-## L. Gaps filled while building patch 0.2.1 (proposed, for Kaan to confirm)
+## L. Gaps filled while building patch 0.2.1 (agreed with Kaan, 28 September 2026)
 
-The sections above left these open. Each was given a starting value so the patch could be built;
-they are data or one-line rules, easy to change.
+The sections above left these open. Each was given a starting value so the patch could be built,
+and Kaan accepted all of them. They are data or one-line rules, easy to change.
 
 | Topic | What the docs said | What 0.2.1 does |
 | --- | --- | --- |
@@ -917,16 +917,23 @@ Balance Lab results when 0.2.1 was finished (100 seeded runs each):
 | Target | Result | Status |
 | --- | --- | --- |
 | 1 MG pins a Rifleman, 3.5–5.5 s | about 4.9 s | green |
-| 5 v 5 Riflemen, the side 30 m higher wins 65–80% | about 91% | red: height is stronger than the target. Not retuned; waiting for Kaan's call. |
+| 5 v 5 Riflemen, the side 30 m higher wins 65–80% | about 91% | red, so Kaan chose to soften height (below) |
 | First Tier II research affordable, 6–10 min (gate 0.5) | under 1 min | red, expected until the tech tree's costs arrive in 0.5 |
 | AI vs AI match length, 45–75 min (gate 0.7) | seed 1 on Normal: no winner after 75 min, 184 v 201 kills | red: neither scripted AI can break the other's base. One run only; a full match takes about 14 real minutes. |
+
+### Decisions after the first lab results (Kaan, 28 September 2026)
+
+| Topic | Decision |
+| --- | --- |
+| Height too strong (Q8) | Soften the steepness bonuses, keep the range formula. Damage `x(1 + clamp(0.1 s, -0.03, +0.06))`, hit chance `x(1 + clamp(0.08 s, -0.03, +0.05))`, about a fifth of the original. The side 30 m higher now wins about 74% of 5 v 5 duels (target 65–80%). The range bonus alone gives about 63%, so most of the high-ground edge is reach. |
+| AI stalemate | Raids escalate now, before the full Q24 raid logic in 0.7: each raid sends 10% more of the army than the last (up to 90%), and once the AI's army is twice the enemy soldiers it has seen in the last 2 minutes (at least 3), it sends everyone. Numbers in `Data.AI_RAIDS`. |
+| Music file | The repo keeps the 80 kbps copy (14 MB) instead of the 44 MB original. |
 
 ---
 
 ## Still open
 
 - Every value marked (proposed): tune in the Balance Lab.
-- Section L: the gaps filled in 0.2.1, and the red height-duel result.
 - Exact extra weights (1 or 2) per designer extra, and the designer's chassis cost factors.
 - The research that triggers Cold War and Modern kit (section K, proposed triggers).
 - Where portraits appear in the UI: selection panel, squadron bar, or both.

@@ -103,9 +103,9 @@ Goal: the game plays at the new core values, and every run can be repeated exact
 
 **Done when**
 - [x] Running the same seed twice gives identical results.
-- [ ] Balance Lab green, or reds reported to Kaan: 1 MG pins a Rifleman in 3.5–5.5 s; 5 v 5
-      Riflemen, the side with +30 m height wins 65–80%. The pin is green (about 4.9 s); the
-      height duel is red (about 91%), reported with pull request #5, waiting for Kaan's call.
+- [x] Balance Lab green, or reds reported to Kaan: 1 MG pins a Rifleman in 3.5–5.5 s; 5 v 5
+      Riflemen, the side with +30 m height wins 65–80%. Pin about 4.9 s; height duel about 74%
+      after Kaan chose to soften the steepness bonuses (DD section L).
 - [x] `GAME_DESIGN.md` updated.
 
 ---

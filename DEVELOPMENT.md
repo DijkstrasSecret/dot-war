@@ -196,6 +196,8 @@ move with `retreat: true`, which `updateUnit` reads for the DD Q10 bonuses.
 - The AI (`ai.js`) keeps one state per commanded player (`AI.reset([2])` normally, `[1, 2]` in the
   lab). It unlocks units at `Data.DIFFICULTY[d].unlocks` game seconds, and times raids from the
   Rifleman walking time between the HQs (flow-field cost divided by speed) plus `buildUp`.
+  Raids escalate by `Data.AI_RAIDS` (larger each time, all-in once it clearly outnumbers the enemy
+  soldiers it saw recently, remembered in the side's `seen` map).
 - Research: `Data.RESEARCH[id]` with `cost`, `time`, `req`, and `unlock` or `effects`. Effects
   multiply the player's blueprint copies (`player.blueprints`).
 - Difficulty: `Data.DIFFICULTY[G.difficulty]` gives the AI its unit cap and growth, first raid

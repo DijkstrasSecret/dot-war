@@ -104,6 +104,11 @@ const Data = {
   },
   DIFFICULTY_ORDER: ['easy', 'normal', 'hard'],
 
+  // Raid escalation (agreed with Kaan on 28 Sept to end AI-v-AI stalemates; the full DD Q24 raid logic
+  // comes in 0.7): each raid sends raidGrow more of the army than the last, up to raidFracMax; once
+  // the army is allInRatio times the enemy soldiers seen in the last `memory` seconds, everyone goes.
+  AI_RAIDS: { raidGrow: 0.1, raidFracMax: 0.9, allInRatio: 2, memory: 120, minEnemy: 3 },
+
   START: { units: ['rifle', 'rifle', 'rifle', 'rifle', 'rifle', 'rifle', 'worker', 'worker', 'worker', 'worker'] },   // DD Q15
 
   // Combat constants (formulas in game.js). DD Q8, Q9, Q10, Q11, I.
@@ -112,8 +117,10 @@ const Data = {
     rangeUp: 0.04, rangeUpMax: 0.5,                     // range x(1 + 0.04 sqrt(dh)), at most +50%
     rangeDown: 0.03, rangeDownMax: 0.2,                 // uphill x(1 - 0.03 sqrt(|dh|)), at most -20%
     indirectRangeShare: 0.5, indirectRangeMax: 0.25,    // mortars get half the height range bonus, at most +25%
-    dmgSteep: 0.5, dmgMin: -0.1, dmgMax: 0.25,          // damage x(1 + clamp(0.5 s)), s = dh / max(d, 20)
-    hitSteep: 0.4, hitMin: -0.1, hitMax: 0.2,           // hit chance x(1 + clamp(0.4 s))
+    // Damage and hit chance x(1 + clamp(k s)), s = dh / max(d, 20). Softened with Kaan on 28 Sept (DD L)
+    // from 0.5 / -0.1..+0.25 and 0.4 / -0.1..+0.2, which made high ground win 91% of 5 v 5 duels.
+    dmgSteep: 0.1, dmgMin: -0.03, dmgMax: 0.06,
+    hitSteep: 0.08, hitMin: -0.03, hitMax: 0.05,
     steepMinDist: 20,
     stressDecay: 0.06, retreatDecayMult: 2,             // per second; retreating units shed stress twice as fast
     suppressedAt: 0.6, panicAt: 0.95,
