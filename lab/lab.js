@@ -51,6 +51,8 @@
     results.mgPin = pin.pin; drawTargets();
     const h = await runDuels({ typeA: 'rifle', nA: 5, typeB: 'rifle', nB: 5, ground: 'height' }, 100, '5 Riflemen v 5 Riflemen 30 m higher');
     results.heightDuel = h.winB; drawTargets();
+    const sq = await runDuels({ typeA: 'rifle', nA: 6, typeB: 'rifle', nB: 6, ground: 'flat', squadA: true }, 100, '6 Riflemen as a squadron v 6 loose Riflemen, flat');
+    results.squadVsLoose = sq.winA; drawTargets();
   };
 
   // ---- economy ----

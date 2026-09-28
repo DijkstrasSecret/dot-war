@@ -116,6 +116,8 @@ const Data = {
     cohesionRadius: 40, cohesionDecay: 0.08,
     leaderRadius: 60, leaderAura: 1.2, leaderDeathShock: 0.3,   // DD H1, I: replaces the normal +0.2 death shock
     coverTime: 4,                                               // fighting withdrawal: the front rank covers this long
+    reactHalts: false,                                          // Kaan: 'react' shares the target but does not halt the squad (a halt made squads win ~77%)
+    shareRange: 1.0,                                            // take the squad's target only if within this x own nearest enemy's distance
     defaults: { move: 'slow', spacing: 'loose', contact: 'react' },
   },
   // Veterancy (DD H1, I; XP values proposed). Each rank stacks on the previous one.

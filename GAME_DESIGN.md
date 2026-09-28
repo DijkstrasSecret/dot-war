@@ -277,14 +277,16 @@ the centre behind those, Mortar Crews 60 m back. Members travel along the path i
 | --- | --- | --- |
 | Movement | `>` everyone at the slowest member's pace · `>>` each at his own pace | `>` |
 | Spacing | tight 15 m · loose 25 m | loose |
-| Contact | react: the whole squadron halts when a member finds a target · keep moving | react |
+| Contact | react: members share the squadron's target when it is no farther than their own · keep moving: each fires at the closest enemy | react |
 
-On react, Riflemen, Machine Gunners and Mortar Crews fire at the squadron's shared target;
-Snipers pick their own. On keep moving each member fires at the closest enemy he can hit. Within 40 m of a squadmate stress drains at 0.08/s instead of 0.06/s. A panicking
+On react, Riflemen, Machine Gunners and Mortar Crews take the squadron's shared target when it is
+no farther than their own nearest enemy; Snipers pick their own. Each soldier stops
+for his own target, as a loose one would. On keep moving each member fires at the closest enemy he can hit. Within 40 m of a squadmate stress drains at 0.08/s instead of 0.06/s. A panicking
 member runs towards the squadron as well as away from the fire. Retreat (G) is a fighting
 withdrawal: the rear ranks fall back at once while the front rank holds 4 s, then follows. A
 factory's rally point set on a squad member (right click it) sends new units into that squadron,
-up to 12. In the Balance Lab a squadron of 6 Riflemen beats 6 loose Riflemen about 82% of the time.
+up to 12. Squadrons are a utility more than an advantage: in the Balance Lab 6 Riflemen in a
+squadron beat 6 loose Riflemen 55–60% of the time (target).
 
 **Veterancy.** Soldiers earn XP: 10 per kill, 1 per 10 damage, 5 when a target they are shooting
 becomes suppressed (once per target every 30 s), 1 per 10 s spent with stress above 0.3, and for

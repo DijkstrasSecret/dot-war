@@ -366,10 +366,9 @@ const Game = (() => {
   function acquire(u) {
     const w = u.stats.weapon; if (!w) { u.target = null; return; }   // unarmed: never picks a target
     if (u.forced && !u.forced.dead && keepsOrders(u) && validTarget(u, u.forced)) { u.target = u.forced; return; }
-    // DD E: riflemen, machine gunners and mortars fire at the squad's target; snipers pick their own.
-    // On 'keep moving' each member fires at the closest enemy he can hit instead (Kaan, after play).
+    // DD E: riflemen, machine gunners and mortars share the squad's target; snipers pick their own.
+    // On 'keep moving' each member fires at the closest enemy instead (Kaan, after play).
     const sq = u.squad && !u.def.obeysWhenSuppressed && G.squads[u.squad] && G.squads[u.squad].contact === 'react' ? G.squads[u.squad] : null;
-    if (sq && sq.target && validTarget(u, sq.target)) { u.target = sq.target; return; }
     const maxR = w.range * 1.3;
     let best = null, bestS = Infinity;
     for (const e of G.units) {
@@ -388,6 +387,9 @@ const Game = (() => {
         best = e; bestS = s;
       }
     }
+    // Shared target, softened (Kaan: squads are a utility, 55-60% against loose soldiers): a member
+    // switches to the squad's target only when it is nearly as close as his own nearest enemy.
+    if (sq && sq.target && sq.target !== best && validTarget(u, sq.target) && (!best || dist(u.x, u.y, sq.target.x, sq.target.y) <= dist(u.x, u.y, best.x, best.y) * SQ.shareRange)) best = sq.target;
     u.target = best;
   }
   function tryFire(u) {
@@ -560,7 +562,7 @@ const Game = (() => {
       s.leader = best.id;
       if (s.target && (s.target.dead || s.target.inside || !ms.some(m => m.target === s.target))) s.target = null;
       if (!s.target) { const counts = new Map(); for (const m of ms) if (m.target && !m.def.obeysWhenSuppressed) counts.set(m.target, (counts.get(m.target) || 0) + 1); let top = 0; for (const [t, c] of counts) if (c > top) { top = c; s.target = t; } }
-      if (s.contact === 'react' && ms.some(m => m.order && (m.order.type === 'move' || m.order.type === 'attackmove') && !m.order.retreat && m.target && inRange(m, m.target))) {
+      if (s.contact === 'react' && SQ.reactHalts && ms.some(m => m.order && (m.order.type === 'move' || m.order.type === 'attackmove') && !m.order.retreat && m.target && inRange(m, m.target))) {
         for (const m of ms) if (m.order && (m.order.type === 'move' || m.order.type === 'attackmove') && !m.order.retreat) { m.queue = []; applyOrder(m, { kind: 'hold' }); }
       }
     }
