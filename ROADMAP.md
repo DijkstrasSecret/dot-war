@@ -55,6 +55,8 @@ each module carries a `TODO(...)` reminder at the top.
 - Save and load (serialise `G` and the map spec id).
 - Sound effects with their own volume (shots, shells, alerts, tower fall); a music playlist.
 - Tutorial script for Highland Pass (the toast on start is the placeholder).
+- Painted main menu and loading screens: images and the animation engine are ready in
+  `assets/paintings/` (see its README); build the menu buttons, loading bar and click effects on top.
 - Balance pass for one to two hour matches at 1x: production and research times, late-game
   costs, a second enemy base. Difficulty numbers live in `Data.DIFFICULTY`.
 - Better AI: harvests instead of passive income, builds towers and researches, flanks through

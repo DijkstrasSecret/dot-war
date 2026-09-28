@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dot War paintings (bare)</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #000; overflow: hidden; }
+  canvas { display: block; width: 100vw; height: 100vh; }
+</style>
+</head>
+<body>
+<!-- Animated paintings with no UI at all. Pick one with the hash (bare.html#the-light) or
+     cycle with the left and right arrow keys. Serve from the repo root: python serve.py 8765,
+     then open http://localhost:8765/assets/paintings/bare.html#the-calling -->
+<canvas id="fx" aria-label="Animated painting"></canvas>
+<script src="painting-fx.js"></script>
+<script>
+  const fx = PaintingFx.create(document.getElementById('fx'), { base: '' });
+  const all = PaintingFx.ids();
+  const pick = () => { const h = location.hash.slice(1); fx.show(all.includes(h) ? h : all[0]); document.title = PaintingFx.info(fx.id).title; };
+  addEventListener('hashchange', pick);
+  addEventListener('keydown', e => {
+    if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
+    const i = all.indexOf(fx.id) + (e.key === 'ArrowRight' ? 1 : -1);
+    location.hash = all[(i + all.length) % all.length];
+  });
+  pick(); fx.start();
+</script>
+</body>
+</html>
