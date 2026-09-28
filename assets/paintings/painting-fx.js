@@ -1,7 +1,7 @@
 // PaintingFx: draws one of the oil paintings in assets/paintings/ on a canvas and animates small
 // details over it (candle flicker, dust in light beams, smoke, embers, snow, glints). No UI here:
 // menu buttons, loading bars and click effects belong to the caller. See assets/paintings/README.md.
-// Classic script, defines one global. Not loaded by index.html yet.
+// Classic script, defines one global. index.html loads it before js/loading.js and js/menu.js.
 const PaintingFx = (() => {
   // All paintings are 1672 x 941 and every coordinate below is in those image pixels.
   const W = 1672, H = 941;

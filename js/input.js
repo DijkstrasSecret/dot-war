@@ -153,7 +153,7 @@ const Input = (() => {
     const tag = (e.target.tagName || '').toLowerCase(); if (tag === 'input' || tag === 'textarea' || tag === 'select') return;
     const k = e.key.toLowerCase();
     if (k === 'f1') { e.preventDefault(); UI.toggleHelp(); return; }
-    if (Menu.open) { if (k === 'escape' && Main.started) Menu.hide(); return; }
+    if (Menu.open) { if (k === 'escape') Menu.back(); return; }
     if (k === ' ') { e.preventDefault(); Game.togglePause(); UI.refreshSpeed(); return; }
     if (k === ',') { Game.setSpeed(G.speed <= 1 ? 0 : G.speed === 2 ? 1 : 2); UI.refreshSpeed(); return; }
     if (k === '.') { Game.setSpeed(G.speed === 0 ? 1 : G.speed === 1 ? 2 : 4); UI.refreshSpeed(); return; }

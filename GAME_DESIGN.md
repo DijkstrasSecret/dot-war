@@ -212,7 +212,18 @@ speed, F1 help. New features add keys; they never move these.
 
 ## 10. Presentation
 
-Olive field-map panels with brass accents and stencil headings. Units are flat shapes with a
+The start menu and the loading screen are oil paintings (patch 0.2b). The menu opens on one of
+three menu paintings picked at random, with the title and white serif buttons on the painting's
+dark left side: New game, Continue (once a game is running), Music, Controls. New game opens a
+dark panel on the same painting with the map, difficulty and army choices. Small details in the
+paintings move (candles, dust, smoke); the engine stops while a match runs. Every map build,
+including the first page load, happens behind a loading screen: one of six loading paintings at
+random, its title and "after ..." line on a plaque bottom left, and a thin gold bar bottom right
+that follows the real build steps (charting the thumbnails, surveying the map, plotting routes,
+drawing the map, deploying). The screen fades in from black once the painting has loaded and stays
+up at least 1.4 seconds so the fade completes even when the build is quick.
+
+In play: olive field-map panels with brass accents and stencil headings. Units are flat shapes with a
 white logo, player blue (#2458d6), enemy red (#c8302e), neutral grey. Yellow ring for suppressed,
 "!" when fire starts, "!!" while panicking, bleeding under 50% health, blood splashes and
 corpses persist (capped at 400 decals). Background music is a Grieg violin sonata with a toggle

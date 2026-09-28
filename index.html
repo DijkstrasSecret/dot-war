@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <title>Dot War</title>
+<link rel="stylesheet" href="assets/fonts/fonts.css">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -31,7 +32,21 @@
     <canvas id="minimap" width="284" height="284"></canvas>
   </div>
 </div>
-<div id="menu" class="hidden"></div>
+<!-- Start menu over a painting (js/menu.js builds the columns next to the canvas). -->
+<div id="menu" class="hidden"><canvas aria-hidden="true"></canvas></div>
+<!-- Loading screen over a painting (js/loading.js fills the plaque and drives the bar). -->
+<div id="loading">
+  <canvas aria-hidden="true"></canvas>
+  <div class="band"></div>
+  <div class="hud">
+    <div class="plaque"><h2></h2><p></p></div>
+    <div class="load" role="progressbar" aria-label="Loading" aria-valuemin="0" aria-valuemax="100">
+      <div class="row"><span>Loading</span><span>0%</span></div>
+      <div class="track"><div class="fill"></div></div>
+    </div>
+  </div>
+  <div class="veil"></div>
+</div>
 <div id="help" class="hidden">
   <h2>Controls</h2>
   <ul>
@@ -65,6 +80,8 @@
 <script src="js/ui.js"></script>
 <script src="js/maps.js"></script>
 <script src="js/audio.js"></script>
+<script src="assets/paintings/painting-fx.js"></script>
+<script src="js/loading.js"></script>
 <script src="js/menu.js"></script>
 <script src="js/main.js"></script>
 </body>

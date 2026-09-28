@@ -74,16 +74,54 @@ input[type=range] { flex: 1; accent-color: var(--brass); }
 #msg { position: absolute; left: 50%; top: 45%; transform: translate(-50%, -50%); font-size: 40px; font-weight: 700; color: #fff; text-shadow: 0 2px 8px #000; z-index: 10; pointer-events: none; text-align: center; font-family: "Bahnschrift", "Segoe UI", sans-serif; letter-spacing: 2px; }
 .hidden { display: none !important; }
 
-/* start menu */
-#menu { position: absolute; inset: 36px 0 0 0; background: rgba(12, 13, 10, 0.78); z-index: 20; display: flex; align-items: center; justify-content: center; }
-.menubox { width: 800px; max-width: 96vw; background-color: var(--panel); background-image: var(--stripes); border: 1px solid var(--brass); border-radius: 4px; padding: 18px 24px 18px; box-shadow: 0 12px 40px #000c; }
-.menubox h1 { margin: 0 0 4px; font-size: 28px; color: var(--brass2); letter-spacing: 4px; text-transform: uppercase; }
-.mapgrid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 12px; }
-.mapcard { background: var(--panel2); border: 1px solid var(--line); border-top: 3px solid var(--edge); border-radius: 2px; padding: 8px; cursor: pointer; text-align: center; }
-.mapcard:hover { background: var(--panel3); border-top-color: var(--brass); }
-.mapcard.on { border-top-color: var(--brass2); background: #3b4a2c; }
-.mapcard canvas { width: 100%; aspect-ratio: 1 / 1; background: #000; border: 1px solid var(--line); display: block; margin-bottom: 6px; }
-.mapcard .name { font-weight: 600; color: #fff; margin-bottom: 3px; letter-spacing: 0.5px; }
-.diffrow { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 14px 0 6px; }
-.diffrow span { color: var(--muted); margin-right: 4px; text-transform: uppercase; letter-spacing: 1.2px; font-size: 11px; }
-.startbtn { font-size: 15px; padding: 7px 24px; background: var(--brass); color: #1b1d17; font-weight: 700; letter-spacing: 1px; border-color: #6d5715; }
+/* painted screens: the start menu and the loading screen share the serif look of assets/paintings/reference */
+:root { --serif-title: 'IM Fell English SC', Georgia, 'Times New Roman', serif; --serif: 'Cormorant Garamond', Georgia, 'Times New Roman', serif; --gold: #e3b565; --gold2: #e8a452; --parchment: #e9dfcd; --parchment2: #b9ab93; }
+#menu, #loading { position: fixed; inset: 0; background: #000; overflow: hidden; }
+#menu { z-index: 20; opacity: 0; transition: opacity 0.5s ease; }
+#menu.in { opacity: 1; }
+#loading { z-index: 40; }
+#menu > canvas, #loading > canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+
+/* menu front: title and serif buttons on the painting's dark left side */
+.mcol { position: absolute; left: 7vw; top: 50%; transform: translateY(-50%); display: grid; gap: 2.4vw; }
+.mcol h1 { margin: 0; font: 400 6.2vw/1 var(--serif-title); letter-spacing: 0.04em; color: #fff; }
+.mcol .sub { margin: -1.2vw 0 1.2vw; font: 500 1.25vw var(--serif); letter-spacing: 0.32em; text-transform: uppercase; color: var(--parchment2); }
+.mcol nav { display: grid; gap: 1.1vw; justify-items: start; }
+.mbtn { all: unset; cursor: pointer; font: 600 2.3vw var(--serif); letter-spacing: 0.14em; text-transform: uppercase; color: #fff; padding: 0.25vw 0; position: relative; }
+.mbtn::after { content: ''; position: absolute; left: 0; bottom: 0; height: 1px; width: 0; background: var(--gold2); transition: width 0.3s ease; }
+.mbtn:hover::after, .mbtn:focus-visible::after { width: 100%; }
+.mbtn.flash { animation: mflash 0.4s ease-out; }
+@keyframes mflash { 0% { color: #fff6e0; text-shadow: 0 0 12px rgba(255, 220, 150, 1), 0 0 34px rgba(255, 190, 90, 0.75); } 100% { color: #fff; text-shadow: none; } }
+
+/* menu setup page: a dark panel on the same painting */
+.msetup { position: absolute; left: 4vw; top: 50%; transform: translateY(-50%); width: min(64vw, 900px); max-height: 92vh; overflow-y: auto; padding: 1.8vw 2.2vw 1.6vw; background: rgba(6, 4, 2, 0.84); border: 1px solid rgba(232, 164, 82, 0.35); box-shadow: 0 20px 60px #000; color: var(--parchment); font-family: var(--serif); scrollbar-width: thin; scrollbar-color: rgba(232, 164, 82, 0.4) transparent; }
+.msetup h2 { margin: 0 0 0.3vw; font: 400 3vw/1 var(--serif-title); color: #fff; letter-spacing: 0.03em; }
+.msetup .small { color: var(--parchment2); font-size: 13px; line-height: 1.4; }
+.msetup .mbtn { font-size: 1.7vw; }
+.mapgrid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.8vw; margin-top: 1vw; }
+.mapcard { background: rgba(255, 240, 210, 0.05); border: 1px solid rgba(255, 240, 210, 0.12); border-top: 2px solid transparent; padding: 0.6vw; cursor: pointer; text-align: center; transition: background 0.2s, border-color 0.2s; }
+.mapcard:hover { background: rgba(255, 240, 210, 0.1); border-top-color: var(--gold2); }
+.mapcard.on { border-top-color: var(--gold); background: rgba(227, 181, 101, 0.14); }
+.mapcard canvas { width: 100%; aspect-ratio: 1 / 1; background: #000; display: block; margin-bottom: 0.5vw; filter: saturate(0.85); }
+.mapcard.on canvas { filter: none; }
+.mapcard .name { font: 600 1.05vw var(--serif); letter-spacing: 0.14em; text-transform: uppercase; color: #fff; margin-bottom: 0.25vw; }
+.mrow { display: flex; flex-wrap: wrap; gap: 0.5vw; align-items: center; margin: 1vw 0 0.3vw; }
+.mrow > span:first-child { font: 500 0.95vw var(--serif); letter-spacing: 0.3em; text-transform: uppercase; color: var(--parchment2); margin-right: 0.6vw; min-width: 7vw; }
+.mrow input[type=range] { flex: 0 1 14vw; accent-color: var(--gold); }
+.pill { all: unset; cursor: pointer; font: 600 0.95vw/1 var(--serif); letter-spacing: 0.16em; text-transform: uppercase; color: var(--parchment); padding: 0.45vw 0.85vw; border: 1px solid rgba(255, 240, 210, 0.22); transition: border-color 0.2s, color 0.2s; }
+.pill:hover { border-color: var(--gold2); color: #fff; }
+.pill.on { background: var(--gold); color: #1b1508; border-color: var(--gold); }
+.pill:disabled { opacity: 0.35; cursor: default; }
+.mactions { display: flex; gap: 2.4vw; align-items: baseline; margin: 1.4vw 0 0.6vw; }
+
+/* loading screen: plaque bottom left, gold bar bottom right, veil for the fade from black */
+#loading .band { position: absolute; left: 0; right: 0; bottom: 0; height: 22%; background: linear-gradient(to top, rgba(6, 4, 2, 0.88), rgba(6, 4, 2, 0.55) 45%, rgba(6, 4, 2, 0)); }
+#loading .hud { position: absolute; left: 3.6vw; right: 3.6vw; bottom: 2.6vw; display: flex; align-items: flex-end; justify-content: space-between; gap: 3vw; }
+#loading .plaque h2 { margin: 0; font: 400 2.7vw/1.05 var(--serif-title); color: #fff; letter-spacing: 0.03em; }
+#loading .plaque p { margin: 0.5vw 0 0; font: italic 500 1.35vw var(--serif); color: #cdbfa6; }
+#loading .load { width: 30vw; display: grid; gap: 0.8vw; }
+#loading .row { display: flex; justify-content: space-between; font: 600 1.2vw var(--serif); letter-spacing: 0.3em; text-transform: uppercase; color: var(--parchment); font-variant-numeric: tabular-nums; }
+#loading .track { position: relative; height: max(2px, 0.22vw); background: rgba(255, 240, 210, 0.18); overflow: hidden; }
+#loading .fill { position: absolute; inset: 0 auto 0 0; width: 0; background: var(--gold); box-shadow: 0 0 1.2vw rgba(255, 190, 90, 0.7); transition: width 0.25s ease; }
+#loading .veil { position: absolute; inset: 0; background: #000; transition: opacity 0.45s ease; pointer-events: none; }
+#loading .veil.clear { opacity: 0; }

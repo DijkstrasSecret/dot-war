@@ -27,8 +27,10 @@ no module system and no framework, so the game runs from `file://` as well as fr
 | `UI` | ui.js | the side panel and top bar (DOM), rebuilt when a content signature changes |
 | `MapGen` | maps.js | builds terrain and entities from a spec; holds the four map specs |
 | `Music` | audio.js | background music with a remembered on/off and volume |
-| `Menu` | menu.js | start menu: map thumbnails, difficulty, music |
-| `Main` | main.js | startup and the loop |
+| `PaintingFx` | assets/paintings/painting-fx.js | draws a menu or loading painting on a canvas and animates its details; `pick`, `info`, `create(canvas).show/start/stop` |
+| `Loading` | loading.js | loading screen: `run(steps)` shows a random loading painting and drives the bar as each `{ label, run }` step executes between frames |
+| `Menu` | menu.js | start menu over a random menu painting: front page (New game, Continue, Music, Controls) and the setup page (map, difficulty, army) |
+| `Main` | main.js | startup, the match build steps, and the loop |
 
 Data flow per frame (`Main.frame`):
 
@@ -43,9 +45,14 @@ Data flow per frame (`Main.frame`):
 units, separation, projectiles, effects and decals, AI, fog (every 0.25 s), cleanup of dead entities
 (every 2 s), win check (skipped for the enemy HQ on sandbox maps).
 
-Startup (`Main` on `load`): `Menu.prepareThumbnails()` builds every map once for its preview,
-then `Main.start('highland', 'normal')` builds the real map and `Menu.show()` covers it.
-`Main.start(mapId, difficulty)` is the only way to (re)start a game.
+Startup (`Main` on `load`): everything runs behind the loading screen. `Loading.run` gets one
+step per map thumbnail (`Menu.prepareThumbnail`) followed by the build steps of the default match,
+then `Menu.show()` opens the painted menu and the loop starts. A match is built by
+`Main.steps(mapId, difficulty, faction)`: survey (init and `MapGen.build`), routes (`Path`, `Fog`,
+`AI`), drawing (`Terrain.flushDirty`), deploy (renderer, input and UI on first use, camera).
+`Main.start(...)` runs the steps synchronously (console and tests); `Main.load(...)` runs them
+behind the loading screen and idles the loop meanwhile (`Main.loading`). The menu's Start button
+uses `load`.
 
 ## 2. Units of measure
 
