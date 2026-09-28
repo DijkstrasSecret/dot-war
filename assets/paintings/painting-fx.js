@@ -18,6 +18,20 @@ const PaintingFx = (() => {
       { t: 'motes', beam: [[1565, 55], [1165, 565], 40, 120], n: 90, rgb: '255,238,200' },
       { t: 'smoke', src: [[1330, 512], [1552, 492]], every: 0.22, rgb: '205,196,178', a: 0.085, rise: -0.45, drift: 0.07, grow: 5, life: [4, 6.5], mode: 'screen' },
       { t: 'glints', pts: [[752, 512], [1372, 447], [1452, 498], [1588, 423], [1076, 698], [1233, 250]] }] },
+    'the-letter': { file: 'menu/the-letter.jpg', title: 'The letter', after: 'in the manner of Caravaggio', use: 'menu', anchorX: 0.75, fx: [
+      { t: 'glow', x: 1250, y: 160, r: 190, rgb: '255,226,180', base: 0.05, amp: 0.04, sp: 0.35 },
+      { t: 'glow', x: 1288, y: 585, r: 150, rgb: '255,150,60', base: 0.09, amp: 0.08, sp: 1.6 },
+      { t: 'glow', x: 1288, y: 590, r: 18, rgb: '255,220,160', base: 0.30, amp: 0.25, sp: 2.2, jit: 1.2 },
+      { t: 'motes', beam: [[1640, 30], [1360, 520], 60, 170], n: 80, rgb: '255,236,196' },
+      { t: 'motes', rect: [900, 120, 480, 480], n: 30, rgb: '255,230,190' },
+      { t: 'smoke', src: [[1292, 570]], every: 0.4, rgb: '190,180,165', a: 0.07, rise: -0.4, drift: 0.04, grow: 6, life: [5, 7], mode: 'screen' },
+      { t: 'glints', pts: [[1005, 440], [1340, 520], [1440, 475], [1612, 425], [1310, 705], [1195, 640], [1110, 453]] }] },
+    'the-wounded': { file: 'menu/the-wounded.jpg', title: 'The wounded', after: 'in the manner of Caravaggio', use: 'menu', anchorX: 0.75, fx: [
+      { t: 'glow', x: 1500, y: 200, r: 220, rgb: '255,230,190', base: 0.05, amp: 0.04, sp: 0.3 },
+      { t: 'motes', beam: [[870, 50], [1360, 520], 40, 150], n: 70, rgb: '255,236,196' },
+      { t: 'motes', beam: [[1540, 60], [1672, 400], 30, 100], n: 35, rgb: '255,236,196' },
+      { t: 'smoke', src: [[1460, 470], [1330, 430]], every: 0.6, rgb: '200,190,172', a: 0.05, rise: -0.25, drift: 0.1, grow: 8, life: [7, 10], mode: 'screen' },
+      { t: 'glints', pts: [[930, 240], [1215, 265], [995, 420], [1190, 460], [1520, 390], [1440, 410], [1090, 820]] }] },
     'the-crossing': { file: 'loading/01-the-crossing.jpg', title: 'The crossing', after: 'after Leutze, 1851', use: 'loading', fx: [
       { t: 'glow', x: 190, y: 235, r: 300, rgb: '255,196,110', base: 0.07, amp: 0.05, sp: 0.35 },
       { t: 'glow', x: 190, y: 235, r: 90, rgb: '255,236,190', base: 0.10, amp: 0.06, sp: 0.5 },
@@ -248,5 +262,7 @@ const PaintingFx = (() => {
   }
 
   const ids = use => Object.keys(PAINTINGS).filter(k => !use || PAINTINGS[k].use === use);
-  return { W, H, PAINTINGS, create, ids, info: k => PAINTINGS[k] };
+  // Equal chance for every painting of a kind, so adding a menu painting changes the odds by itself.
+  const pick = use => { const a = ids(use); return a[Math.floor(Math.random() * a.length)]; };
+  return { W, H, PAINTINGS, create, ids, pick, info: k => PAINTINGS[k] };
 })();

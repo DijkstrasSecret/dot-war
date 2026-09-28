@@ -15,6 +15,8 @@ any click or hover effects are to be built in the game UI (see "For Claude Code"
 | File | Painting | Used for | Animated details |
 |---|---|---|---|
 | `menu/the-calling.jpg` | The calling, after Caravaggio | Main menu | Candle flicker, dust in the window beam, cigarette smoke, glints |
+| `menu/the-letter.jpg` | The letter, in the manner of Caravaggio | Main menu | Fire flicker and smoke, dust in the window beam, arch light, glints |
+| `menu/the-wounded.jpg` | The wounded, in the manner of Caravaggio | Main menu | Dust in two light beams, drifting haze, arch light, glints |
 | `loading/01-the-crossing.jpg` | The crossing, after Leutze | Loading | Sun pulse, snow, sparkles on the ice water, glints |
 | `loading/02-over-the-barricade.jpg` | Over the barricade, after Delacroix | Loading | Fire glow, rising embers, dark smoke, glints |
 | `loading/03-the-company-moves-out.jpg` | The company moves out, after Rembrandt | Loading | Dust in the sunbeam, light pulse, glints |
@@ -37,10 +39,11 @@ pixels. To preview, run `python serve.py 8765` from the repo root and open
 
 ```js
 const fx = PaintingFx.create(canvas, { base: 'assets/paintings/' });
-fx.show('the-calling').then(() => fadeIn());  // resolves when the image has loaded
+fx.show(PaintingFx.pick('menu')).then(() => fadeIn());  // random menu painting; resolves when loaded
 fx.start();                                   // requestAnimationFrame loop
 fx.stop();                                    // stop when the screen is hidden (important in game)
 PaintingFx.ids('loading');                    // ['the-crossing', 'over-the-barricade', ...]
+PaintingFx.pick('menu');                      // one menu painting at random, equal chance each
 PaintingFx.info('the-light');                 // { title, after, file, use, fx }
 ```
 
@@ -53,7 +56,10 @@ which side survives the crop on narrow screens: the menu uses 0.75 to keep the f
 ## For Claude Code: building the real screens
 
 Main menu (`js/menu.js`, the planned UI rework):
-- Background is `the-calling`. The left 40% of the painting is deliberately near-black empty
+- Background: every time the menu opens, pick one menu painting at random with
+  `PaintingFx.pick('menu')`. All menu paintings have an equal chance (1 in 3 now); a painting
+  added with `use: 'menu'` joins the draw and the odds adjust by themselves.
+- The left 40% of every menu painting is deliberately near-black empty
   space for the menu. Buttons are white serif text on the dark area (preview uses IM Fell English
   SC for the title and Cormorant Garamond for buttons; any similar serif works).
 - Add the hover and click feedback in the UI layer, for example a warm underline on hover and a

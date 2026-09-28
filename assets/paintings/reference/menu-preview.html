@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Dot War menu preview</title>
-<!-- Design reference only: shows the agreed look of the main menu over the-calling.
+<!-- Design reference only: shows the agreed look of the main menu over a random menu painting.
      The real menu is built in js/menu.js; the buttons here do nothing. -->
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IM+Fell+English+SC&family=Cormorant+Garamond:wght@500;600&display=swap">
 <style>
@@ -25,14 +25,16 @@
   <canvas id="fx" aria-hidden="true"></canvas>
   <div class="menu">
     <h1>Dot War</h1>
-    <div class="sub">The calling</div>
+    <div class="sub" id="sub"></div>
     <nav><button>New game</button><button>Continue</button><button>Settings</button><button>Quit</button></nav>
   </div>
 </div>
 <script src="../painting-fx.js"></script>
 <script>
   const fx = PaintingFx.create(document.getElementById('fx'), { base: '../' });
-  fx.show('the-calling'); fx.start();
+  const id = PaintingFx.pick('menu');  // a new random menu painting on every load
+  document.getElementById('sub').textContent = PaintingFx.info(id).title;
+  fx.show(id); fx.start();
 </script>
 </body>
 </html>
