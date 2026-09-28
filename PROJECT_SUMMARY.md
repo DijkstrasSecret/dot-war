@@ -1,7 +1,8 @@
 # Dot War: project summary
 
-Written 28 September 2026, to bring any chat in this project up to speed without mixing up
-details from earlier chats. It sums up both chats so far, the project docs and the GitHub repo.
+Written 28 September 2026 and updated the same evening, to bring any chat in this project up to
+speed without mixing up details from earlier chats. It sums up the three chats so far, the project
+docs and the GitHub repo.
 When this summary and a source doc disagree, the source doc wins.
 
 The claude.ai project is called "Goat Wars"; the game is **Dot War**.
@@ -15,7 +16,8 @@ The claude.ai project is called "Goat Wars"; the game is **Dot War**.
 | Chat | What happened |
 | --- | --- |
 | **Game design concepts** | Read `GAME_DESIGN.md` (patch 0.2) and the code. Answered all 25 open design questions, then designed squadrons, a full tech tree, new units and buildings, veterancy, weather, day and night, and the Balance Lab. Ran two review passes. Wrote `DESIGN_DECISIONS.md` (sections 0 to J), `IMPLEMENTATION_PLAN.md` (infantry-first patch order) and a new `CLAUDE.md`, and put them on the repo's `design-decisions` branch. |
-| **Soldier portraits** (the chat that wrote this summary) | Built the portrait and name generator (`js/portraits.js`), added nine cosmetic factions and three kit eras, and wrote section K into `DESIGN_DECISIONS.md`. Made patch 0.2a, which comes before 0.2.1, with a tested diff and a step-by-step guide for Claude Code. |
+| **Soldier portraits** (the chat that wrote this summary) | Built the portrait and name generator (`js/portraits.js`), added nine cosmetic factions and three kit eras, and wrote section K into `DESIGN_DECISIONS.md`. Made patch 0.2a, which comes before 0.2.1, with a tested diff and a step-by-step guide for Claude Code. Opened pull request #2. |
+| **Oil painted renaissance soldiers** | Made seven oil-painting backgrounds (one menu, six loading screens) that restage famous paintings with WW2 soldiers, plus `painting-fx.js`, which animates candles, dust, smoke, embers, snow and glints over them. Committed them straight to `main` under `assets/paintings/`. Changed the insignia rule in section K: national insignia are now allowed, Nazi and party symbols never. |
 
 ### Project docs (claude.ai)
 
@@ -35,8 +37,8 @@ Claude Code reads the same versions.
 
 | Branch | Contents |
 | --- | --- |
-| `main` | The game as built (patch 0.2), commit `d329ba3`. Old `CLAUDE.md`, `ROADMAP.md`, `DEVELOPMENT.md`, `README.md`. No design docs. |
-| `design-decisions` | **Docs only, open as pull request #2, not merged yet.** Holds `GAME_DESIGN.md`, the newest `DESIGN_DECISIONS.md` and `IMPLEMENTATION_PLAN.md`, the updated `CLAUDE.md`, `PROJECT_SUMMARY.md`, `PATCH_0.2a_PORTRAITS.md`, `patches/patch-0.2a-portraits.diff` and `deploy.sh`. Built on top of `main-f0qn7m`. |
+| `main` | The game as built (patch 0.2) plus `assets/paintings/` (menu and loading paintings, `painting-fx.js`, previews and a README for Claude Code). Not wired into the game yet. Still has the old `CLAUDE.md` and no design docs. |
+| `design-decisions` | **Docs only, open as pull request #2, not merged yet.** Merges cleanly with the current `main`. Holds `GAME_DESIGN.md`, the newest `DESIGN_DECISIONS.md` and `IMPLEMENTATION_PLAN.md`, the updated `CLAUDE.md`, `PROJECT_SUMMARY.md`, `PATCH_0.2a_PORTRAITS.md`, `patches/patch-0.2a-portraits.diff` and `deploy.sh`. Built on top of `main-f0qn7m`. |
 | `main-f0qn7m` | Older branch that added `deploy.sh` (open pull request #1) and `GAME_DESIGN.md`. The first design chat read from here. Merging `design-decisions` brings these in too. |
 
 ### Other
@@ -73,6 +75,12 @@ Full detail is in `GAME_DESIGN.md` on the `design-decisions` branch.
   from a factory; G and U upgrade and unload towers.
 - **Dev server:** `python serve.py 8765`. Never `python -m http.server`, because the browser keeps
   old scripts.
+- **Paintings (on `main`, not wired in):** `assets/paintings/` holds the menu painting
+  (*The calling*, after Caravaggio) and six loading paintings (after Leutze, Delacroix, Rembrandt,
+  Raphael, Leonardo, Michelangelo), all 1672 × 941. `painting-fx.js` defines one global,
+  `PaintingFx`, that draws a painting on a canvas and animates small details. `bare.html` previews
+  them; `reference/` holds the agreed menu and loading-screen look. The README has instructions
+  for Claude Code.
 
 ---
 
@@ -360,6 +368,28 @@ Every army also has rare peaked caps, head bandages and bare heads.
 
 ---
 
+## 5b. Menu and loading-screen paintings
+
+- **What exists:** seven paintings and the `PaintingFx` engine, on `main` in `assets/paintings/`.
+  Approved look; not wired into the game yet. Read `assets/paintings/README.md` first.
+- **Menu:** *The calling*. The left 40% of the painting is empty near-black space for the
+  buttons: white serif text (IM Fell English SC for the title, Cormorant Garamond for buttons in
+  the preview). Hover shows a warm underline, click a short brightening flash. Stop the engine
+  when a match starts.
+- **Loading screen:** pick a random loading painting per load, show its title and "after ..."
+  line as a plaque bottom left and a thin gold progress bar bottom right, driven by real loading
+  progress. Fade from black once the image has loaded.
+- **Decisions to keep:**
+  - Never warp the painted image (no waving flags). Effects only add light and particles on top.
+  - In *The light* the cigarette ember stays tiny.
+  - Insignia follow section K (below).
+- **Known issue:** `06-the-light.jpg` shows a WW2 German cap eagle, which holds a swastika.
+  Regenerate that image before release, keeping the file name and framing.
+- **Build slot:** the UI rework (after patch 0.2a), which owns `js/menu.js`. Added to
+  `IMPLEMENTATION_PLAN.md` as "Patch 0.2b: UI rework (to be designed)".
+
+---
+
 ## 6. Build order
 
 `IMPLEMENTATION_PLAN.md` replaces the older patch list in `ROADMAP.md` and `GAME_DESIGN.md`
@@ -368,7 +398,7 @@ section 11.
 | Patch | Content |
 | --- | --- |
 | **0.2a** | Portraits, names, factions (added 28 Sept, before the UI rework) |
-| *UI rework* | Planned by Kaan after 0.2a; not designed yet |
+| **0.2b** | UI rework: painted menu and loading screen, new panel layout. Layout not designed yet; the paintings are ready. |
 | **0.2.1** | Foundations: seeded randomness, Balance Lab, new combat values, Worker, Musketeer removed, AI changes, new controls |
 | **0.3** | Squadrons and veterancy |
 | **0.4** | Fortifications and medical (lines, Bunker, HQ garrison, grenades, Medic, Field Hospital) |
@@ -386,7 +416,8 @@ section 11.
    `deploy.sh` from pull request #1, which then closes as merged.
 2. In Claude Code, pull `main`, ask it to read `PROJECT_SUMMARY.md` and report back, then say:
    "Do patch 0.2a following PATCH_0.2a_PORTRAITS.md."
-3. Plan the UI rework in a new chat in this project. Start by pointing it at this summary.
+3. Plan the rest of the UI rework (0.2b) in a new chat in this project. Start by pointing it at
+   this summary.
 
 ---
 
@@ -394,7 +425,8 @@ section 11.
 
 - Every value marked (proposed), to be tuned in the Balance Lab.
 - Designer extras' exact weights (1 or 2) and the chassis cost factors.
-- The UI rework: layout, and where portraits appear (selection panel, squadron bar, or both).
+- The UI rework (0.2b): panel layout, and where portraits appear (selection panel, squadron bar,
+  or both). The menu and loading screens are designed; the rest is not.
 - Final research triggers for Cold War and Modern kit, once the tech tree grows past WW2.
 - Drones: when they arrive and what research unlocks them.
 - National insignia on portraits and art (helmet decals, cap badges); patch 0.2a has none yet.
@@ -418,5 +450,6 @@ section 11.
 | Era | "Grounded 1910–1945" | WW2 and beyond (section K) |
 | Faction vs team | — | Faction = army look and names. Team = colour (blue or red). They are separate. |
 | Insignia | "No flags, party or political insignia" (morning of 28 Sept) | National insignia allowed, Nazi and party symbols never (section K) |
-| Paintings | — | Menu and loading screen paintings are on `main` in `assets/paintings/` (see its README) |
+| Paintings | — | Menu and loading screen paintings are on `main` in `assets/paintings/` (see its README). They were pushed straight to `main`, the one exception to the branch-per-patch rule. |
+| Portraits vs paintings | — | Portraits = small procedural faces per soldier (`js/portraits.js`, patch 0.2a). Paintings = large hand-made menu and loading art (`assets/paintings/`, patch 0.2b). |
 | Doc versions | Before 28 Sept afternoon, the repo copies lacked section K and patch 0.2a | Repo `design-decisions` branch and project copies now match |

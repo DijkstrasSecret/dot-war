@@ -127,6 +127,13 @@ must print nothing. The simulation never calls the portrait engine.
   the random draws changes every soldier's face or name. Adding a new faction at the end is fine.
 - **Don't let factions touch stats.** They are looks only; sides stay symmetric.
 
+## Insignia
+
+The portraits in this patch draw no national insignia; the only marking is the team colour on
+collar tabs and cap bands. That is fine under the current section K rule (national insignia
+allowed, Nazi and party symbols never). Adding helmet decals and cap badges per army is open work
+for a later patch, not part of 0.2a.
+
 ## Notes for later patches
 
 - **0.2.1 (seeded randomness):** the AI's faction is chosen with `Math.random` in `Main.start`

@@ -1,7 +1,7 @@
 # Dot War: implementation plan
 
 Patch order agreed on 28 September 2026: **infantry first**. Patch 0.2a (portraits) was added
-in front of 0.2.1 the same day, so the coming UI rework is built with portraits already in place.
+in front of 0.2.1 the same day, so the UI rework (0.2b) is built with portraits already in place.
 The patches build on each other, so do them in this order. All numbers and rules come from `DESIGN_DECISIONS.md`; the references in
 brackets point to its sections. Work rules are in `CLAUDE.md`.
 
@@ -26,6 +26,25 @@ Guide and ready-made diff: `PATCH_0.2a_PORTRAITS.md` and `patches/patch-0.2a-por
 - [ ] `grep Portraits` finds nothing in the simulation files.
 - [ ] Repo docs updated (`CLAUDE.md`, `DEVELOPMENT.md`, `GAME_DESIGN.md`, `README.md`, `ROADMAP.md`).
 - [ ] `patches/patch-0.2a-portraits.diff` deleted once the code is in.
+
+---
+
+## Patch 0.2b: UI rework (to be designed)
+
+The menu and loading screens are designed and their art is on `main`; the rest of the layout is
+not designed yet. Read `assets/paintings/README.md` before starting.
+
+- [ ] Main menu over *The calling* (`PaintingFx`): white serif buttons on the dark left 40%,
+      hover underline, click flash; stop the engine when a match starts.
+- [ ] Loading screen: random loading painting, title plaque, gold progress bar from real loading
+      progress, fade in from black.
+- [ ] Regenerate `06-the-light.jpg` without the cap eagle (section K marking rules).
+- [ ] Panel layout, and where portraits go (design first, in a project chat).
+
+**Done when**
+- [ ] Menu and loading screen tested in the browser with no console errors; the game loop is
+      unaffected during play.
+- [ ] `GAME_DESIGN.md` section 10 (Presentation) updated.
 
 ---
 
