@@ -180,5 +180,54 @@ const LabTests = (() => {
     };
   }
 
-  return { buildArena, duel, duels, fort, forts, economy, aiMatch };
+  // ---- meta snapshot (patch 0.5b.1) ----
+  // A fixed battery of seeded tests that sums up the balance of the current build, so a later patch
+  // (weather and night in 0.6, for example) can be compared number by number. Pieces run separately so
+  // a page can show progress; metaSnapshot() runs them all.
+  const ARMED = ['rifle', 'hmg', 'sniper', 'mortar'];
+  // Equal supply per side (6): six of each circle, three Mortar Crews.
+  const bySupply = t => Math.round(6 / (Data.UNITS[t].supply || 1));
+  function metaDuels(runs = 30) {
+    const out = [];
+    for (let i = 0; i < ARMED.length; i++) for (let j = i; j < ARMED.length; j++) {
+      const a = ARMED[i], b = ARMED[j], r = duels({ typeA: a, nA: bySupply(a), typeB: b, nB: bySupply(b), ground: 'flat', maxTime: 180 }, runs);
+      out.push({ a, nA: bySupply(a), b, nB: bySupply(b), winA: r.winA, winB: r.winB, draw: r.draw, time: r.avgTime, survA: r.avgSurvivorsA, survB: r.avgSurvivorsB });
+    }
+    return out;
+  }
+  function metaTerrain(runs = 50) {
+    const f = (o, label) => Object.assign({ label }, duels(Object.assign({ typeA: 'rifle', nA: 5, typeB: 'rifle', nB: 5 }, o), runs));
+    return [f({ ground: 'flat' }, '5 v 5 Riflemen, flat'), f({ ground: 'height' }, 'B 30 m higher'), f({ ground: 'forest' }, 'B in forest'),
+      f({ ground: 'flat', nA: 6, nB: 6, squadA: true }, '6 v 6, A as a squadron'), f({ typeA: 'hmg', nA: 1, typeB: 'rifle', nB: 1, maxTime: 60, keepAliveB: true }, 'MG pins a Rifleman')];
+  }
+  function metaForts(runs = 30) {
+    const f = (o, label) => Object.assign({ label }, forts(o, runs));
+    return [f({ setup: 'open', nA: 8 }, '8 Riflemen v 5 in the open'), f({ setup: 'trench', nA: 8 }, '8 v 5 in a trench'),
+      f({ setup: 'trench', nA: 8, grenades: true }, '8 with grenades v 5 in a trench'), f({ setup: 'bunker', nA: 8 }, '8 grenadiers v full Bunker (5 inside)'),
+      f({ setup: 'bunker', nA: 10 }, '10 grenadiers v full Bunker (5 inside)')];
+  }
+  function metaEconomy() {
+    const e = economy({ seed: 1, minutes: 20 }), at = m => e.log.reduce((best, r) => Math.abs(r.t - m * 60) < Math.abs(best.t - m * 60) ? r : best, e.log[0]);
+    return { tier2Min: e.tier2Min, at5: at(5), at10: at(10), at15: at(15), at20: at(20) };
+  }
+  // How hard the enemy commander pushes an idle player: the player's starting army stays home and
+  // fights only what comes to it. Logs every minute; stops when the player's HQ falls.
+  function aiPressure({ seed = 1, difficulty = 'normal', minutes = 30 } = {}) {
+    Sim.newMatch({ map: 'highland', difficulty, seed });
+    const hq = G.buildings.find(b => b.owner === 1 && b.type === 'hq'); const log = []; let firstContact = null, raids = 0;
+    const ticks = Math.round(minutes * 60 / STEP);
+    for (let t = 0; t <= ticks && !G.over; t++) {
+      if (firstContact == null && G.units.some(u => u.owner === 2 && !u.dead && Util.dist(u.x, u.y, hq.x, hq.y) < 500)) firstContact = G.time / 60;
+      if (t % 1800 === 0) log.push({ min: G.time / 60, aiArmy: G.units.filter(u => u.owner === 2 && !u.dead && !u.def.labour).length, playerUnits: G.units.filter(u => u.owner === 1 && !u.dead).length, hqHp: hq.dead ? 0 : Math.round(hq.hp), kills: G.stats[1].kills, lost: G.stats[1].lost });
+      if (t < ticks) Game.update(STEP);
+    }
+    raids = AI.sides[2] ? AI.sides[2].raids : 0;
+    return { seed, difficulty, firstContactMin: firstContact, hqFellMin: G.over && G.winner === 2 ? G.time / 60 : null, raids, log };
+  }
+  function metaSnapshot({ runs = 30 } = {}) {
+    return { build: 'see PATCH_NOTES.md', duels: metaDuels(runs), terrain: metaTerrain(Math.max(runs, 50)), forts: metaForts(runs), economy: metaEconomy(),
+      ai: ['easy', 'normal', 'hard'].map(d => aiPressure({ seed: 1, difficulty: d, minutes: 30 })) };
+  }
+
+  return { buildArena, duel, duels, fort, forts, economy, aiMatch, metaDuels, metaTerrain, metaForts, metaEconomy, aiPressure, metaSnapshot };
 })();
