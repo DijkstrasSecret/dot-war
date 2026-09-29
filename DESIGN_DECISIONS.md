@@ -1159,6 +1159,14 @@ Worker button, army overview, under-attack alerts, repeat production); **0.5d** 
 (garrison and dig in, retreat damaged units, research over time, raid supply lines); **0.7**
 objectives / victory points; **0.9** Officer / radio unit, unit stances, after-match report.
 
+### Patch 0.5c balance details (Kaan, 30 September 2026)
+
+| Topic | Decision |
+| --- | --- |
+| Machine Gunner | Supply 2 was tried and **reverted to 1**. Instead: cost **15 wood + 45 metal** (was 10 + 35), damage **6** (was 11), and its suppression spreads to soldiers within **50 m** of the target at **half** strength (other weapons: 30 m, 20%). Its power is pinning, not killing. Lab: 1 MG + 4 Riflemen beat 6 Riflemen 60% (5 Riflemen alone: 7%); the MG pin test is unchanged at 4.9 s. |
+| Forest | Cover only at the forest edge (open ground within 2 cells), and cover **0.75** (was 0.55). Lab: 5 v 5 with the defenders in forest, defenders win ~88% (was 100%); 7 attacking 5 win ~95%. |
+| Mortars | Minimum range 150 m; a mortar with an enemy inside that range steps back until it can fire (unless holding or bombarding). |
+
 ---
 
 ## Still open

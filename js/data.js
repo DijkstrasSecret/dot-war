@@ -38,9 +38,11 @@ const Data = {
     },
     hmg: {
       name: 'Machine Gunner', shape: 'circle', icon: 'hmg', cls: 'infantry', size: 6.5, role: 2,
-      hp: 80, armor: 'none', speed: 38, vision: 160, cost: { wood: 10, metal: 35 }, time: 14, supply: 1, requires: 'hmg', noMovingFire: true,   // DD Q11: cannot fire on the move
-      weapon: { dmg: 11, dtype: 'ballistic', range: 200, minRange: 0, acc: 0.4, reload: 0.18, pspeed: 900, indirect: false, splash: 0, suppress: 0.035 },
-      desc: 'Sustained fire. Pins enemies down and shreds infantry in the open.',
+      hp: 80, armor: 'none', speed: 38, vision: 160, cost: { wood: 15, metal: 45 }, time: 14, supply: 1, requires: 'hmg',   // Kaan, 0.5c: dearer (was 10 / 35), supply stays 1 noMovingFire: true,   // DD Q11: cannot fire on the move
+      // Kaan, 0.5c: an MG's strength is suppression, not killing: damage 11 -> 6, and its suppression spreads
+      // to soldiers within 50 m of the target at half strength (others' shots: 30 m, 20%).
+      weapon: { dmg: 6, dtype: 'ballistic', range: 200, minRange: 0, acc: 0.4, reload: 0.18, pspeed: 900, indirect: false, splash: 0, suppress: 0.035, suppressArea: { r: 50, share: 0.5 } },
+      desc: 'Sustained fire that pins whole groups down. Weak on its own, decisive beside Riflemen.',
     },
     sniper: {
       name: 'Sniper', shape: 'circle', icon: 'sniper', cls: 'infantry', size: 6, role: 2,
@@ -52,7 +54,8 @@ const Data = {
     mortar: {
       name: 'Mortar Crew', shape: 'square', icon: 'mortar', cls: 'infantry', size: 7, role: 3,
       hp: 70, armor: 'none', speed: 34, vision: 140, cost: { wood: 20, metal: 40 }, time: 16, supply: 2, requires: 'mortar',
-      weapon: { dmg: 50, dtype: 'explosive', range: 380, minRange: 90, acc: 0.5, reload: 5, pspeed: 200, indirect: true, splash: 32, suppress: 0.35, ammo: { sulfur: 2 } },
+      weapon: { dmg: 50, dtype: 'explosive', range: 380, minRange: 150,   // Kaan, 0.5c: minimum range 90 -> 150
+         acc: 0.5, reload: 5, pspeed: 200, indirect: true, splash: 32, suppress: 0.35, ammo: { sulfur: 2 } },
       desc: 'Indirect fire over ridges. Costs sulfur per shell. Needs a spotter to be accurate.',
     },
     // DD A, patch 0.5b. Seats: a circle takes 1, a square 2. Hauls `load` on a supply link (Kaan).
@@ -225,13 +228,13 @@ const Data = {
   DEPOSIT_NAMES: { metal: 'Iron ore', sulfur: 'Sulfur', rubber: 'Rubber trees', oil: 'Oil seep' },
 
   // Enemy commander settings per difficulty. 'hard' is the original tuning.
-  // DD Q2: first raid = the enemy's walking time to the player's HQ + buildUp; each raid interval
+  // DD Q2: first raid = the enemy's walking time to the player's HQ + buildUp (Kaan, 0.5c: 8 / 5 / 3.5 min by difficulty); each raid interval
   // also adds that walking time. DD G7: game seconds at which the AI may train each unit; Normal
   // uses the agreed 8 / 12 / 15 min, Easy x1.25 and Hard x0.75 (proposed, set in 0.2.1).
   DIFFICULTY: {
-    easy: { name: 'Easy', desc: 'Small garrison, rare small raids, slow enemy production.', cap: 8, capGrow: 1, buildUp: 300, raidMin: 320, raidVar: 120, raidFrac: 0.4, garrison: 6, income: 0.6, unlocks: { hmg: 600, sniper: 900, mortar: 1125 } },
+    easy: { name: 'Easy', desc: 'Small garrison, rare small raids, slow enemy production.', cap: 8, capGrow: 1, buildUp: 480, raidMin: 320, raidVar: 120, raidFrac: 0.4, garrison: 6, income: 0.6, unlocks: { hmg: 600, sniper: 900, mortar: 1125 } },
     normal: { name: 'Normal', desc: 'Moderate garrison and raids every few minutes.', cap: 11, capGrow: 2, buildUp: 300, raidMin: 220, raidVar: 100, raidFrac: 0.5, garrison: 9, income: 0.8, unlocks: { hmg: 480, sniper: 720, mortar: 900 } },
-    hard: { name: 'Hard', desc: 'Full garrison on the mountain and frequent large raids.', cap: 14, capGrow: 2, buildUp: 300, raidMin: 150, raidVar: 90, raidFrac: 0.55, garrison: 12, income: 1, unlocks: { hmg: 360, sniper: 540, mortar: 675 } },
+    hard: { name: 'Hard', desc: 'Full garrison on the mountain and frequent large raids.', cap: 14, capGrow: 2, buildUp: 210, raidMin: 150, raidVar: 90, raidFrac: 0.55, garrison: 12, income: 1, unlocks: { hmg: 360, sniper: 540, mortar: 675 } },
   },
   DIFFICULTY_ORDER: ['easy', 'normal', 'hard'],
 

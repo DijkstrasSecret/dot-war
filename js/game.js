@@ -579,7 +579,9 @@ const Game = (() => {
     if (e instanceof Unit) {   // every shot at a unit stresses it, hit or miss
       const was = e.suppressed; addStress(e, w.suppress); e.lastHitBy = u; alertUnit(e); returnFire(e, u);
       if (!was && e.suppressed) suppressXp(u, e);
-      for (const o of G.units) if (o !== e && !o.dead && !o.inside && o.owner === e.owner && dist(o.x, o.y, e.x, e.y) < 30) addStress(o, w.suppress * 0.2);
+      // Neighbours feel part of it; a weapon with suppressArea (the MG, Kaan 0.5c) spreads more, wider.
+      const sa = w.suppressArea || { r: 30, share: 0.2 };
+      for (const o of G.units) if (o !== e && !o.dead && !o.inside && o.owner === e.owner && dist(o.x, o.y, e.x, e.y) < sa.r) addStress(o, w.suppress * sa.share);
     }
   }
   function fireShell(u, tx, ty) {
@@ -1223,6 +1225,13 @@ const Game = (() => {
     } else if (u.stress >= C.panicAt && !u.def.neverPanics) { u.flee = 2.5 + R(); u.target = null; u.windup = null; return; }   // DD Q12: snipers never panic
     if (u.windup) { updateWindup(u, dt); return; }   // winding up a throw: no moving, no firing
     tryFire(u);
+    // Kaan, 0.5c: a mortar with an enemy inside its minimum range steps back to where it can fire
+    // (unless it is holding or bombarding a point).
+    if (isIndirect(u) && !(u.order && (u.order.type === 'hold' || u.order.type === 'bombard'))) {
+      let near = null, nd = u.stats.weapon.minRange;
+      for (const e of G.units) { if (e.dead || e.inside || e.owner === u.owner || e.owner === 0 && u.owner !== 0) continue; const d = dist(u.x, u.y, e.x, e.y); if (d < nd && canSee(u, e)) { near = e; nd = d; } }
+      if (near) { moveToward(u, u.x + (u.x - near.x), u.y + (u.y - near.y), dt, 1); return; }
+    }
     if (u.def.grenade && u.nadeT <= 0 && !u.windup && G.tick % 10 === u.id % 10 && canThrow(u) && !(u.order && u.order.type === 'grenade')) autoGrenade(u);
     // An idle Medic walks over to the nearest wounded soldier it can see (squadmates first).
     if (u.def.heal && !u.order && !u.micro && G.tick % 30 === u.id % 30 && !u.patient) {
