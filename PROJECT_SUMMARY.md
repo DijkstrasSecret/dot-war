@@ -405,8 +405,8 @@ section 11.
 | **0.4** | Fortifications and medical (lines, Bunker, HQ garrison, grenades, Medic, Field Hospital) |
 | **0.5** | Vehicles, logistics and the tech tree (Truck, fuel, Workshop, Depot, R&D Lab, Rubber Tapper, Refinery, supply) |
 | **0.6** | Weather and night |
-| **0.7** | Big maps, villages and AI raids |
-| **0.8** | Blueprint designer, artillery (Field Gun), armoured car |
+| **0.7** | Big maps, villages, AI raids, abandoned buildings and props as cover, trees in forests, wider roads |
+| **0.8** | Artillery (Field Gun), armoured car (the blueprint designer was dropped) |
 | Later | AI on player economy, multiplayer, replays, save and load, sound, tutorial, drones |
 
 ---
