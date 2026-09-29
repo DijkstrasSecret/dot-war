@@ -62,8 +62,9 @@ Victory: destroy the enemy Headquarters. Defeat: lose yours. The sandbox map has
 
 ## 3. Units
 
-All six blueprints are infantry class. Squares count as "heavy" for tower capacity. The
-Musketeer was removed in patch 0.2.1; the Medic arrived in patch 0.4.
+Six infantry blueprints and one vehicle, the Truck (patch 0.5b). Squares count as "heavy" for tower
+capacity and take two Truck seats. The Musketeer was removed in patch 0.2.1; the Medic arrived in
+patch 0.4.
 
 | Blueprint | Shape | HP | Speed | Vision | Cost | Train time | Needs research |
 | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -73,6 +74,7 @@ Musketeer was removed in patch 0.2.1; the Medic arrived in patch 0.4.
 | Sniper | circle | 55 | 48 | 230 | 10 wood, 25 metal | 14 s | Marksman Rifle |
 | Mortar Crew | square | 70 | 34 | 140 | 20 wood, 40 metal | 16 s | Mortar |
 | Medic | circle | 50 | 50 | 140 | 20 wood, 15 metal | 10 s | Field Medicine |
+| Truck | rectangle | 150 (light armour) | 110, x1.5 on roads | 150 | 40 wood, 30 metal, 5 rubber | 18 s (Workshop) | Motorisation |
 
 Weapons:
 
@@ -98,6 +100,30 @@ Speeds are world units per game second. Times are game seconds. All units have a
 Each unit stores a snapshot of its blueprint when produced, so stat research only affects new
 units. Unlocks that are abilities or buildings (Grenades, Fortification, Field Hospital) and
 Entrenching Tools apply at once, to units already in the field too.
+
+### Trucks (patch 0.5b)
+
+- **Seats:** 6; a circle takes 1, a Mortar Crew 2. Passengers are hidden and can't fire; the Truck
+  shows "×N ○" on its back. Right click a Truck (or E, then click it) with soldiers selected to board;
+  Q unloads, or click one passenger on the Truck's panel. A destroyed Truck throws its passengers out
+  with half their health gone.
+- **Moves like a vehicle:** max grade 0.4, forest ×0.3, swamp ×0.15, roads ×1.5. Barricades block it,
+  trenches slow it to ×0.4 (your own too), wire doesn't. Vehicles take no stress and aren't healed.
+- **Fuel:** a 60 tank, 1 fuel per 100 m on roads and 1.5 off them. With an empty tank it crawls at
+  20% speed. A Depot refuels vehicles within 60 m for 1 oil per fuel, and refills the Truck's 60
+  spare fuel, which it shares with vehicles below half a tank within 30 m. At 110 speed a full tank
+  lasts about a minute of driving.
+- **Hauling:** assign a Truck to a camp, mine, tapper or refinery like a Worker (E or right click):
+  it carries 40 per trip along the supply link (it waits up to 20 s for a full load) and adds no
+  labour. Worth it on busy, far buildings.
+- **Squadrons:** a squadron with a Truck in it rides on moves over 600 m: members fill the seats
+  (front ranks first), the rest march, and the riders unload at the destination and walk to their
+  places in the line.
+- **Workshop:** builds Trucks, repairs vehicles within 60 m (5 HP/s, 1 metal per 10 HP) and retrofits
+  Trucks to the latest blueprint for 40% of the price difference (button on the Truck's panel).
+- **Upgrades at the R&D Lab**, endless: Armour +15% HP, Engine +8% speed, Fuel Tank +20%, each level
+  1.5× dearer than the last (base 20 wood, 40 metal, 40 s) and each making new Trucks 10% dearer.
+  Heavy Truck Armour (needs Armour 5) gives heavy armour but removes all Engine speed gained so far.
 
 ## 4. Combat model
 
@@ -180,9 +206,9 @@ one mine per deposit.
 | Field Hospital | 48x40 | 500 | 80 wood, 40 metal | 35 s | heals your infantry within 120 m at 1.5 HP/s; needs Field Hospital research; Command & medical research |
 | Rubber Tapper | 40x32 | 350 | 50 wood | 25 s | on rubber trees: 0.6 rubber/s + 0.3 per worker, max 4 |
 | Refinery | 60x48 | 600 | 100 wood, 80 metal | 40 s | on an oil seep: 1.0 oil/s + 0.4 per worker, max 4; needs Refinery research |
-| Workshop | 56x44 | 700 | 80 wood, 60 metal | 40 s | Engineering research; vehicles and repair in 0.5b |
+| Workshop | 56x44 | 700 | 80 wood, 60 metal | 40 s | builds Trucks, repairs and retrofits vehicles; Engineering research |
 | Depot | 48x40 | 500 | 80 wood, 40 metal, +25% per Depot you have | 30 s | +10 supply, 0.1 oil/s, Logistics research |
-| R&D Lab | 52x44 | 600 | 100 wood, 80 metal | 45 s | needed for Tier III research; truck upgrades in 0.5b |
+| R&D Lab | 52x44 | 600 | 100 wood, 80 metal | 45 s | needed for Tier III research; researches the Truck upgrades |
 
 **Supply chains** (patch 0.5a.2). A harvest building's output goes into its own stock (up to 100).
 Its assigned Workers or soldiers carry loads of 10 (soldiers 5) along the fastest walking route to
@@ -262,7 +288,8 @@ changes stats of units trained afterwards, **G** changes a rule at once (units i
 | Infantry doctrine (Barracks) | Marksmanship Drill (B, +10% accuracy), Field Boots (B, +10% speed), Grenades (G) | Heavy Machine Gun (U), Marksman Rifle (U), Improved Powder (B, +12% range), Assault Drill (G, moving accuracy 0.5), Squad Cohesion (G, morale radius 60 m) | Camouflage Uniforms (B), Storm Troops (B, grenade cooldown 12 s; needs Grenades) |
 | Fire support (Ordnance Works) | Mortar (U) | HE Shells (B, +25% mortar damage), Smoke Shells (G), Forward Observers (G, spotted scatter −30%) | Artillery and Counter-battery come in 0.8 |
 | Engineering (Workshop) | Fortification (U), Entrenching Tools (G, +30% digging) | Road Building (G), Reinforced Concrete (G, Bunker and tower HP +30%, existing too) | Bridging (G), Demolition Charges (G) |
-| Logistics (Depot) | Logistics (G, +25% harvest everywhere), Deep Shafts (G, Mines take 6 workers) | Supply Organisation (G, +15 supply per Depot), Refinery (U); Motorisation comes with the Truck in 0.5b | Armoured Car and AP Rounds come in 0.8 |
+| Logistics (Depot) | Logistics (G, +25% harvest everywhere), Deep Shafts (G, Mines take 6 workers) | Motorisation (U, the Truck), Supply Organisation (G, +15 supply per Depot), Refinery (U) | Armoured Car and AP Rounds come in 0.8 |
+| R&D Lab slot | — | Truck Armour, Engine and Fuel Tank (B, endless levels), Heavy Truck Armour | — |
 | Command & medical (Field Hospital) | Field Medicine (U), Field Hospital (U) | Triage (G, Medics heal under-50% soldiers twice as fast), Signals (G) | Intelligence (G) |
 
 Costs and times are in `Data.RESEARCH`. Rifling is done for everyone from the start.

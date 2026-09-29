@@ -158,6 +158,7 @@ const Icons = (() => {
     if (bg) {
       ctx.fillStyle = bg;
       if (shape === 'square') ctx.fillRect(size * 0.08, size * 0.08, size * 0.84, size * 0.84);
+      else if (shape === 'rect') ctx.fillRect(size * 0.04, size * 0.2, size * 0.92, size * 0.6);   // vehicles
       else { ctx.beginPath(); ctx.arc(size / 2, size / 2, size * 0.47, 0, Math.PI * 2); ctx.fill(); }
     }
     drawIcon(ctx, name, size / 2, size / 2, size * (bg ? 0.27 : 0.4), color);

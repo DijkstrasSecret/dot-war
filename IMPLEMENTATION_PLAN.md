@@ -184,23 +184,24 @@ Goal: the game plays at the new core values, and every run can be repeated exact
 
 ## Patch 0.5: Vehicles, logistics and the tech tree
 
-Built in two parts (Kaan): **0.5a** tech tree, buildings and supply (done); **0.5b** vehicles.
+Built in two parts (Kaan): **0.5a** tech tree, buildings and supply (done); **0.5b** vehicles (done; Trucks also haul
+40 per trip on supply links, an empty tank crawls at 20%, the AI has no Trucks yet).
 
 **Vehicles**
-- [ ] Vehicle move class (max grade 0.4).
-- [ ] Truck [A]:
-  - [ ] 6 seats; a square takes 2.
-  - [ ] "x2 ○" passenger count on its back.
-  - [ ] E boards, Q unloads.
-- [ ] Squad auto-carry on moves over 600 m: members fill the seats and the rest march [G4].
-- [ ] Fuel [I, J]:
-  - [ ] Tank 60; 1 fuel per 100 m on roads, 1.5 off-road.
-  - [ ] Depot refuels (1 oil per fuel) and produces a 0.1 oil/s trickle.
-  - [ ] Truck carries 60 spare fuel.
+- [x] Vehicle move class (max grade 0.4).
+- [x] Truck [A]:
+  - [x] 6 seats; a square takes 2.
+  - [x] "x2 ○" passenger count on its back.
+  - [x] E boards, Q unloads.
+- [x] Squad auto-carry on moves over 600 m: members fill the seats and the rest march [G4].
+- [x] Fuel [I, J]:
+  - [x] Tank 60; 1 fuel per 100 m on roads, 1.5 off-road.
+  - [x] Depot refuels (1 oil per fuel) and produces a 0.1 oil/s trickle.
+  - [x] Truck carries 60 spare fuel.
 
 **Buildings**
-- [ ] Workshop: builds vehicles; repairs 5 HP/s for 1 metal per 10 HP; retrofits trucks. (Built in
-      0.5a as the Engineering research building; vehicles, repair and retrofit in 0.5b.)
+- [x] Workshop: builds vehicles; repairs 5 HP/s for 1 metal per 10 HP; retrofits trucks. (Research building
+      in 0.5a; vehicles, repair and retrofit in 0.5b.)
 - [x] Depot: +10 supply; each extra Depot costs 25% more.
 - [x] R&D Lab.
 - [x] Rubber Tapper [G1].
@@ -208,7 +209,7 @@ Built in two parts (Kaan): **0.5a** tech tree, buildings and supply (done); **0.
 
 **Supply and upgrades**
 - [x] Supply cap 30, +10 per Depot, no maximum. Supply cost per unit [Q18].
-- [ ] Truck upgrade tracks (infinite): cost ×1.5 per level; truck price +10% per level; heavy
+- [x] Truck upgrade tracks (infinite): cost ×1.5 per level; truck price +10% per level; heavy
       conversion at Armour 5 removes Engine speed gained so far; retrofit costs 40% of the price
       difference [A].
 

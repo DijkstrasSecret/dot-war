@@ -20,6 +20,7 @@ class Unit {
     this.nadeT = 0; this.windup = null; this.patient = null; this.load = null;   // load: { k: resource, n } a carrier holds   // grenade cooldown; the unit a Medic is treating (patch 0.4)
     this.recoil = 0; this.alertT = 0; this.bleedT = 0; this.lastAttackedT = -99;   // presentation timers
     this.cls = Data.MOVE_CLASSES[this.def.cls];
+    if (this.def.cls === 'vehicle') { this.fuel = stats.fuel || 0; this.spare = this.def.spare || 0; this.cargo = []; this.lastX = x; this.lastY = y; }   // trucks (0.5b)
     this.spawn = { x, y };
     this.stuck = 0;
     this.muzzle = 0;
@@ -27,7 +28,7 @@ class Unit {
   get alive() { return !this.dead; }
   get suppressed() { return this.stress > Data.COMBAT.suppressedAt; }   // DD Q12: snipers can be suppressed too
   get size() { return this.def.size; }
-  get armor() { return this.def.armor; }
+  get armor() { return this.stats.armor || this.def.armor; }   // Heavy Truck Armour changes it per blueprint
 }
 
 class Building {
