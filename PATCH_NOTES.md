@@ -5,6 +5,23 @@ each change live in `DESIGN_DECISIONS.md`.
 
 ---
 
+## 0.5b: Trucks (29 September 2026)
+
+- **The Truck** (Workshop, after Motorisation research): 6 seats, where a Mortar Crew takes 2. Right
+  click it with soldiers selected to climb in; Q lets everyone out. Passengers can't shoot, and if
+  the Truck is destroyed they tumble out hurt.
+- **Fuel:** a Truck burns fuel as it drives, less on roads. Park it next to a Depot to refuel (costs
+  oil). It carries spare fuel for other trucks running low nearby. On an empty tank it crawls.
+- **Hauling:** a Truck can be assigned to a camp or mine like a Worker and carries 40 per trip along
+  the supply link.
+- **Squadrons ride:** put a Truck in a squadron, and on long moves the soldiers climb in, ride, and
+  jump out to take their places at the destination; whoever doesn't fit marches.
+- **Workshop:** repairs vehicles parked beside it (costs metal) and retrofits old Trucks to the latest
+  design for 40% of the price difference.
+- **Endless Truck upgrades at the R&D Lab:** Armour, Engine and Fuel Tank, each level dearer than the
+  last; at Armour 5 you can switch to Heavy Armour, at the cost of the engine upgrades so far.
+- Barricades now stop vehicles; trenches slow them.
+
 ## 0.5a.3: You choose the supply links (29 September 2026)
 
 - Camps, mines, tappers, refineries and Depots now send their goods where **you** choose: press

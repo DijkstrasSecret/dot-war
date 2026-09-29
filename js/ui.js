@@ -145,7 +145,7 @@ const UI = (() => {
   function signature() {
     const p = G.players[1];
     let s = tab + '|' + Input.state.mode + '|' + (Input.state.buildType || Input.state.lineType || '') + '|' + [...p.unlocked].join(',') + '|' + [...p.done].join(',') + '|' + Object.entries(p.research).map(([k, j]) => k + j.id).join(',') + '|' + G.buildings.filter(b => b.owner === 1 && b.built).length + '|';
-    if (tab === 'sel') s += Object.values(G.squads).map(q => q.id + q.move + q.spacing + q.contact + q.members.length).join('') + '|' + G.selection.map(e => e.id + ':' + (e.dead ? 'd' : '') + (e instanceof Building ? e.queue.map(q => q.type).join('.') + ':' + e.built + ':' + e.workers.length + ':' + e.level + ':' + e.garrison.join('.') + ':' + !!e.upgrading + ':' + e.link : (e.work || '') + ':' + (e.order ? e.order.type : '') + ':' + (e.flee > 0) + ':' + e.suppressed + ':' + e.rank + ':' + e.squad)).join(',');
+    if (tab === 'sel') s += Object.values(G.squads).map(q => q.id + q.move + q.spacing + q.contact + q.members.length).join('') + '|' + G.selection.map(e => e.id + ':' + (e.dead ? 'd' : '') + (e instanceof Building ? e.queue.map(q => q.type).join('.') + ':' + e.built + ':' + e.workers.length + ':' + e.level + ':' + e.garrison.join('.') + ':' + !!e.upgrading + ':' + e.link : (e.work || '') + ':' + (e.order ? e.order.type : '') + ':' + (e.flee > 0) + ':' + e.suppressed + ':' + e.rank + ':' + e.squad + ':' + (e.cargo ? e.cargo.length + '.' + e.bpLevel : ''))).join(',');
     if (tab === 'build') s += Data.BUILD_LIST.map(t => Game.canAfford(p, Game.costOf(1, t)) + Util.costStr(Game.costOf(1, t))).join(',');
     if (tab === 'research') s += Data.RESEARCH_ORDER.map(r => Game.researchState(p, r)).join(',');
     if (tab === 'sel') { const b = G.selection[0]; if (b instanceof Building && b.def.produces) s += '|' + b.def.produces.map(t => p.unlocked.has(t) && Game.canAfford(p, p.blueprints[t].cost)).join(','); }
@@ -172,6 +172,7 @@ const UI = (() => {
     const pl = G.players[1];
     if (pl.done.has('smoke') && units.some(u => u.stats.weapon && u.stats.weapon.indirect)) items.push(['Smoke', 'M', () => Input.setMode('smoke'), mode === 'smoke', 'Mortars fire one smoke round: a cloud that blocks sight for 15 s.']);
     if (pl.done.has('demolition') && units.some(u => u.stats.weapon)) items.push(['Demolish', 'C', () => Input.setMode('demolish'), mode === 'demolish', 'The nearest soldier blows up a barricade, wire or bridge segment: 3 s to set, 1 sulfur.']);
+    if (units.some(u => u.cargo)) items.push(['Unload', 'Q', () => { for (const t of units.filter(v => v.cargo)) Game.command({ kind: 'unload', building: t.id }); }, false, 'Let everyone out of the selected Trucks.']);
     if (units.some(u => u.def.labour)) items.push(['Fill', 'K', () => Input.setMode('fill'), mode === 'fill', 'Workers fill in one of your trenches, as slowly as it was dug.']);
     if (units.some(u => Game.canThrow(u))) items.push(['Grenade', 'V', () => Input.setMode('grenade'), mode === 'grenade', 'Riflemen walk within 25 m, stand still 1 s and throw a grenade (1 sulfur, 20 s cooldown). Friendly fire is on.']);
     for (const [label, key, fn, on, tip] of items) {
@@ -199,7 +200,39 @@ const UI = (() => {
     else if (units.length > 1) groupPanel(units);
     else buildingPanel(sel[0]);
   }
+  // A Truck's panel (0.5b): fuel, spare fuel, seats and passengers, Unload and Retrofit.
+  function truckPanel(u) {
+    const own = u.owner === 1, p = G.players[u.owner];
+    content.appendChild(card({ icon: u.def.icon, iconBg: Data.PLAYER_COLORS[u.owner], shape: 'rect', name: u.def.name + (u.bpLevel ? ' (level ' + u.bpLevel + ')' : ''), cost: armyLabel(u.owner) + ' · ' + u.armor + ' armour', desc: u.def.desc }));
+    const hp = bar('#5ad65a'), fu = bar('#c9a227'), sp = bar('#8a6a2a');
+    content.appendChild(el('div', 'small', 'Health')); content.appendChild(hp);
+    content.appendChild(el('div', 'small', 'Fuel (a Depot refills it for oil; empty = 20% speed)')); content.appendChild(fu);
+    content.appendChild(el('div', 'small', 'Spare fuel (shared with vehicles running low nearby)')); content.appendChild(sp);
+    const status = el('div', 'small'); status.style.margin = '6px 0'; content.appendChild(status);
+    if (own) {
+      content.appendChild(el('h3', null, 'Passengers'));
+      const g = el('div', 'queue');
+      for (const id of u.cargo) {
+        const r = G.unitById.get(id); if (!r || r.dead) continue;
+        const q = el('div', 'q'); q.title = soldierName(r).short + ', ' + r.def.name + ' (click to let out)';
+        q.appendChild(Icons.makeCanvas(r.def.icon, 60, '#fff', Data.PLAYER_COLORS[1], r.def.shape)); q.onclick = () => { Game.command({ kind: 'unloadOne', building: u.id, unit: id }); refresh(); };
+        g.appendChild(q);
+      }
+      if (!u.cargo.length) g.appendChild(el('div', 'small', 'Empty. Select soldiers and right click the Truck, or press E and click it.'));
+      content.appendChild(g);
+      const row = el('div', 'row');
+      row.appendChild(btn('[Q] Unload all', () => { Game.command({ kind: 'unload', building: u.id }); refresh(); }));
+      const bp = p.blueprints[u.type];
+      if ((bp.level || 0) !== u.bpLevel) { const c = Game.retrofitCost(u); row.appendChild(btn('Retrofit: ' + Util.costStr(c), () => { Game.command({ kind: 'retrofit', units: [u.id] }); refresh(); }, 'At a Workshop: upgrade this Truck to the latest blueprint (level ' + (bp.level || 0) + ') for 40% of the price difference')); }
+      content.appendChild(row);
+    }
+    tick = () => {
+      hp.fill.style.width = (u.hp / u.stats.hp * 100) + '%'; fu.fill.style.width = (u.fuel / u.stats.fuel * 100) + '%'; sp.fill.style.width = (u.spare / u.def.spare * 100) + '%';
+      const o = u.order; status.textContent = 'Seats free ' + Game.seatsFree(u) + ' of ' + u.def.seats + '. Fuel ' + Math.floor(u.fuel) + '/' + Math.round(u.stats.fuel) + '. ' + (u.work != null ? (u.load ? 'Hauling ' + Math.floor(u.load.n) + ' ' + u.load.k + '.' : 'Collecting a load.') : o ? ({ move: 'Driving.', attackmove: 'Driving.', ferry: 'Waiting for riders.' })[o.type] || '' : 'Parked.');
+    };
+  }
   function unitPanel(u) {
+    if (u.cargo) { truckPanel(u); return; }
     const own = u.owner === 1;
     const pw = el('div', 'pwrap'); pw.appendChild(portraitEl(u, 72)); pw.appendChild(badge(u, 40));
     content.appendChild(card({ img: pw, name: soldierName(u).full, cost: u.def.name + ' · ' + armyLabel(u.owner), desc: u.def.desc }));
@@ -244,8 +277,8 @@ const UI = (() => {
     // One face per soldier with a class badge and a health bar; click a face to select only them.
     const faces = el('div', 'faces'), fills = [];
     for (const u of units.slice(0, 24)) {
-      const f = el('div', 'face'); f.title = soldierName(u).short + ', ' + u.def.name + ' (click to select only this soldier)';
-      f.appendChild(portraitEl(u, 64)); f.appendChild(badge(u, 34));
+      const f = el('div', 'face'); f.title = (u.cargo ? 'Truck' : soldierName(u).short + ', ' + u.def.name) + ' (click to select only this one)';
+      if (u.cargo) f.appendChild(Icons.makeCanvas(u.def.icon, 64, '#fff', Data.PLAYER_COLORS[u.owner], 'rect')); else { f.appendChild(portraitEl(u, 64)); f.appendChild(badge(u, 34)); }
       const hb = el('div', 'hpbar'), hf = el('div'); hb.appendChild(hf); f.appendChild(hb); fills.push([u, hf]);
       f.onclick = () => Input.select([u], false);
       faces.appendChild(f);
@@ -359,7 +392,7 @@ const UI = (() => {
     const p = G.players[1], bars = [];
     const where = id => Data.BUILDINGS[Game.slotOf(id)].name;
     const slots = el('div', 'rslots');
-    for (const slot of ['hq', ...Data.BRANCH_ORDER.map(b => Data.BRANCHES[b].building)]) {
+    for (const slot of ['hq', ...Data.BRANCH_ORDER.map(b => Data.BRANCHES[b].building)]) {   // the R&D Lab slot holds the Truck tracks
       const job = p.research[slot], d = el('div', 'rslot' + (job ? ' on' : '') + (Game.owns(1, slot) ? '' : ' off'));
       d.title = Data.BUILDINGS[slot].name + (Game.owns(1, slot) ? '' : ' (not built)');
       d.appendChild(el('span', 'rsname', Data.BUILDINGS[slot].name)); d.appendChild(el('span', 'rsjob', job ? Data.RESEARCH[job.id].name : Game.owns(1, slot) ? 'idle' : '—'));
@@ -378,7 +411,7 @@ const UI = (() => {
         let extra = null;
         if (s === 'active') { extra = bar('#5a78c8'); bars.push([extra, p.research[Game.slotOf(id)]]); }
         const icon = r.unlock ? Data.UNITS[r.unlock].icon : r.icon || 'flask';
-        content.appendChild(card({ icon, iconBg: s === 'done' ? '#2f6b3a' : '#2a2a2e', shape: r.unlock ? Data.UNITS[r.unlock].shape : null, name: ['I', 'II', 'III'][r.tier - 1] + ' · ' + r.name + ' (' + r.tag + ')', cost: Util.costStr(r.cost) + ' · ' + r.time + ' s · ' + where(id), desc: r.desc + ' — ' + label, disabled: s !== 'ready', extra, onclick: () => { Game.command({ kind: 'research', research: id }); refresh(); } }));
+        content.appendChild(card({ icon, iconBg: s === 'done' ? '#2f6b3a' : '#2a2a2e', shape: r.unlock ? Data.UNITS[r.unlock].shape : null, name: (r.branch === 'lab' ? (r.track ? 'Lv ' + p.tracks[r.track] + ' → ' + (p.tracks[r.track] + 1) : '★') : ['I', 'II', 'III'][r.tier - 1]) + ' · ' + r.name + ' (' + r.tag + ')', cost: Util.costStr(Game.researchCost(p, id)) + ' · ' + r.time + ' s · ' + where(id), desc: r.desc + ' — ' + label, disabled: s !== 'ready', extra, onclick: () => { Game.command({ kind: 'research', research: id }); refresh(); } }));
       }
     }
     tick = () => { for (const [bb, job] of bars) bb.fill.style.width = (job.t / job.total * 100) + '%'; };

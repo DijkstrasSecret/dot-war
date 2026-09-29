@@ -25,7 +25,7 @@ const Game = (() => {
     const r = {}; for (const k of Data.RES) r[k] = res[k] || 0;
     // DD Q1: Rifling is researched from the start, so Riflemen and Workers are open to everyone.
     return { id, res: r, blueprints: JSON.parse(JSON.stringify(Data.UNITS)), unlocked: new Set(['rifle', 'worker']), done: new Set(), research: {}, harvestMult: 1, digMult: 1,
-      rules: {}, bhp: {}, noSupply: false,   // research slots by building type; global rules and building HP set by research (0.5a)
+      rules: {}, bhp: {}, noSupply: false, tracks: { armour: 0, engine: 0, tank: 0, heavy: false, engineAtHeavy: 0 },   // research slots by building type; global rules and building HP set by research (0.5a)
       faction: null, kitEra: 'ww2' };   // DD K: cosmetic only; set by Main, read by UI portraits
   }
   // A new match. The same seed and the same logged commands give the same match, tick for tick.
@@ -51,7 +51,7 @@ const Game = (() => {
   function togglePause() { setSpeed(G.speed === 0 ? (G.lastSpeed || 1) : 0); }
 
   // ---- blueprints, costs, research ----
-  function statsFor(owner, type) { const bp = G.players[owner].blueprints[type]; return { hp: bp.hp, speed: bp.speed, vision: bp.vision, weapon: bp.weapon ? { ...bp.weapon } : null, camo: bp.camo || 0, nadeCooldown: bp.nadeCooldown || 0 }; }
+  function statsFor(owner, type) { const bp = G.players[owner].blueprints[type]; return { hp: bp.hp, speed: bp.speed, vision: bp.vision, weapon: bp.weapon ? { ...bp.weapon } : null, camo: bp.camo || 0, nadeCooldown: bp.nadeCooldown || 0, armor: bp.armor, fuel: bp.fuel || 0 }; }
   // A rule a Global research changed (DD F 'G' items), or its default.
   const rule = (owner, k, def) => { const p = G.players[owner]; return p && p.rules[k] != null ? p.rules[k] : def; };
   // DD I: the HQ trains Riflemen at 0.7x and Workers at full speed; prodMult maps unit type to a multiplier.
@@ -69,24 +69,43 @@ const Game = (() => {
     if (miss.length) return 'Requires ' + miss.map(q => Data.RESEARCH[q].name).join(', ');
     if (!owns(p.id, slot)) return 'Needs a ' + Data.BUILDINGS[slot].name;
     if (r.tier === 3 && !owns(p.id, 'lab')) return 'Tier III: needs an R&D Lab';
+    if (r.needsArmour && p.tracks.armour < r.needsArmour) return 'Needs Truck Armour level ' + r.needsArmour;
     return '';
+  }
+  // Truck tracks (DD A) repeat forever; each level costs costGrow times the last.
+  function researchCost(p, rid) {
+    const r = Data.RESEARCH[rid]; if (!r.track) return r.cost;
+    const m = Math.pow(Data.TRUCK_TRACKS.costGrow, p.tracks[r.track]), c = {}; for (const k in r.cost) c[k] = Math.round(r.cost[k] * m); return c;
   }
   function researchState(p, rid) {
     const r = Data.RESEARCH[rid], slot = slotOf(rid), job = p.research[slot];
-    if (p.done.has(rid)) return 'done';
+    if (p.done.has(rid) && !r.track) return 'done';
     if (job && job.id === rid) return 'active';
     if (researchLock(p, rid)) return 'locked';
     if (job) return 'busy';
-    if (!canAfford(p, r.cost)) return 'poor';
+    if (!canAfford(p, researchCost(p, rid))) return 'poor';
     return 'ready';
   }
   function startResearch(pid, rid) {
     const p = G.players[pid]; if (!Data.RESEARCH[rid]) return false; const s = researchState(p, rid);
     if (s !== 'ready') { if (pid === 1) { if (s === 'poor') toast('Not enough resources'); else if (s === 'busy') toast('The ' + Data.BUILDINGS[slotOf(rid)].name + ' is already researching'); else if (s === 'locked') toast(researchLock(p, rid)); } return false; }
-    pay(p, Data.RESEARCH[rid].cost); p.research[slotOf(rid)] = { id: rid, t: 0, total: Data.RESEARCH[rid].time }; return true;
+    pay(p, researchCost(p, rid)); p.research[slotOf(rid)] = { id: rid, t: 0, total: Data.RESEARCH[rid].time }; return true;
+  }
+  // The Truck blueprint from its tracks (DD A): Armour +15% HP, Engine +8% speed, Tank +20% fuel per
+  // level; price +10% per level of any track; Heavy Armour removes the Engine speed gained before it.
+  function applyTracks(p) {
+    const T = Data.TRUCK_TRACKS, base = Data.UNITS.truck, bp = p.blueprints.truck, tr = p.tracks;
+    bp.hp = base.hp * Math.pow(T.armour.mult, tr.armour);
+    bp.speed = base.speed * Math.pow(T.engine.mult, tr.engine - tr.engineAtHeavy);
+    bp.fuel = base.fuel * Math.pow(T.tank.mult, tr.tank);
+    bp.armor = tr.heavy ? 'heavy' : base.armor;
+    const pm = Math.pow(T.priceGrow, tr.armour + tr.engine + tr.tank); bp.cost = {}; for (const k in base.cost) bp.cost[k] = Math.round(base.cost[k] * pm);
+    bp.level = tr.armour + tr.engine + tr.tank + (tr.heavy ? 1 : 0);
   }
   function applyResearch(p, rid) {
     const r = Data.RESEARCH[rid]; p.done.add(rid);
+    if (r.track) { p.tracks[r.track]++; applyTracks(p); return; }
+    if (rid === 'truckHeavy') { p.tracks.heavy = true; p.tracks.engineAtHeavy = p.tracks.engine; applyTracks(p); return; }
     if (r.unlock) p.unlocked.add(r.unlock);
     for (const e of r.effects || []) {
       if (e.harvest) { p.harvestMult *= e.harvest; continue; }
@@ -134,6 +153,7 @@ const Game = (() => {
     const u = new Unit(type, owner, x, y, statsFor(owner, type));
     // DD K: looks only. The kit era is fixed at training time, so veterans keep their old kit.
     const p = G.players[owner]; u.faction = p.faction; u.kitEra = p.kitEra;
+    if (u.cargo) { const bp = p.blueprints[type]; u.price = { ...bp.cost }; u.bpLevel = bp.level || 0; }   // what this Truck cost, for retrofits
     G.units.push(u); G.unitById.set(u.id, u); return u;
   }
   function addBuilding(type, owner, x, y, built) {
@@ -229,7 +249,7 @@ const Game = (() => {
     switch (o.kind) {
       case 'move': case 'attackmove': {
         const f = Path.getField(o.x, o.y, u.def.cls, G.time); if (!f) break;
-        u.order = { type: o.kind, x: f.tx, y: f.ty, offx: o.offx || 0, offy: o.offy || 0, arrive: o.arrive || 12, phase: 0, retreat: !!o.retreat, maxSpeed: o.maxSpeed || 0 }; u.field = f;
+        u.order = { type: o.kind, x: f.tx, y: f.ty, offx: o.offx || 0, offy: o.offy || 0, arrive: o.arrive || 12, phase: 0, retreat: !!o.retreat, maxSpeed: o.maxSpeed || 0, unload: !!o.unload }; u.field = f;
         break;
       }
       case 'attack': {
@@ -252,7 +272,7 @@ const Game = (() => {
       }
       case 'work': {
         const b = o.building;
-        if (!b || b.dead || !b.built || u.def.cls !== 'infantry' || b.workers.length >= maxWorkers(b)) { if (u.owner === 1 && b && !b.dead) toast(b.def.name + ' is full'); break; }
+        if (!b || b.dead || !b.built || !(u.def.cls === 'infantry' || u.def.load) || b.workers.length >= maxWorkers(b)) { if (u.owner === 1 && b && !b.dead) toast(b.def.name + ' is full'); break; }
         b.workers.push(u.id); u.work = b.id;
         const slot = b.workers.length - 1; const ang = slot / maxWorkers(b) * Math.PI * 2 + 0.6;
         const px = b.x + Math.cos(ang) * (b.w / 2 + 12), py = b.y + Math.sin(ang) * (b.h / 2 + 12);
@@ -260,6 +280,14 @@ const Game = (() => {
         u.order = { type: 'work', x: f.tx, y: f.ty, offx: 0, offy: 0, arrive: 6, phase: 0 }; u.field = f;
         break;
       }
+      case 'board': {   // walk to a Truck and get in (0.5b); the rest of the queue waits until it unloads
+        const t = o.truck; if (!t || t.dead || !t.cargo || t.owner !== u.owner || u.def.cls !== 'infantry') break;
+        u.order = { type: 'board', truck: t, tk: -1 };
+        break;
+      }
+      case 'ferry':   // a squadron's Truck: wait for its riders, then drive and unload (DD E, G4)
+        u.order = { type: 'ferry', riders: o.riders, t0: G.time, next: o.next };
+        break;
       case 'dig':   // dig (or, Workers only, fill) the segments of one drawn line, nearest first
         if (u.def.cls !== 'infantry' || (o.fill && !u.def.labour)) break;
         u.order = { type: 'dig', line: o.line, fill: !!o.fill, seg: null, fseg: null };
@@ -284,6 +312,7 @@ const Game = (() => {
     for (const [n, members] of bySquad(list)) {
       if (n === 0) { loose.push(...members); continue; }
       const s = G.squads[n], slots = formation(s, members, x, y, opts);
+      if (!queue && !retreat && ferry(s, members, x, y, mode, slots)) continue;
       const maxSpeed = s.move === 'slow' ? Math.min(...members.map(u => u.stats.speed)) : 0;
       for (const u of members) { const o = slots.get(u); issue(u, { kind: mode, x, y, offx: o[0], offy: o[1], arrive: o[2], retreat, maxSpeed }, queue); }
     }
@@ -319,7 +348,7 @@ const Game = (() => {
   }
   function orderWork(units, b, queue = false) {
     let n = 0;
-    for (const u of units) { if (u.dead || u.def.cls !== 'infantry' || u.work === b.id) continue; issue(u, { kind: 'work', building: b }, queue); n++; }
+    for (const u of units) { if (u.dead || !(u.def.cls === 'infantry' || u.def.load) || u.work === b.id) continue; issue(u, { kind: 'work', building: b }, queue); n++; }
     return n;
   }
   // Pull back a short distance towards the owner's headquarters, as one group. DD Q10: while
@@ -380,7 +409,7 @@ const Game = (() => {
   // wherever they are on the supply line (Kaan); the scripted AI has no carriers.
   function activeWorkers(b) {
     let n = 0;
-    for (const id of b.workers) { const u = G.unitById.get(id); if (u && !u.dead && u.work === b.id) n += (u.def.labour || Data.ECONOMY.soldierLabour) * Math.pow(VET.perRank.work, u.def.labour ? u.rank : 0); }
+    for (const id of b.workers) { const u = G.unitById.get(id); if (u && !u.dead && u.work === b.id) n += (u.def.labour != null ? u.def.labour : Data.ECONOMY.soldierLabour) * Math.pow(VET.perRank.work, u.def.labour ? u.rank : 0); }   // a Truck (labour 0) only carries
     return n;
   }
   function updateBuildings(dt) {
@@ -439,7 +468,7 @@ const Game = (() => {
   // Every source of stress goes through here. DD Q12: snipers take half; DD I: stress taken is at least x0.25.
   // Garrisoned units take none, except from a grenade in a Bunker (force, DD G13). DD B: half in a trench.
   function addStress(u, amt, force) {
-    if (u.dead || (u.inside && !force) || amt <= 0) return;
+    if (u.dead || (u.inside && !force) || amt <= 0 || u.cargo) return;   // vehicles take no stress
     const ls = u.inside ? null : lineAt(u.x, u.y);
     u.stress = Math.min(1, u.stress + amt * Util.stack('stressTaken', u.def.stressTaken || 1, Math.pow(VET.perRank.stressTaken, u.rank), ls ? LINES[ls.type].stress : 1));   // DD H1: -10% per rank
   }
@@ -603,6 +632,7 @@ const Game = (() => {
       if (sq && sq.leader === e.id) for (const m of membersOf(sq)) if (m !== e && dist(m.x, m.y, e.x, e.y) < SQ.leaderRadius) { addStress(m, SQ.leaderDeathShock); shocked.add(m); }
       for (const o of G.units) if (!o.dead && !shocked.has(o) && o.owner === e.owner && dist(o.x, o.y, e.x, e.y) < 45) addStress(o, 0.2);
       if (sq) leaveSquad(e);
+      if (e.cargo) { let n = 0; for (const id of e.cargo) { const p = G.unitById.get(id); if (!p || p.dead) continue; placeOutside(p, e, n++); addStress(p, 0.6); applyDamage(p, p.stats.hp * 0.5, by); } e.cargo = []; }   // a wrecked Truck throws its passengers out, hurt
       // blood, a corpse, and a morale shock that alerts nearby friends
       G.effects.push({ kind: 'shock', x: e.x, y: e.y, t: 0, dur: 0.7, r: 45 });
       const blobs = []; for (let i = 0; i < 5; i++) { const a = V() * Math.PI * 2, rr = V() * e.size * 1.6; blobs.push([Math.cos(a) * rr, Math.sin(a) * rr, e.size * (0.5 + V() * 0.7)]); }
@@ -671,7 +701,9 @@ const Game = (() => {
   }
   // Barricades and wire make routes through them dearer, so units path around when they can.
   function applyRoute(sg, on) {
-    const T = LINES[sg.type]; if (T.slowOwn >= 1) return false;
+    const T = LINES[sg.type];
+    if (sg.type === 'barricade') for (const k of sg.route) Terrain.setBlockVeh(k, on);   // DD B: barricades block vehicles
+    if (T.slowOwn >= 1) return false;
     for (const k of sg.route) {
       let m = 1;
       if (on) m = 1 / T.slowOwn; else for (const o of G.segGrid.get(k) || []) if (o !== sg && o.done && !o.dead && o.route.includes(k)) m = Math.max(m, 1 / LINES[o.type].slowOwn);
@@ -916,6 +948,77 @@ const Game = (() => {
     if (G.cutT >= LOG.cutCheck) { G.cutT = 0; checkCuts(); }
   }
 
+  // ---- trucks (DD A, I, J; patch 0.5b) ----
+  const FUEL = Data.FUEL;
+  const seatCost = u => u.def.shape === 'square' ? 2 : 1;
+  function seatsFree(t) { let n = 0; for (const id of t.cargo) { const p = G.unitById.get(id); if (p && !p.dead) n += seatCost(p); } return t.def.seats - n; }
+  function embark(u, t) {
+    releaseWork(u); u.order = null; u.field = null; u.forced = null; u.target = null; u.micro = null; u.flee = 0;   // the queue stays: it runs after unloading
+    u.inside = t.id; u.x = t.x; u.y = t.y; t.cargo.push(u.id);
+    G.selection = G.selection.filter(s => s !== u);
+  }
+  function unloadTruck(t) {
+    if (!t.cargo) return 0; let n = 0;
+    for (const id of t.cargo) { const u = G.unitById.get(id); if (!u || u.dead) continue; placeOutside(u, t, n++); if (u.queue.length) nextOrder(u); }
+    t.cargo = []; return n;
+  }
+  // Fuel per 100 m driven: 1 on roads, 1.5 off them (DD I). Measured from where the Truck was last tick.
+  function burnFuel(u) {
+    const d = dist(u.lastX, u.lastY, u.x, u.y); u.lastX = u.x; u.lastY = u.y;
+    if (d > 0 && d < 50) u.fuel = Math.max(0, u.fuel - d / 100 * (Terrain.roadAt(u.x, u.y) ? FUEL.road : FUEL.offRoad));
+  }
+  // Depots refuel vehicles and refill spare fuel within range (1 oil per fuel, DD J); Workshops repair
+  // them (5 HP/s, 1 metal per 10 HP, DD J); a Truck shares spare fuel with vehicles running low nearby.
+  function updateVehicles(dt) {
+    for (const v of G.units) {
+      if (v.dead || !v.cargo) continue; const p = G.players[v.owner];
+      const near = type => G.buildings.find(b => b.owner === v.owner && b.type === type && b.built && !b.dead && dist(b.x, b.y, v.x, v.y) < (type === 'depot' ? FUEL.depotRange : Data.REPAIR.range) + b.size);
+      const dep = near('depot');
+      if (dep) for (const k of ['fuel', 'spare']) {
+        const cap = k === 'fuel' ? v.stats.fuel : v.def.spare, need = cap - v[k]; if (need <= 0) continue;
+        const amt = Math.min(need, FUEL.refuelRate * dt, (p.res.oil || 0) / FUEL.oilPerFuel); if (amt <= 0) continue;
+        v[k] += amt; p.res.oil -= amt * FUEL.oilPerFuel;
+      }
+      if (v.hp < v.stats.hp && near('workshop')) {
+        const amt = Math.min(v.stats.hp - v.hp, Data.REPAIR.rate * dt, (p.res.metal || 0) / Data.REPAIR.metalPerHp);
+        if (amt > 0) { v.hp += amt; p.res.metal -= amt * Data.REPAIR.metalPerHp; }
+      }
+      if (v.spare > 0) for (const w of G.units) {
+        if (w === v || w.dead || !w.cargo || w.owner !== v.owner || w.fuel >= w.stats.fuel * FUEL.shareBelow || dist(w.x, w.y, v.x, v.y) > FUEL.shareRange) continue;
+        const amt = Math.min(v.spare, FUEL.refuelRate * dt, w.stats.fuel - w.fuel); w.fuel += amt; v.spare -= amt;
+      }
+    }
+  }
+  // Retrofit at a Workshop (DD A): the latest blueprint for 40% of the price difference.
+  function retrofit(u) {
+    if (!u.cargo || u.dead) return false; const p = G.players[u.owner], bp = p.blueprints[u.type];
+    if ((bp.level || 0) === u.bpLevel) return false;
+    if (!G.buildings.some(b => b.owner === u.owner && b.type === 'workshop' && b.built && !b.dead && dist(b.x, b.y, u.x, u.y) < Data.REPAIR.range + b.size)) { if (u.owner === 1) toast('Retrofits are done at a Workshop: drive the Truck next to one'); return false; }
+    const cost = retrofitCost(u); if (!canAfford(p, cost)) { if (u.owner === 1) toast('Not enough resources'); return false; }
+    pay(p, cost); const frac = u.hp / u.stats.hp; u.stats = statsFor(u.owner, u.type); u.hp = u.stats.hp * frac; u.fuel = Math.min(u.fuel, u.stats.fuel);
+    u.price = { ...bp.cost }; u.bpLevel = bp.level || 0; if (u.owner === 1) toast('Truck retrofitted'); return true;
+  }
+  function retrofitCost(u) { const bp = G.players[u.owner].blueprints[u.type], c = {}; for (const k in bp.cost) c[k] = Math.max(0, Math.round((bp.cost[k] - (u.price[k] || 0)) * Data.TRUCK_TRACKS.retrofitShare)); return c; }
+  // Squad auto-carry (DD E, G4): on a long move the squadron's Truck takes as many members as fit, the
+  // rest march; the riders unload at the destination and walk to their places in the line.
+  function ferry(s, members, x, y, mode, slots) {
+    const t = members.find(m => m.cargo && !m.dead && !m.inside);
+    if (!t || !['move', 'attackmove'].includes(mode)) return false;
+    let cx = 0, cy = 0; for (const m of members) { cx += m.x; cy += m.y; } cx /= members.length; cy /= members.length;
+    if (dist(cx, cy, x, y) < Data.FERRY.minDist) return false;
+    let free = seatsFree(t); const riders = [];
+    for (const r of [1, 2, 0, 3]) for (const m of members) if (m !== t && !m.inside && m.def.cls === 'infantry' && (m.def.role != null ? m.def.role : 1) === r && seatCost(m) <= free) { riders.push(m); free -= seatCost(m); }
+    if (!riders.length) return false;
+    const slot = u => { const o = slots.get(u); return { kind: mode, x, y, offx: o[0], offy: o[1], arrive: o[2] }; };
+    for (const m of members) {
+      if (m === t) continue;
+      if (riders.includes(m)) { m.queue = []; applyOrder(m, { kind: 'board', truck: t }); m.queue = [slot(m)]; }
+      else issue(m, Object.assign(slot(m), { maxSpeed: 0 }), false);
+    }
+    t.queue = []; applyOrder(t, { kind: 'ferry', riders: riders.map(m => m.id), next: Object.assign(slot(t), { kind: 'move', unload: true }) });
+    return true;
+  }
+
   // ---- squadrons (DD E) ----
   // A squadron: { id, members: [unit ids], move: 'slow'|'own', spacing: 'tight'|'loose',
   // contact: 'react'|'keep', target, leader }. One squadron per unit; fewer than two members disbands it.
@@ -949,7 +1052,7 @@ const Game = (() => {
     const face = opts.facing != null ? opts.facing : Math.atan2(y - cy, x - cx);
     const fx = Math.cos(face), fy = Math.sin(face), rx = -fy, ry = fx;
     const perRow = opts.width ? Math.max(1, Math.floor(opts.width / sp) + 1) : Math.max(3, Math.ceil(Math.sqrt(members.length * 2)));
-    const ranks = [1, 2, 0, 3].map(r => members.filter(m => (m.def.role != null ? m.def.role : 1) === r).sort((a, b) => a.id - b.id));
+    const ranks = [1, 2, 0, 3, 4].map(r => members.filter(m => (m.def.role != null ? m.def.role : 1) === r).sort((a, b) => a.id - b.id));
     const slots = new Map(); let depth = 0;
     ranks.forEach((rank, ri) => {
       if (!rank.length) return;
@@ -1048,19 +1151,21 @@ const Game = (() => {
     // wasMoving: whether the unit moved last tick. Firing happens before this tick's move, so it is
     // what the moving-fire penalty reads (DD Q11).
     u.wasMoving = u.moving; u.moving = false;
+    if (u.cargo) burnFuel(u);
     u.muzzle = Math.max(0, u.muzzle - dt); u.recoil = Math.max(0, u.recoil - dt); u.alertT = Math.max(0, u.alertT - dt);
     const retreating = !!(u.order && u.order.retreat);
     u.cooldown -= dt; u.nadeT -= dt; u.stress = Math.max(0, u.stress - stressDecay(u) * (retreating ? C.retreatDecayMult : 1) * dt);   // DD Q9, Q10, E, H1
     if (u.stress > VET.xp.underFireStress) { u.fireT += dt; if (u.fireT >= VET.xp.underFireEvery) { u.fireT -= VET.xp.underFireEvery; addXp(u, 1); } }
     if (u.work != null && u.order && u.order.type === 'haul') { u.workT += dt; if (u.workT >= VET.xp.workEvery) { u.workT -= VET.xp.workEvery; addXp(u, 1); } }
-    if (u.hp < u.stats.hp * 0.5 && !u.inside) {   // wounded units leave blood behind (visual only)
+    if (u.hp < u.stats.hp * 0.5 && !u.inside && !u.cargo) {   // wounded units leave blood behind (visual only)
       u.bleedT -= dt;
       if (u.bleedT <= 0) { u.bleedT = 0.6 + V() * 1.4; addDecal({ kind: 'blood', x: u.x + (V() - 0.5) * 6, y: u.y + (V() - 0.5) * 6, r: 1.1 + V() * 1.2, life: 25 }); }
     }
     u.acquireT -= dt; if (u.acquireT <= 0) { u.acquireT = 0.3 + R() * 0.1; acquire(u); }
-    if (u.inside) {   // garrisoned: pinned to the tower, only fires
-      const b = G.buildingById.get(u.inside);
+    if (u.inside) {   // garrisoned: pinned to the tower, only fires; a Truck's passengers can't fire (DD A)
+      const b = G.buildingById.get(u.inside) || G.unitById.get(u.inside);
       if (!b || b.dead) { u.inside = null; u.hBonus = 0; return; }
+      if (b instanceof Unit) { u.x = b.x; u.y = b.y; return; }
       u.x = b.x; u.y = b.y; u.stress = Math.max(0, u.stress - 0.1 * dt);
       tryFire(u); return;
     }
@@ -1086,8 +1191,10 @@ const Game = (() => {
     // DD Q10: no suppression slowdown in retreat. DD E '>': a squad travels at its slowest member's pace.
     // DD B, G12: barricades and wire slow everyone, trenches slow only the enemy.
     const cap = o0 => o0 && o0.maxSpeed && o0.phase === 0 ? Math.min(1, o0.maxSpeed / u.stats.speed) : 1;
-    const ls = lineAt(u.x, u.y), lineSlow = ls ? (ls.owner === u.owner ? LINES[ls.type].slowOwn : LINES[ls.type].slowEnemy) : 1;
-    const spd = Util.stack('speed', u.suppressed && !retreating ? 0.6 : 1, cap(u.order), lineSlow);
+    const ls = lineAt(u.x, u.y);
+    // DD B: trenches slow enemies and friendly vehicles to x0.4; wire doesn't slow vehicles (barricades block them).
+    const lineSlow = !ls ? 1 : u.cargo ? (ls.type === 'trench' ? LINES.trench.slowEnemy : 1) : ls.owner === u.owner ? LINES[ls.type].slowOwn : LINES[ls.type].slowEnemy;
+    const spd = Util.stack('speed', u.suppressed && !retreating ? 0.6 : 1, cap(u.order), lineSlow, u.cargo && u.fuel <= 0 ? Data.FUEL.emptySpeed : 1);   // Kaan, 0.5b: an empty tank crawls
     const o = u.order;
     if (o) {
       switch (o.type) {
@@ -1109,7 +1216,7 @@ const Game = (() => {
             if (arrived || u.stuck > 1.5) {
               u.stuck = 0;
               if (o.type === 'work') { u.order = { type: 'haul', stage: 'load', wait: 0, tk: -1 }; u.field = null; }
-              else { const more = u.queue.length > 0; nextOrder(u); if (!more) seekCover(u); }
+              else { if (o.unload) unloadTruck(u); const more = u.queue.length > 0; nextOrder(u); if (!more && !u.cargo) seekCover(u); }
             }
           }
           break;
@@ -1140,9 +1247,9 @@ const Game = (() => {
           if (!b || b.dead) { releaseWork(u); nextOrder(u); break; }
           if (o.stage === 'load') {
             if (dist(u.x, u.y, b.x, b.y) > b.size + 22) { const d = door(b); walkTo(u, o, d[0], d[1], dt, spd); break; }
-            const k = b.def.harvest === 'wood' ? 'wood' : b.depositType, have = (k && b.stock[k]) || 0, cap = u.def.labour ? LOG.load : LOG.soldierLoad;
+            const k = b.def.harvest === 'wood' ? 'wood' : b.depositType, have = (k && b.stock[k]) || 0, cap = u.def.load || (u.def.labour ? LOG.load : LOG.soldierLoad);
             o.wait += dt;
-            if (have >= cap || (have >= 1 && o.wait > LOG.loadWait)) { const n = Math.min(have, cap); b.stock[k] = have - n; u.load = { k, n }; o.stage = 'haul'; o.tk = -1; }
+            if (have >= cap || (have >= 1 && o.wait > (u.def.load ? LOG.truckWait : LOG.loadWait))) { const n = Math.min(have, cap); b.stock[k] = have - n; u.load = { k, n }; o.stage = 'haul'; o.tk = -1; }
           } else {
             const d = G.buildingById.get(b.drop);
             if (!d || d.dead) break;   // no drop-off yet: wait with the load
@@ -1164,6 +1271,18 @@ const Game = (() => {
             break;
           }
           digSeg(u, sg, o.fill, dt);
+          break;
+        }
+        case 'board': {
+          const t = o.truck;
+          if (!t || t.dead || t.inside) { nextOrder(u); break; }
+          if (dist(u.x, u.y, t.x, t.y) > t.size + u.size + 10) { walkTo(u, o, t.x, t.y, dt, spd); break; }
+          if (seatsFree(t) >= seatCost(u)) embark(u, t); else { if (u.owner === 1) toast('The Truck is full'); nextOrder(u); }
+          break;
+        }
+        case 'ferry': {
+          const waiting = o.riders.map(id => G.unitById.get(id)).filter(r => r && !r.dead && !r.inside && r.order && r.order.type === 'board' && r.order.truck === u);
+          if (!waiting.length || G.time - o.t0 > Data.FERRY.boardWait) applyOrder(u, o.next);
           break;
         }
         case 'demolish': {   // Demolition Charges: walk up, set the charge for 3 s, blow the segment
@@ -1278,8 +1397,10 @@ const Game = (() => {
       case 'rally': if (b) b.rally = { x: c.x, y: c.y, squad: c.squad || 0 }; return true;
       case 'upgrade': return !!b && upgradeTower(b);
       case 'link': return setLink(b, c.target, pid);   // Kaan, 0.5a.3: a gatherer's or Depot's supply link (null: the HQ)
-      case 'unload': return b ? unloadBuilding(b) : 0;
-      case 'unloadOne': return unloadOne(b, entById(c.unit));
+      case 'unload': return b ? (b instanceof Unit ? unloadTruck(b) : unloadBuilding(b)) : 0;
+      case 'unloadOne': { const u = entById(c.unit); if (b instanceof Unit) { if (!b.cargo || !b.cargo.includes(c.unit)) return false; b.cargo = b.cargo.filter(x => x !== c.unit); placeOutside(u, b, b.cargo.length); if (u.queue.length) nextOrder(u); return true; } return unloadOne(b, u); }
+      case 'board': { const t = entById(c.target); if (!(t instanceof Unit) || !t.cargo || t.owner !== pid) return 0; let n = 0; for (const u of us) if (u !== t && u.def.cls === 'infantry' && !u.inside) { issue(u, { kind: 'board', truck: t }, q); n++; } return n; }
+      case 'retrofit': { let n = 0; for (const u of us) if (retrofit(u)) n++; return n; }
       case 'line': return planDig(pid, c.type, c.points, us, q);
       case 'dig': case 'fill': {   // resume digging a line, or (Workers only) fill a trench, from one of its segments
         const sg = G.segById.get(c.seg); if (!sg || sg.owner !== pid) return 0;
@@ -1306,7 +1427,7 @@ const Game = (() => {
     G.tick++;
     G.time += dt;
     updateResearch(dt); updateBuildings(dt);
-    updateSquads(); updateLines(); updateHealing(dt); updateSmokes(dt); updateSignals(dt); updateLogistics(dt);
+    updateSquads(); updateLines(); updateHealing(dt); updateSmokes(dt); updateSignals(dt); updateLogistics(dt); updateVehicles(dt);
     for (const u of G.units) if (!u.dead) updateUnit(u, dt);
     separate();
     updateProjectiles(dt); updateEffects(dt);
@@ -1322,7 +1443,7 @@ const Game = (() => {
     canAfford, researchState, startResearch, statsFor, prodTime,
     spawnUnit, addBuilding, canPlace, placeBuilding,
     orderMove, orderAttack, orderBombard, orderStop, orderHold, orderWork, orderRetreat, orderGarrison,
-    setLink, researchLock, slotOf, owns, supplyCap, supplyUsed, costOf, maxWorkers, detected, raidLaunched, smokeBlocks,
+    setLink, researchLock, researchCost, slotOf, owns, seatsFree, retrofitCost, supplyCap, supplyUsed, costOf, maxWorkers, detected, raidLaunched, smokeBlocks,
     canEnter, unloadBuilding, upgradeTower, slotCount, hasTech, canThrow, lineAt, segNear, orderDig, orderGrenade,
     enqueue, cancelQueue, harvestRate, activeWorkers, effRange,
     squadCentre, membersOf, setSquad,

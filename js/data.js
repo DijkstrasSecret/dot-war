@@ -19,7 +19,7 @@ const Data = {
 
   MOVE_CLASSES: {
     infantry: { maxGrade: 0.8, forest: 0.65, swamp: 0.45, road: 1.25 },
-    vehicle: { maxGrade: 0.4, forest: 0.3, swamp: 0.15, road: 1.5 },
+    vehicle: { maxGrade: 0.4, forest: 0.3, swamp: 0.15, road: 1.5, vehicle: true },   // barricades block it (DD B)
   },
 
   UNITS: {
@@ -56,6 +56,14 @@ const Data = {
       weapon: { dmg: 50, dtype: 'explosive', range: 380, minRange: 90, acc: 0.5, reload: 5, pspeed: 200, indirect: true, splash: 32, suppress: 0.35, ammo: { sulfur: 2 } },
       desc: 'Indirect fire over ridges. Costs sulfur per shell. Needs a spotter to be accurate.',
     },
+    // DD A, patch 0.5b. Seats: a circle takes 1, a square 2. Hauls `load` on a supply link (Kaan).
+    // labour 0: a Truck on a camp adds no labour, it only carries.
+    truck: {
+      name: 'Truck', shape: 'rect', icon: 'truck', cls: 'vehicle', size: 8, role: 4, labour: 0,
+      hp: 150, armor: 'light', speed: 110, vision: 150, cost: { wood: 40, metal: 30, rubber: 5 }, time: 18, supply: 2, requires: 'motorisation',
+      weapon: null, seats: 6, fuel: 60, spare: 60, load: 40,
+      desc: 'Carries 6 seats of infantry (a Mortar Crew takes 2) or 40 goods per trip on a supply link. Burns fuel; refuel at a Depot.',
+    },
     // DD A: heals one unit at a time, squadmates first (DD E). Speed, vision, cost and time proposed.
     medic: {
       name: 'Medic', shape: 'circle', icon: 'medic', cls: 'infantry', size: 5.5, role: 0,
@@ -78,9 +86,9 @@ const Data = {
     // Patch 0.5a (DD B, G1, I, G14). (p) values proposed in DD B.
     rubber: { name: 'Rubber Tapper', w: 40, h: 32, hp: 350, icon: 'rubber', harvest: 'deposit', rate: 0.6, perWorker: 0.3, maxWorkers: 4, cost: { wood: 50 }, buildTime: 25, vision: 100, needs: 'deposit', deposits: ['rubber'], desc: 'Place on rubber trees. Assign Workers (or soldiers, at half rate).' },
     refinery: { name: 'Refinery', w: 60, h: 48, hp: 600, icon: 'refinery', harvest: 'deposit', rate: 1.0, perWorker: 0.4, maxWorkers: 4, cost: { wood: 100, metal: 80 }, buildTime: 40, vision: 100, needs: 'deposit', deposits: ['oil'], requires: 'refinery', desc: 'Place on an oil seep. Assign Workers (or soldiers, at half rate).' },
-    workshop: { name: 'Workshop', w: 56, h: 44, hp: 700, icon: 'workshop', cost: { wood: 80, metal: 60 }, buildTime: 40, vision: 120, desc: 'Engineering research (Tiers II and III). Builds and repairs vehicles once they arrive (0.5b).' },
+    workshop: { name: 'Workshop', w: 56, h: 44, hp: 700, icon: 'workshop', produces: ['truck'], cost: { wood: 80, metal: 60 }, buildTime: 40, vision: 120, desc: 'Builds Trucks, repairs vehicles within 60 m (5 HP/s, 1 metal per 10 HP) and retrofits Trucks. Engineering research (Tiers II and III).' },
     depot: { name: 'Depot', w: 48, h: 40, hp: 500, icon: 'depot', cost: { wood: 80, metal: 40 }, buildTime: 30, vision: 120, costGrow: 1.25, supply: true, trickle: { oil: 0.1 }, desc: '+10 supply and 0.1 oil/s. Logistics research (Tiers II and III). Each extra Depot costs 25% more.' },
-    lab: { name: 'R&D Lab', w: 52, h: 44, hp: 600, icon: 'flask', cost: { wood: 100, metal: 80 }, buildTime: 45, vision: 120, desc: 'Needed for Tier III research in every branch. Truck upgrades arrive in 0.5b.' },
+    lab: { name: 'R&D Lab', w: 52, h: 44, hp: 600, icon: 'flask', cost: { wood: 100, metal: 80 }, buildTime: 45, vision: 120, desc: 'Needed for Tier III research in every branch. Researches the endless Truck upgrades.' },
     tower: {
       name: 'Scout Tower', w: 30, h: 30, hp: 400, icon: 'tower', cost: { wood: 60, metal: 10 }, buildTime: 25, vision: 200, tower: true,
       levels: [
@@ -146,7 +154,7 @@ const Data = {
   RESEARCH: {
     // 1 Infantry doctrine (Barracks)
     drill: { branch: 'inf', tier: 1, tag: 'B', name: 'Marksmanship Drill', cost: { wood: 80 }, time: 40, req: [], effects: [{ units: 'all', stat: 'acc', mult: 1.1 }], desc: '+10% accuracy for newly trained units.' },
-    boots: { branch: 'inf', tier: 1, tag: 'B', name: 'Field Boots', cost: { wood: 70 }, time: 35, req: [], effects: [{ units: 'all', stat: 'speed', mult: 1.1 }], desc: '+10% speed for newly trained infantry.' },
+    boots: { branch: 'inf', tier: 1, tag: 'B', name: 'Field Boots', cost: { wood: 70 }, time: 35, req: [], effects: [{ units: 'infantry', stat: 'speed', mult: 1.1 }], desc: '+10% speed for newly trained infantry.' },
     grenades: { branch: 'inf', tier: 1, tag: 'G', name: 'Grenades', icon: 'grenade', cost: { metal: 30, sulfur: 40 }, time: 40, req: [], desc: 'Riflemen throw grenades (1 sulfur each, 25 m, 1 s wind-up) at enemies in trenches and bunkers, or on order (V).' },
     hmg: { branch: 'inf', tier: 2, tag: 'U', name: 'Heavy Machine Gun', cost: { metal: 90 }, time: 60, req: [], unlock: 'hmg', desc: 'Unlocks Machine Gunners.' },
     sniper: { branch: 'inf', tier: 2, tag: 'U', name: 'Marksman Rifle', cost: { wood: 20, metal: 60 }, time: 50, req: [], unlock: 'sniper', desc: 'Unlocks Snipers.' },
@@ -170,6 +178,7 @@ const Data = {
     // 4 Logistics (Depot). Motorisation comes with the Truck in 0.5b; Armoured Car and AP Rounds in 0.8.
     logistics: { branch: 'log', tier: 1, tag: 'G', name: 'Logistics', cost: { wood: 100, metal: 20 }, time: 50, req: [], effects: [{ harvest: 1.25 }], desc: '+25% harvest at every camp, mine, tapper and refinery.' },
     shafts: { branch: 'log', tier: 1, tag: 'G', name: 'Deep Shafts', icon: 'mine', cost: { wood: 80, metal: 40 }, time: 45, req: [], effects: [{ rule: 'mineWorkers', set: 6 }], desc: 'Mines take 6 workers instead of 4 (Mines only).' },
+    motorisation: { branch: 'log', tier: 2, tag: 'U', name: 'Motorisation', icon: 'truck', cost: { wood: 60, metal: 80, rubber: 10 }, time: 50, req: [], unlock: 'truck', desc: 'Unlocks the Truck at the Workshop.' },
     supplyOrg: { branch: 'log', tier: 2, tag: 'G', name: 'Supply Organisation', icon: 'depot', cost: { wood: 100, metal: 80 }, time: 60, req: [], effects: [{ rule: 'perDepot', set: 15 }], desc: '+15 supply per Depot instead of +10.' },
     refinery: { branch: 'log', tier: 2, tag: 'U', name: 'Refinery', icon: 'refinery', cost: { wood: 80, metal: 100 }, time: 60, req: [], desc: 'Unlocks the Refinery, built on an oil seep.' },
     // 5 Command & medical (Field Hospital)
@@ -177,21 +186,37 @@ const Data = {
     hospital: { branch: 'med', tier: 1, tag: 'U', name: 'Field Hospital', icon: 'hospital', cost: { wood: 60, metal: 50 }, time: 45, req: ['medicine'], desc: 'Unlocks the Field Hospital building.' },
     triage: { branch: 'med', tier: 2, tag: 'G', name: 'Triage', icon: 'medic', cost: { wood: 50, metal: 70 }, time: 50, req: [], effects: [{ rule: 'triage', set: 2 }], desc: 'Medics heal soldiers under 50% health twice as fast.' },
     signals: { branch: 'med', tier: 2, tag: 'G', name: 'Signals', icon: 'signal', cost: { wood: 60, metal: 90 }, time: 60, req: [], desc: 'Enemies spotted in the last 30 s stay on the map as fading markers where they were last seen.' },
+    // R&D Lab slot (DD A, F): endless Truck tracks. Each level costs 1.5x the last and makes new Trucks
+    // 10% dearer; Heavy Armour (at Armour 5) removes the Engine speed gained so far.
+    truckArmour: { branch: 'lab', tier: 2, tag: 'B', track: 'armour', name: 'Truck Armour', icon: 'truck', cost: { wood: 20, metal: 40 }, time: 40, req: ['motorisation'], desc: '+15% Truck HP per level.' },
+    truckEngine: { branch: 'lab', tier: 2, tag: 'B', track: 'engine', name: 'Truck Engine', icon: 'truck', cost: { wood: 20, metal: 40 }, time: 40, req: ['motorisation'], desc: '+8% Truck speed per level.' },
+    truckTank: { branch: 'lab', tier: 2, tag: 'B', track: 'tank', name: 'Truck Fuel Tank', icon: 'truck', cost: { wood: 20, metal: 40 }, time: 40, req: ['motorisation'], desc: '+20% fuel tank per level.' },
+    truckHeavy: { branch: 'lab', tier: 2, tag: 'B', name: 'Heavy Truck Armour', icon: 'truck', cost: { wood: 20, metal: 40 }, time: 40, req: ['motorisation'], needsArmour: 5, desc: 'Needs Armour level 5. New Trucks get heavy armour, but lose all Engine speed gained so far; later Engine levels add speed again.' },
     intelligence: { branch: 'med', tier: 3, tag: 'G', name: 'Intelligence', icon: 'signal', cost: { wood: 120, metal: 120 }, time: 80, req: ['signals'], desc: 'A warning when an enemy raid leaves its base.' },
   },
   RESEARCH_ORDER: ['drill', 'boots', 'grenades', 'hmg', 'sniper', 'powder', 'assault', 'cohesion', 'camo', 'storm',
     'mortar', 'shells', 'smoke', 'observers',
     'fortification', 'entrenching', 'roads', 'concrete', 'bridging', 'demolition',
-    'logistics', 'shafts', 'supplyOrg', 'refinery',
-    'medicine', 'hospital', 'triage', 'signals', 'intelligence'],
+    'logistics', 'shafts', 'motorisation', 'supplyOrg', 'refinery',
+    'medicine', 'hospital', 'triage', 'signals', 'intelligence',
+    'truckArmour', 'truckEngine', 'truckTank', 'truckHeavy'],
   BRANCHES: {
     inf: { name: 'Infantry doctrine', building: 'barracks' },
     fire: { name: 'Fire support', building: 'ordnance' },
     eng: { name: 'Engineering', building: 'workshop' },
     log: { name: 'Logistics', building: 'depot' },
     med: { name: 'Command & medical', building: 'hospital' },
+    lab: { name: 'Truck upgrades', building: 'lab' },   // the R&D Lab's own slot
   },
-  BRANCH_ORDER: ['inf', 'fire', 'eng', 'log', 'med'],
+  BRANCH_ORDER: ['inf', 'fire', 'eng', 'log', 'med', 'lab'],
+  TRUCK_TRACKS: { armour: { stat: 'hp', mult: 1.15 }, engine: { stat: 'speed', mult: 1.08 }, tank: { stat: 'fuel', mult: 1.2 }, costGrow: 1.5, priceGrow: 1.1, retrofitShare: 0.4 },
+  // Fuel (DD Q7, I, J): per 100 m driven; Depots refuel within range for 1 oil per fuel; Trucks share
+  // their spare fuel with vehicles nearby. Kaan, 0.5b: an empty tank crawls at emptySpeed.
+  FUEL: { road: 1, offRoad: 1.5, emptySpeed: 0.2, refuelRate: 10, depotRange: 60, oilPerFuel: 1, shareRange: 30, shareBelow: 0.5 },
+  // Workshop repair (DD J): vehicles within range, 5 HP/s, 1 metal per 10 HP.
+  REPAIR: { rate: 5, metalPerHp: 0.1, range: 60 },
+  // Squad auto-carry (DD E, G4): moves longer than this ride in the squadron's Truck; the rest march.
+  FERRY: { minDist: 600, boardWait: 10 },
   // DD K: Cold War kit for newly trained soldiers once you own an R&D Lab and have 2 Tier III items (proposed).
   KIT: { coldTier3: 2 },
   // DD Q18, G14: supply cap. AI sides are exempt while the AI stays scripted (DD Q23).
@@ -256,6 +281,6 @@ const Data = {
   // along the building's supply link (a Depot the player picked, or the HQ). Depots link to the HQ or
   // to a chosen Depot; enemies within cutRange of a Depot line cut it. aiCarriers: Workers the enemy
   // commander keeps on each of its mines. Times in game seconds.
-  LOGISTICS: { load: 10, soldierLoad: 5, stockCap: 100, cutRange: 20, replan: 5, cutCheck: 1, loadWait: 4, aiCarriers: 2 },
+  LOGISTICS: { load: 10, soldierLoad: 5, stockCap: 100, cutRange: 20, replan: 5, cutCheck: 1, loadWait: 4, truckWait: 20, aiCarriers: 2 },   // truckWait: a Truck waits longer for a full load
   ECONOMY: { soldierLabour: 0.5, pace: 0.7 },   // Kaan, 0.5a.1: a slower game. Every harvest rate and the AI's passive income x0.7                      // DD Q4: a soldier at a camp counts as half a Worker
 };

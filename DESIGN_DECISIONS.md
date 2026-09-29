@@ -1090,6 +1090,24 @@ old ones, so the tech tree alone doesn't move this. Not retuned; Kaan to decide.
 | Supply link | Replaces the automatic nearest drop-off and the 20% detour rule ("work smarter, not harder"). Every gatherer and every Depot has a **supply link** the player picks (a button on its panel, or right click one of your Depots with it selected). With no link set, it goes **straight to the HQ**. A Depot may link to another Depot, so webs exist only where the player builds them; a link that would make a loop is refused. Cutting works as before. |
 | AI | The enemy commander's **mines need carriers**: it trains a couple of Workers per mine and they carry along lines the player can see and cut. It keeps its passive income for everything else; the full AI economy stays "Later" (DD Q23). AI Workers don't count towards its army cap and never raid. |
 
+### Patch 0.5b: trucks (Kaan, 29 September 2026)
+
+| Topic | Decision |
+| --- | --- |
+| Hauling | A Truck can be assigned to a camp, mine, tapper or refinery with E, like a Worker. It carries **40 per trip** along the supply link and burns fuel as it drives. It adds no labour to the building. |
+| Empty tank | A Truck with an empty tank **crawls at 20% speed**, so it can still limp to a Depot or meet a truck with spare fuel. |
+| AI | The enemy commander **does not use Trucks yet**; that comes with the full AI economy (DD Q23). |
+
+Built in 0.5b (notes for Kaan):
+
+| Topic | What 0.5b does |
+| --- | --- |
+| Fuel pace | With the design's numbers (60 tank, 1–1.5 fuel per 100 m, speed 110) a full tank lasts **about one game minute of driving**. Only Depots refuel (the HQ doesn't), so a hauling Truck should be linked to a Depot. Say if tanks should last longer. |
+| Truck loads | A Truck waits up to 20 s for a full 40 at the building, then takes what is there. A Mine with few Workers makes ~0.35 metal/s, so a Truck pays off on busy, far buildings. |
+| Wire and vehicles | Barbed wire doesn't slow vehicles (the design lists it for infantry only). |
+| Boots | Field Boots now name infantry explicitly, so Trucks aren't sped up by it. |
+| Squad ride | Riders are picked front rank first (Riflemen, then Machine Gunners and Snipers, Workers and Medics, Mortar Crews last); the Truck waits up to 10 s for them. |
+
 ---
 
 ## Still open

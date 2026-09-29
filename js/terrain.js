@@ -13,7 +13,7 @@ const Terrain = (() => {
   };
 
   let W = 0, H = 0;
-  let height, type, road, slope, blocked, pathMult;   // pathMult: extra route cost of barricades and wire (patch 0.4)
+  let height, type, road, slope, blocked, pathMult, blockVeh;   // blockVeh: barricades stop vehicles (0.5b)   // pathMult: extra route cost of barricades and wire (patch 0.4)
   let deposits = [];
   let roads = [];   // polylines [[x,y],...] in world units; `road` cell mask is rasterised from them
   let cache, cctx;
@@ -22,7 +22,7 @@ const Terrain = (() => {
 
   function create(w, h) {
     W = w; H = h;
-    height = new Float32Array(w * h); type = new Uint8Array(w * h); road = new Uint8Array(w * h); slope = new Float32Array(w * h); blocked = new Uint8Array(w * h); pathMult = new Float64Array(w * h).fill(1);
+    height = new Float32Array(w * h); type = new Uint8Array(w * h); road = new Uint8Array(w * h); slope = new Float32Array(w * h); blocked = new Uint8Array(w * h); pathMult = new Float64Array(w * h).fill(1); blockVeh = new Uint8Array(w * h);
     deposits = []; roads = [];
     cache = document.createElement('canvas'); cache.width = w * CELL; cache.height = h * CELL; cctx = cache.getContext('2d');
     maskCanvas = document.createElement('canvas'); maskCanvas.width = w; maskCanvas.height = h; maskCtx = maskCanvas.getContext('2d');
@@ -113,7 +113,7 @@ const Terrain = (() => {
     for (let j = j0; j <= j1; j++) for (let i = i0; i <= i1; i++) blocked[j * W + i] = val ? 1 : 0;
   }
   function cellPassable(k, cls) {
-    if (blocked[k]) return false;
+    if (blocked[k] || (cls.vehicle && blockVeh[k])) return false;
     if (road[k]) return true;               // roads are engineered: always walkable, bridges over water included
     const t = type[k];
     if (t === T_WATER) return false;
@@ -131,7 +131,7 @@ const Terrain = (() => {
     const g = gradAt(x, y); const grade = g[0] * dx + g[1] * dy;
     if (Math.abs(grade) > cls.maxGrade * 1.25) return 0;   // the flow field already avoids steep cells; allow local wiggle
     const k = cellIdxAt(x, y);
-    if (blocked[k] || (type[k] === T_WATER && !road[k])) return 0;
+    if (blocked[k] || (cls.vehicle && blockVeh[k]) || (type[k] === T_WATER && !road[k])) return 0;
     return slopeFactor(grade) * terrainFactor(k, cls);
   }
   function edgeCost(from, to, cls, d) {
@@ -142,6 +142,7 @@ const Terrain = (() => {
     return d * pathMult[to] / (slopeFactor(grade) * terrainFactor(to, cls));
   }
   function setPathMult(k, v) { pathMult[k] = v; }
+  function setBlockVeh(k, v) { blockVeh[k] = v ? 1 : 0; }
   function passableAt(x, y, cls) { return cellPassable(cellIdxAt(x, y), cls); }
   // straight-line walkability check used for path smoothing
   function straightPassable(x0, y0, x1, y1, cls) {
@@ -416,7 +417,7 @@ const Terrain = (() => {
     get W() { return W; }, get H() { return H; }, get height() { return height; }, get type() { return type; }, get road() { return road; }, get slope() { return slope; },
     get deposits() { return deposits; }, get roads() { return roads; }, get cache() { return cache; }, rasterizeRoads, eraseRoads, addRoad, removeRoad,
     idx, inb, cellI, cellJ, cellIdxAt, cx, cy, hAt, gradAt, typeAt, roadAt, slopeAt,
-    cellPassable, terrainFactor, slopeFactor, moveFactor, edgeCost, passableAt, straightPassable, setBlocked, setPathMult, get blocked() { return blocked; },
+    cellPassable, terrainFactor, slopeFactor, moveFactor, edgeCost, passableAt, straightPassable, setBlocked, setPathMult, setBlockVeh, get blocked() { return blocked; },
     los, coverAt, ridgeCover, forestCellsNear, depositNear, areaOk,
     markDirty, flushDirty, recomputeDerived, smoothRegion, renderRegion,
   };

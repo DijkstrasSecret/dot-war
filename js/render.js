@@ -36,7 +36,13 @@ const Render = (() => {
     const kick = u.recoil > 0 ? Math.sin(Math.min(1, u.recoil / 0.12) * Math.PI) * 2.2 : 0;   // recoil nudge along the facing
     ctx.save(); ctx.translate(u.x - Math.cos(u.facing) * kick, u.y - Math.sin(u.facing) * kick);
     ctx.fillStyle = col; ctx.strokeStyle = u.suppressed ? '#ffb300' : '#141414'; ctx.lineWidth = u.suppressed ? 1.6 : 1;
-    if (u.def.shape === 'square') { ctx.fillRect(-s, -s, 2 * s, 2 * s); ctx.strokeRect(-s, -s, 2 * s, 2 * s); }
+    if (u.def.shape === 'rect') {   // a Truck: a long box turned to its heading, passengers counted on the back ("x2 ○")
+      ctx.save(); ctx.rotate(u.facing); ctx.fillRect(-s * 1.4, -s * 0.8, s * 2.8, s * 1.6); ctx.strokeRect(-s * 1.4, -s * 0.8, s * 2.8, s * 1.6);
+      ctx.fillStyle = 'rgba(0,0,0,0.35)'; ctx.fillRect(s * 0.6, -s * 0.8, s * 0.8, s * 1.6); ctx.restore();
+      if (u.cargo && u.cargo.length) { ctx.font = 'bold 8px Consolas, monospace'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.lineWidth = 2.5; ctx.strokeStyle = '#111'; const txt = '×' + u.cargo.length + ' ○'; ctx.strokeText(txt, 0, s + 6); ctx.fillStyle = '#fff'; ctx.fillText(txt, 0, s + 6); }
+      if (u.fuel <= 0) { ctx.fillStyle = '#ff5a3a'; ctx.font = 'bold 8px sans-serif'; ctx.textAlign = 'center'; ctx.fillText('NO FUEL', 0, -s - 10); }
+    }
+    else if (u.def.shape === 'square') { ctx.fillRect(-s, -s, 2 * s, 2 * s); ctx.strokeRect(-s, -s, 2 * s, 2 * s); }
     else { ctx.beginPath(); ctx.arc(0, 0, s, 0, Math.PI * 2); ctx.fill(); ctx.stroke(); }
     ctx.strokeStyle = 'rgba(255,255,255,0.9)'; ctx.lineWidth = 1.2; ctx.beginPath();
     ctx.moveTo(Math.cos(u.facing) * s * 0.75, Math.sin(u.facing) * s * 0.75); ctx.lineTo(Math.cos(u.facing) * (s + 2.5), Math.sin(u.facing) * (s + 2.5)); ctx.stroke();
@@ -219,6 +225,7 @@ const Render = (() => {
         ctx.globalAlpha = 0.65 * a; ctx.save(); ctx.translate(d.x, d.y); ctx.rotate(d.facing); ctx.scale(1.2, 0.75);
         ctx.fillStyle = d.color; ctx.strokeStyle = '#1a1a1a'; ctx.lineWidth = 1;
         if (d.shape === 'square') { ctx.fillRect(-d.size, -d.size, 2 * d.size, 2 * d.size); ctx.strokeRect(-d.size, -d.size, 2 * d.size, 2 * d.size); }
+        else if (d.shape === 'rect') { ctx.fillRect(-d.size * 1.4, -d.size * 0.8, d.size * 2.8, d.size * 1.6); ctx.strokeRect(-d.size * 1.4, -d.size * 0.8, d.size * 2.8, d.size * 1.6); }
         else { ctx.beginPath(); ctx.arc(0, 0, d.size, 0, Math.PI * 2); ctx.fill(); ctx.stroke(); }
         ctx.restore();
         ctx.globalAlpha = 0.6 * a; ctx.strokeStyle = '#2a0808'; ctx.lineWidth = 1.2; const k = d.size * 0.55;
