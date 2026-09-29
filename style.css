@@ -158,3 +158,12 @@ input[type=range] { flex: 1; accent-color: var(--brass); }
 #loading .fill { position: absolute; inset: 0 auto 0 0; width: 0; background: var(--gold); box-shadow: 0 0 1.2vw rgba(255, 190, 90, 0.7); transition: width 0.25s ease; }
 #loading .veil { position: absolute; inset: 0; background: #000; transition: opacity 0.45s ease; pointer-events: none; }
 #loading .veil.clear { opacity: 0; }
+
+/* Research overview slots (patch 0.5a): one tile per research building type. */
+.rslots { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; margin-bottom: 8px; }
+.rslot { border: 1px solid var(--line); padding: 3px 5px; font-size: 11px; line-height: 1.25; background: rgba(0,0,0,0.18); }
+.rslot.on { border-color: var(--brass); }
+.rslot.off { opacity: 0.45; }
+.rslot .rsname { display: block; color: var(--brass2); text-transform: uppercase; letter-spacing: 0.8px; font-size: 10px; }
+.rslot .rsjob { display: block; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rslot .bar { margin-top: 2px; }

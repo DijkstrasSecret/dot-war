@@ -154,7 +154,8 @@ least x0.35 (`Util.stack`).
 
 ## 5. Economy
 
-Resources: wood, metal, sulfur in use; rubber and oil placed but unused.
+Resources: wood, metal and sulfur in use; rubber (Rubber Tapper) and oil (Refinery, Depot trickle)
+are gathered from patch 0.5a and spent from 0.5b (trucks and fuel).
 
 | Who | Starting stock |
 | --- | --- |
@@ -170,13 +171,22 @@ one mine per deposit.
 | Building | Size | HP | Cost | Build time | Role |
 | --- | --- | --- | --- | --- | --- |
 | Headquarters | 64x64 | 1500 | given | 0 | trains Riflemen at 0.7x speed and Workers at full speed, vision 220, holds 6 infantry (+6 m), heals infantry within 150 m at 0.5 HP/s |
-| Barracks | 48x40 | 600 | 80 wood, 20 metal | 30 s | trains Riflemen, Machine Gunners, Snipers, Medics |
-| Ordnance Works | 52x44 | 700 | 60 wood, 60 metal | 40 s | trains squares (mortar) |
+| Barracks | 48x40 | 600 | 80 wood, 20 metal | 30 s | trains Riflemen, Machine Gunners, Snipers, Medics; Infantry research |
+| Ordnance Works | 52x44 | 700 | 60 wood, 60 metal | 40 s | trains squares (mortar); Fire support research |
 | Lumber Camp | 40x32 | 350 | 40 wood | 20 s | 1.0 wood/s + 0.6 per worker, max 4 workers |
 | Mine | 40x36 | 400 | 60 wood, 10 metal | 25 s | 0.5/s + 0.35 per worker, max 4 workers |
 | Scout Tower | 30x30 | 400 | 60 wood, 10 metal | 25 s | garrison, see below |
 | Bunker | 32x32 | 1200 | 120 wood, 90 metal | 45 s | 4 infantry + 1 Machine Gunner slot, occupants shoot x1.1, no height; needs Fortification |
-| Field Hospital | 48x40 | 500 | 80 wood, 40 metal | 35 s | heals your infantry within 120 m at 1.5 HP/s; needs Field Hospital research |
+| Field Hospital | 48x40 | 500 | 80 wood, 40 metal | 35 s | heals your infantry within 120 m at 1.5 HP/s; needs Field Hospital research; Command & medical research |
+| Rubber Tapper | 40x32 | 350 | 50 wood | 25 s | on rubber trees: 0.6 rubber/s + 0.3 per worker, max 4 |
+| Refinery | 60x48 | 600 | 100 wood, 80 metal | 40 s | on an oil seep: 1.0 oil/s + 0.4 per worker, max 4; needs Refinery research |
+| Workshop | 56x44 | 700 | 80 wood, 60 metal | 40 s | Engineering research; vehicles and repair in 0.5b |
+| Depot | 48x40 | 500 | 80 wood, 40 metal, +25% per Depot you have | 30 s | +10 supply, 0.1 oil/s, Logistics research |
+| R&D Lab | 52x44 | 600 | 100 wood, 80 metal | 45 s | needed for Tier III research; truck upgrades in 0.5b |
+
+**Supply** (patch 0.5a): every unit uses supply (1 each, a Mortar Crew 2), counted when it is queued.
+The cap is 30, plus 10 per finished Depot (15 with Supply Organisation), with no maximum; the top
+bar shows used/cap. The scripted AI keeps its own unit cap instead.
 
 A Lumber Camp with four Workers yields 3.4 wood/s; a Mine with four Workers 1.9 metal or sulfur/s.
 Production cost is paid when queued and refunded on cancel; new units walk to the building's
@@ -225,29 +235,39 @@ within 120 m. A Medic treats one wounded soldier at a time within 40 m at 4 HP/s
 its squadmates first; an idle Medic walks over to the nearest wounded soldier it can see. A Medic
 earns 1 XP per 20 HP healed.
 
-## 6. Research
+## 6. Research (tech tree, patch 0.5a)
 
-Thirteen items, researched one at a time at the HQ. Effects apply to blueprints, so only to units
-trained afterwards. Rifling is done for everyone from the start, so it is no longer an item. The
-five-branch tech tree of `DESIGN_DECISIONS.md` section F arrives in patch 0.5.
+Five branches with three tiers each (`DESIGN_DECISIONS.md` section F). **Tier I** is researched at
+the HQ; **Tiers II and III** at the branch building; **Tier III** also needs an R&D Lab. There is
+**one research slot per building type** (a second Barracks adds no slot), so up to six projects run at
+once: HQ, Barracks, Ordnance Works, Workshop, Depot, Field Hospital. A project pauses while you own
+none of its buildings. N opens the overview: the slots on top, then each branch by tier. Tags: **B**
+changes stats of units trained afterwards, **G** changes a rule at once (units in the field too),
+**U** unlocks.
 
-| Item | Cost | Time | Requires | Effect |
-| --- | --- | --- | --- | --- |
-| Marksmanship Drill | 80 wood | 40 s | none | +10% accuracy, all new units |
-| Logistics | 100 wood, 20 metal | 50 s | none | +25% harvest rate |
-| Field Boots | 70 wood | 35 s | none | +10% speed, new infantry |
-| Heavy Machine Gun | 90 metal | 60 s | none | unlocks Machine Gunner |
-| Marksman Rifle | 20 wood, 60 metal | 50 s | none | unlocks Sniper |
-| Mortar | 40 wood, 60 metal | 50 s | none | unlocks Mortar Crew |
-| Improved Powder | 30 sulfur, 20 metal | 40 s | none | +12% range, new firearm units |
-| HE Shells | 40 sulfur, 40 metal | 45 s | Mortar | +25% mortar damage, new crews |
-| Fortification | 60 wood, 60 metal | 45 s | none | unlocks Bunker, barricade, barbed wire |
-| Entrenching Tools | 60 wood, 20 metal | 35 s | none | digging 30% faster, every digger |
-| Grenades | 30 metal, 40 sulfur | 40 s | none | Riflemen throw grenades |
-| Field Medicine | 40 wood, 40 metal | 40 s | none | unlocks Medic |
-| Field Hospital | 60 wood, 50 metal | 45 s | Field Medicine | unlocks Field Hospital |
+| Branch (building) | Tier I (HQ) | Tier II | Tier III (needs R&D Lab) |
+| --- | --- | --- | --- |
+| Infantry doctrine (Barracks) | Marksmanship Drill (B, +10% accuracy), Field Boots (B, +10% speed), Grenades (G) | Heavy Machine Gun (U), Marksman Rifle (U), Improved Powder (B, +12% range), Assault Drill (G, moving accuracy 0.5), Squad Cohesion (G, morale radius 60 m) | Camouflage Uniforms (B), Storm Troops (B, grenade cooldown 12 s; needs Grenades) |
+| Fire support (Ordnance Works) | Mortar (U) | HE Shells (B, +25% mortar damage), Smoke Shells (G), Forward Observers (G, spotted scatter −30%) | Artillery and Counter-battery come in 0.8 |
+| Engineering (Workshop) | Fortification (U), Entrenching Tools (G, +30% digging) | Road Building (G), Reinforced Concrete (G, Bunker and tower HP +30%, existing too) | Bridging (G), Demolition Charges (G) |
+| Logistics (Depot) | Logistics (G, +25% harvest everywhere), Deep Shafts (G, Mines take 6 workers) | Supply Organisation (G, +15 supply per Depot), Refinery (U); Motorisation comes with the Truck in 0.5b | Armoured Car and AP Rounds come in 0.8 |
+| Command & medical (Field Hospital) | Field Medicine (U), Field Hospital (U) | Triage (G, Medics heal under-50% soldiers twice as fast), Signals (G) | Intelligence (G) |
 
-The last five are on the HQ list only until the tech tree arrives in patch 0.5.
+Costs and times are in `Data.RESEARCH`. Rifling is done for everyone from the start.
+
+- **Camouflage Uniforms:** infantry trained afterwards who stand in forest are only spotted (drawn,
+  targeted, clickable) by an enemy unit or building within 70% of its vision range.
+- **Smoke Shells:** with mortars selected, M then click: one smoke round (normal ammo) makes a
+  35 m cloud that blocks every sight line through it for 15 s.
+- **Signals:** enemies seen in the last 30 s stay on the map as fading dashed outlines.
+- **Intelligence:** a warning and a red ping when an enemy raid leaves its base.
+- **Road Building / Bridging:** line tools (B then E, B then V) built by Workers only; a finished
+  segment becomes road. Road 20 wood and 10 s per 10 m; bridge 40 wood, 20 metal and 20 s per 10 m,
+  and it must cross water. Roads are always walkable and give infantry ×1.25 speed.
+- **Demolition Charges:** with soldiers selected, C then click a barricade, wire or bridge segment:
+  the nearest soldier walks up, sets a charge for 3 s (1 sulfur) and destroys it. Trenches stay.
+- **Cold War kit:** once you own an R&D Lab and have two Tier III items, newly trained soldiers wear
+  Cold War uniforms (looks only).
 
 ## 7. Time and pacing
 
@@ -292,9 +312,10 @@ smart command: ground moves, an enemy attacks, your camp or mine puts the select
 tower, Bunker or HQ garrisons it, your unfinished line gets dug on. F attack-move, R defend
 position, G retreat, X stop, E enter (camp, mine, tower, Bunker or HQ), Q exit (unload a tower,
 Bunker or HQ), T upgrade a tower, K fill a trench (Workers), V throw a grenade (Riflemen). With a factory selected Z X C V train, and Tab
-flips to the next four when a factory has more (otherwise Tab cycles factories). B build (L Lumber
-Camp, M Mine, C Barracks, O Ordnance Works, T Scout Tower, U Bunker, P Field Hospital; line
-defences Y trench, I barricade, J barbed wire), N research, H headquarters, Shift queues
+flips to the next four when a factory has more (otherwise Tab cycles factories). B opens the Build tab, and only while it is open a letter picks a building (L Lumber Camp, M Mine,
+Z Rubber Tapper, F Refinery, C Barracks, O Ordnance Works, K Workshop, G Depot, R R&D Lab, T Scout
+Tower, U Bunker, P Field Hospital) or a line (Y trench, I barricade, J barbed wire, E road, V
+bridge); M smoke and C demolition are unit orders (patch 0.5a), N research, H headquarters, Shift queues
 orders, Ctrl+1..9 squadrons (section 9a), right-drag sets a squadron's line, Space pauses, comma and period change
 speed, F1 help. New features take free keys; existing ones don't move without asking.
 

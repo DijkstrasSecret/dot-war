@@ -184,6 +184,8 @@ Goal: the game plays at the new core values, and every run can be repeated exact
 
 ## Patch 0.5: Vehicles, logistics and the tech tree
 
+Built in two parts (Kaan): **0.5a** tech tree, buildings and supply (done); **0.5b** vehicles.
+
 **Vehicles**
 - [ ] Vehicle move class (max grade 0.4).
 - [ ] Truck [A]:
@@ -197,31 +199,34 @@ Goal: the game plays at the new core values, and every run can be repeated exact
   - [ ] Truck carries 60 spare fuel.
 
 **Buildings**
-- [ ] Workshop: builds vehicles; repairs 5 HP/s for 1 metal per 10 HP; retrofits trucks.
-- [ ] Depot: +10 supply; each extra Depot costs 25% more.
-- [ ] R&D Lab.
-- [ ] Rubber Tapper [G1].
-- [ ] Refinery [I].
+- [ ] Workshop: builds vehicles; repairs 5 HP/s for 1 metal per 10 HP; retrofits trucks. (Built in
+      0.5a as the Engineering research building; vehicles, repair and retrofit in 0.5b.)
+- [x] Depot: +10 supply; each extra Depot costs 25% more.
+- [x] R&D Lab.
+- [x] Rubber Tapper [G1].
+- [x] Refinery [I].
 
 **Supply and upgrades**
-- [ ] Supply cap 30, +10 per Depot, no maximum. Supply cost per unit [Q18].
+- [x] Supply cap 30, +10 per Depot, no maximum. Supply cost per unit [Q18].
 - [ ] Truck upgrade tracks (infinite): cost ×1.5 per level; truck price +10% per level; heavy
       conversion at Armour 5 removes Engine speed gained so far; retrofit costs 40% of the price
       difference [A].
 
 **Tech tree** [F]
-- [ ] Five branches, three tiers.
-- [ ] One research slot per building type.
-- [ ] B / G / U effect semantics.
-- [ ] N opens the research overview.
-- [ ] Every item in F except those scheduled for 0.6 and 0.8.
-- [ ] Signals: last-seen markers [J]. Intelligence: raid warning.
-- [ ] Logistics boosts every harvest building; Deep Shafts applies to Mines only [J].
-- [ ] Mermaid tree in the docs updated if items move.
-- [ ] Cold War kit trigger (R&D Lab + 2 Tier III items, proposed) [K].
+- [x] Five branches, three tiers.
+- [x] One research slot per building type.
+- [x] B / G / U effect semantics.
+- [x] N opens the research overview.
+- [x] Every item in F except those scheduled for 0.6 and 0.8 (Motorisation arrives with the Truck
+      in 0.5b). Road Building, Bridging and Demolition Charges use Kaan's 0.5 rules.
+- [x] Signals: last-seen markers [J]. Intelligence: raid warning.
+- [x] Logistics boosts every harvest building; Deep Shafts applies to Mines only [J].
+- [x] Mermaid tree in the docs updated if items move.
+- [x] Cold War kit trigger (R&D Lab + 2 Tier III items, proposed) [K].
 
 **Done when**
 - [ ] Balance Lab economy timeline: first Tier II research affordable at 6–10 game min.
+      **Red after 0.5a: 0.9 min** (the Tier II costs are cheap); waiting on Kaan.
 - [ ] `GAME_DESIGN.md` updated.
 
 ---
