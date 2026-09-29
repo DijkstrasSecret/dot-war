@@ -145,6 +145,8 @@ const Game = (() => {
     const c = {}; for (const k in def.cost) c[k] = Math.round(def.cost[k] * Math.pow(def.costGrow, n)); return c;
   }
   // Workers a harvest building takes: Deep Shafts lets Mines take 6.
+  // Workers queued at the HQ for this building (hireFor), so its button knows how many are coming.
+  const hiresFor = b => G.buildings.reduce((n, h) => n + (h.owner === b.owner ? h.queue.filter(q => q.assign === b.id).length : 0), 0);
   const maxWorkers = b => b.type === 'mine' ? rule(b.owner, 'mineWorkers', b.def.maxWorkers) : b.def.maxWorkers;
 
   // ---- spawning ----
@@ -387,11 +389,14 @@ const Game = (() => {
     pay(p, bp.cost); b.queue.push({ type, t: 0, total: prodTime(b, type), cost: { ...bp.cost } }); return true;   // the price paid, for a fair refund
   }
   function cancelQueue(b, i) { const q = b.queue[i]; if (!q) return; pay(G.players[b.owner], q.cost || G.players[b.owner].blueprints[q.type].cost, -1); b.queue.splice(i, 1); }   // refunds what was paid, not today's price
-  function spawnFrom(b, type) {
+  function spawnFrom(b, type, q) {
     const cls = Data.MOVE_CLASSES[Data.UNITS[type].cls];
     let x = b.x + (R() - 0.5) * b.w * 0.6, y = b.y + b.h / 2 + 10;
     if (!Terrain.passableAt(x, y, cls)) { const p = Path.nearestPassable(Terrain.cellI(x), Terrain.cellJ(y), cls); if (p) { x = Terrain.cx(p[0]); y = Terrain.cy(p[1]); } }
     const u = spawnUnit(type, b.owner, x, y);
+    // Kaan, 0.5b.3: a Worker trained for a gatherer ("Train a Worker" on its panel) goes straight to work there.
+    const job = q && q.assign != null ? G.buildingById.get(q.assign) : null;
+    if (job && !job.dead && job.built && job.workers.length < maxWorkers(job)) { orderWork([u], job); return u; }
     const rs = b.rally && b.rally.squad ? G.squads[b.rally.squad] : null;
     if (rs && rs.members.length < SQ.max) {   // DD E: a rally point on a squad member reinforces that squadron
       joinSquad(rs, u); const c = squadCentre(rs, u); orderMove([u], c[0], c[1]);
@@ -432,7 +437,7 @@ const Game = (() => {
           if (b.owner === 1) toast(b.def.name + ' upgraded to level ' + b.level);
         }
       }
-      if (b.queue.length) { const q = b.queue[0]; q.t += dt; if (q.t >= q.total) { b.queue.shift(); spawnFrom(b, q.type); } }
+      if (b.queue.length) { const q = b.queue[0]; q.t += dt; if (q.t >= q.total) { b.queue.shift(); spawnFrom(b, q.type, q); } }
       if (b.def.harvest) {
         const rate = (b.def.rate + activeWorkers(b) * b.def.perWorker) * p.harvestMult * Data.ECONOMY.pace;
         const key = b.def.harvest === 'wood' ? 'wood' : b.depositType;
@@ -1424,6 +1429,12 @@ const Game = (() => {
       case 'retreat': orderRetreat(us, q); return true;
       case 'work': return b ? orderWork(us, b, q) : 0;
       case 'garrison': return b ? orderGarrison(us, b, q) : 0;
+      case 'hireFor': {   // Kaan, 0.5b.3: train a Worker at the HQ for this gatherer, sent there when ready
+        if (!b || !b.def.harvest || !b.built) return false;
+        const hq = G.buildings.find(x => x.owner === pid && x.type === 'hq' && !x.dead && x.built);
+        if (!hq || !enqueue(hq, 'worker')) return false;
+        hq.queue[hq.queue.length - 1].assign = b.id; return true;
+      }
       case 'enqueue': return !!b && b instanceof Building && b.built && !!b.def.produces && b.def.produces.includes(c.type) && enqueue(b, c.type);
       case 'cancel': if (b) cancelQueue(b, c.index); return true;
       case 'research': return startResearch(pid, c.research);
@@ -1477,7 +1488,7 @@ const Game = (() => {
     canAfford, researchState, startResearch, statsFor, prodTime,
     spawnUnit, addBuilding, canPlace, placeBuilding,
     orderMove, orderAttack, orderBombard, orderStop, orderHold, orderWork, orderRetreat, orderGarrison,
-    squadMarchers, setLink, researchLock, researchCost, slotOf, owns, seatsFree, retrofitCost, supplyCap, supplyUsed, costOf, maxWorkers, detected, raidLaunched, smokeBlocks,
+    hiresFor, squadMarchers, setLink, researchLock, researchCost, slotOf, owns, seatsFree, retrofitCost, supplyCap, supplyUsed, costOf, maxWorkers, detected, raidLaunched, smokeBlocks,
     canEnter, unloadBuilding, upgradeTower, slotCount, hasTech, canThrow, lineAt, segNear, orderDig, orderGrenade,
     enqueue, cancelQueue, harvestRate, activeWorkers, effRange,
     squadCentre, membersOf, setSquad,

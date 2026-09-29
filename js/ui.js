@@ -147,7 +147,7 @@ const UI = (() => {
   function signature() {
     const p = G.players[1];
     let s = tab + '|' + Input.state.mode + '|' + (Input.state.buildType || Input.state.lineType || '') + '|' + [...p.unlocked].join(',') + '|' + [...p.done].join(',') + '|' + Object.entries(p.research).map(([k, j]) => k + j.id).join(',') + '|' + G.buildings.filter(b => b.owner === 1 && b.built).length + '|';
-    if (tab === 'sel') s += Object.values(G.squads).map(q => q.id + q.move + q.spacing + q.contact + q.members.length).join('') + '|' + G.selection.map(e => e.id + ':' + (e.dead ? 'd' : '') + (e instanceof Building ? e.queue.map(q => q.type).join('.') + ':' + e.built + ':' + e.workers.length + ':' + e.level + ':' + e.garrison.join('.') + ':' + !!e.upgrading + ':' + e.link + ':' + (e.def.levels && e.level < e.def.levels.length ? Game.canAfford(p, e.def.levels[e.level].cost) : '') : (e.work || '') + ':' + (e.order ? e.order.type : '') + ':' + (e.flee > 0) + ':' + e.suppressed + ':' + e.rank + ':' + e.squad + ':' + (e.cargo ? e.cargo.length + '.' + e.bpLevel : ''))).join(',');
+    if (tab === 'sel') s += Object.values(G.squads).map(q => q.id + q.move + q.spacing + q.contact + q.members.length).join('') + '|' + G.selection.map(e => e.id + ':' + (e.dead ? 'd' : '') + (e instanceof Building ? e.queue.map(q => q.type).join('.') + ':' + e.built + ':' + e.workers.length + ':' + e.level + ':' + e.garrison.join('.') + ':' + !!e.upgrading + ':' + e.link + ':' + (e.def.harvest ? Game.hiresFor(e) + '.' + Game.canAfford(p, p.blueprints.worker.cost) : '') + ':' + (e.def.levels && e.level < e.def.levels.length ? Game.canAfford(p, e.def.levels[e.level].cost) : '') : (e.work || '') + ':' + (e.order ? e.order.type : '') + ':' + (e.flee > 0) + ':' + e.suppressed + ':' + e.rank + ':' + e.squad + ':' + (e.cargo ? e.cargo.length + '.' + e.bpLevel : ''))).join(',');
     if (tab === 'build') s += Data.BUILD_LIST.map(t => Game.canAfford(p, Game.costOf(1, t)) + Util.costStr(Game.costOf(1, t))).join(',');
     if (tab === 'research') s += Data.RESEARCH_ORDER.map(r => Game.researchState(p, r)).join(',');
     if (tab === 'sel') { const b = G.selection[0]; if (b instanceof Building && b.def.produces) s += '|' + b.def.produces.map(t => p.unlocked.has(t) && Game.canAfford(p, p.blueprints[t].cost)).join(','); }
@@ -359,7 +359,11 @@ const UI = (() => {
     if (own && b.built && b.def.harvest) {
       content.appendChild(el('h3', null, 'Harvesting'));
       content.appendChild(el('div', 'small', 'Select Workers and right click this building to assign up to ' + Game.maxWorkers(b) + '. Each Worker adds ' + b.def.perWorker + '/s; a soldier adds half that. Output goes into the building\'s stock (up to ' + Data.LOGISTICS.stockCap + '); the assigned people carry it along the dashed line to its supply link, ' + Data.LOGISTICS.load + ' per trip (soldiers ' + Data.LOGISTICS.soldierLoad + '). Only delivered goods can be spent.'));
-      const row = el('div', 'row'); row.appendChild(btn('Release workers', () => { Game.command({ kind: 'stop', units: b.workers.slice() }); refresh(); })); content.appendChild(row);
+      const row = el('div', 'row');
+      // Kaan, 0.5b.3: while slots are free, train a Worker at the HQ who walks straight here.
+      const free = Game.maxWorkers(b) - b.workers.length - Game.hiresFor(b);
+      if (free > 0) { const hb = btn('Train a Worker for this (' + Util.costStr(G.players[1].blueprints.worker.cost) + ')', () => { Game.command({ kind: 'hireFor', building: b.id }); refresh(); }, free + ' free slot' + (free > 1 ? 's' : '') + '. The HQ trains a Worker who goes straight to work here.'); hb.disabled = !Game.canAfford(G.players[1], G.players[1].blueprints.worker.cost); row.appendChild(hb); }
+      row.appendChild(btn('Release workers', () => { Game.command({ kind: 'stop', units: b.workers.slice() }); refresh(); })); content.appendChild(row);
     }
     tick = () => {
       hp.fill.style.width = (b.hp / b.maxHp * 100) + '%';

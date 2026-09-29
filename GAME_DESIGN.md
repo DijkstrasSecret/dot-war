@@ -60,6 +60,8 @@ Victory: destroy the enemy Headquarters. Defeat: lose yours. The sandbox map has
 - Fog of war shows the terrain always and hides enemy units outside vision. Recomputed four times
   a game second; a unit or building that has not moved reuses its last result.
 
+- **Vision from height** (patch 0.5b.3): standing high adds up to +90% vision (at 300 m altitude); on top of that, each clear line of sight reaches farther where the ground drops below the eye, ×(1 + 0.04 √drop), at most +50%. Forest and ridges still stop it.
+
 ## 3. Units
 
 Six infantry blueprints and one vehicle, the Truck (patch 0.5b). Squares count as "heavy" for tower
@@ -114,7 +116,7 @@ Entrenching Tools apply at once, to units already in the field too.
   spare fuel, which it shares with vehicles below half a tank within 30 m. A full tank lasts about
   72 game seconds of driving (8 km off-road at 110, or 12 km on roads at 165).
 - **Hauling:** assign a Truck to a camp, mine, tapper or refinery like a Worker (E or right click):
-  it carries 40 per trip along the supply link (it waits up to 20 s for a full load) and adds no
+  it carries 120 per trip along the supply link (it waits up to 20 s for a full load) and adds no
   labour. While it waits at the building, Workers leave the stock to it (Trucks carry first). Worth it
   on far buildings: at a mine 1.4 km away, 3 Workers and a Truck deliver about 45% more than 4 Workers.
 - **Squadrons:** a squadron with a Truck in it rides on moves over 600 m: members fill the seats
@@ -242,6 +244,9 @@ rally point.
 | 1 | 2 | 0 | 8 m | 400 | 200 | build 60 wood, 10 metal | 25 s |
 | 2 | 4 | 0 | 14 m | 650 | 240 | 80 wood, 30 metal | 25 s |
 | 3 | 6 | 1 | 20 m | 900 | 280 | 100 wood, 60 metal | 30 s |
+
+A harvest building with free slots has a **Train a Worker for this** button: the HQ trains a Worker
+who walks straight to it (patch 0.5b.3).
 
 Garrisoned units are hidden, untargetable, take no stress, and get the tower's height for range,
 damage and sight. When a tower is destroyed the occupants lose half their health, gain stress and

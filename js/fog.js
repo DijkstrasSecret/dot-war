@@ -12,28 +12,36 @@ const Fog = (() => {
   // nothing; it saves most of the work, since buildings and holding units rarely move.
   let castCache = new WeakMap();
   const INTERVAL = 0.25;
-  const HEIGHT_BONUS = 0.9;   // vision radius multiplier at the top of the map's height range
+  let minH = 0;   // the map's lowest ground, to bound how far any ray can reach
+  const HEIGHT_BONUS = 0.9;   // flat vision bonus at the top of the map's height range (kept, Kaan 0.5b.3)
 
   function init() {
     W = Terrain.W; H = Terrain.H;
+    minH = Infinity; for (let k = 0; k < W * H; k++) if (Terrain.height[k] < minH) minH = Terrain.height[k];
     for (const p of [1, 2]) vis[p] = new Uint8Array(W * H);
     timer = 0; castCache = new WeakMap();   // per match, so a replay starts from the same state
     imageDirty = true;
   }
 
+  // Standing high: a flat bonus by altitude, up to +90% at 300 m. Kaan, 0.5b.3: on top of it, each clear
+  // line of sight reaches farther where the ground drops away below the eye (see cast).
   function visionRadius(base, x, y, extraH = 0) {
     const h = Terrain.hAt(x, y) + extraH;
     return base * (1 + clamp(h / 300, 0, 1) * HEIGHT_BONUS);
   }
+  const VIS = Data.VISION;
+  const reach = drop => drop < VIS.deadZone ? 1 : 1 + Math.min(VIS.max, VIS.perSqrt * Math.sqrt(drop));
 
-  // Cast rays from (x, y) with the eye `eyeH` metres above ground, marking visible cells within r.
+  // Cast rays from (x, y) with the eye `eyeH` metres above ground, marking visible cells within r, and
+  // farther where the ground drops away below the eye along a clear line (Kaan, 0.5b.3): a point at
+  // distance d is seen if d <= r x reach(eye height - ground height there).
   let smokes = [];
   function inSmoke(px, py) { for (const c of smokes) if ((px - c.x) * (px - c.x) + (py - c.y) * (py - c.y) < c.r * c.r) return true; return false; }
   function cast(v, x, y, r, eyeH = 2.2, out = null) {
     const CELL = Terrain.CELL;
-    const step = CELL * 0.5, nsteps = Math.ceil(r / step);
+    const h0 = Terrain.hAt(x, y) + eyeH, rMax = r * reach(h0 - minH);
+    const step = CELL * 0.5, nsteps = Math.ceil(rMax / step), rEdge = Math.ceil(r / step) * step;   // the old last step past r
     const rays = Math.ceil(2 * Math.PI * (r / CELL) * 1.5);
-    const h0 = Terrain.hAt(x, y) + eyeH;
     const type = Terrain.type, T_FOREST = Terrain.T_FOREST;
     const maxX = W * CELL, maxY = H * CELL;
     const tol = 1.8 + Terrain.LOS_TOLERANCE;
@@ -48,7 +56,7 @@ const Fog = (() => {
         const d = s * step;
         const k = Terrain.cellIdxAt(px, py);
         const ht = Terrain.hAt(px, py);
-        if ((ht + tol - h0) / d >= maxSlope) { if (out && !v[k]) out.push(k); v[k] = 1; }
+        if ((ht + tol - h0) / d >= maxSlope && (d <= rEdge || d <= r * reach(h0 - ht))) { if (out && !v[k]) out.push(k); v[k] = 1; }
         const sg = (ht - h0) / d; if (sg > maxSlope) maxSlope = sg;
         if (type[k] === T_FOREST) { forest++; if (forest * step > 36) break; }
         if (smokes.length && inSmoke(px, py)) break;   // Smoke Shells: nothing seen in or beyond a cloud

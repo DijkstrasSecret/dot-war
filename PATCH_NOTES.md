@@ -5,6 +5,16 @@ each change live in `DESIGN_DECISIONS.md`.
 
 ---
 
+## 0.5b.3: Bigger truck loads, quick hiring, far sight from hills (30 September 2026)
+
+- **Trucks carry 120** per trip instead of 40.
+- **"Train a Worker for this":** a camp, mine, tapper or refinery with free slots has a button that
+  trains a Worker at the HQ and sends him straight there.
+- **See farther from high ground:** besides the existing bonus for standing high, a clear view down
+  a slope now reaches up to 50% farther, the more the ground drops away. Forest and ridges still
+  block it. From the enemy plateau's edge a soldier now sees about 320 m instead of 300.
+- Bigger maps come with patch 0.7, as planned.
+
 ## 0.5b.2: Trucks that earn their keep (30 September 2026)
 
 - **Trucks at camps and mines are worth it now:** the HQ refuels Trucks too (not only Depots), the
