@@ -267,6 +267,10 @@ Built in two parts (Kaan): **0.5a** tech tree, buildings and supply (done); **0.
 - [ ] Villages [J]: 3–5 hamlets and 1–2 central towns. Civilians get their own owner id, are
       never auto-targeted, and flee from fighting.
 - [ ] Neutral guards patrol routes that avoid bases, with a 150 m leash; they return and heal.
+- [ ] Map detail (Kaan, 30 Sept): random **abandoned buildings, ruins, walls, wrecks and similar props**
+      across the map, usable as cover (they give cover like forest or barricades) and as scenery.
+- [ ] **Trees drawn in forest cells**, mainly for decoration (forest rules unchanged).
+- [ ] **Wider roads**, drawn wider and with a slightly wider walkable road band.
 - [ ] AI raid logic [Q24]:
   1. [ ] Probe towers first.
   2. [ ] Move to the weakest outpost toward the HQ.
@@ -280,17 +284,14 @@ Built in two parts (Kaan): **0.5a** tech tree, buildings and supply (done); **0.
 
 ---
 
-## Patch 0.8: Designer, artillery and armoured car
+## Patch 0.8: Artillery and armoured car
 
 - [ ] Artillery research → Field Gun [J], Scout Tower level 4 [B], Counter-battery.
 - [ ] Armoured Car research → armoured car [J]. AP Rounds → ap damage type.
-- [ ] Blueprint designer [D, J]:
-  - [ ] Chassis weight limits and part weights.
-  - [ ] Speed penalty over half the limit.
-  - [ ] Parts researched at the R&D Lab; each needs its branch unlock first [G6].
-  - [ ] EMP and the extras.
-- [ ] Modern kit trigger (EMP part researched, proposed) [K].
-- [ ] Balance Lab tests for designed units against stock units.
+- [ ] Modern kit trigger: needs a new rule now that the EMP part is gone (to ask Kaan) [K].
+- [ ] Balance Lab tests for the Field Gun and the armoured car.
+- ~~Blueprint designer~~: **dropped** (Kaan, 30 Sept: the game is complex enough). No chassis/weight
+  system, no designer parts, no EMP or extras.
 
 ---
 

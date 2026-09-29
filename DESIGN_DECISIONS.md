@@ -1141,6 +1141,16 @@ Built in 0.5b (notes for Kaan):
 | Vision from height | The flat bonus for standing high stays (up to +90% at 300 m altitude). **On top of it**, each clear line of sight reaches farther where the ground drops below the eye: ×(1 + 0.04 √drop), at most +50%, drops under 3 m count as flat (the same shape as weapon range from height). A first version replaced the flat bonus and lowered vision overall; Kaan chose to keep both. |
 | Bigger maps | Wait for patch 0.7 (the big-map engine), as planned. |
 
+### Plan changes (Kaan, 30 September 2026)
+
+| Topic | Decision |
+| --- | --- |
+| Blueprint designer | **Dropped.** Section D (the designer, chassis weights, extras, EMP) and the designer-part rows of section F and G6 no longer apply. The Field Gun, armoured car and AP Rounds stay as stock units in 0.8. |
+| Modern kit | Its trigger was "EMP part researched", which no longer exists. A new trigger is needed before 0.8 (open question). |
+| Map detail (0.7) | Random abandoned buildings, ruins, walls, wrecks and similar props across the maps, usable as cover and as scenery. |
+| Trees (0.7) | Trees drawn in forest cells, mainly for decoration; forest rules unchanged. |
+| Roads (0.7) | Roads a bit wider: drawn wider, and a slightly wider walkable road band. |
+
 ---
 
 ## Still open
