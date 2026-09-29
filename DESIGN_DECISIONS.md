@@ -1072,6 +1072,17 @@ old ones, so the tech tree alone doesn't move this. Not retuned; Kaan to decide.
 | Tier II target | "First Tier II research affordable" lowered from 6–10 min to **1–3 min**. Measured after the change: **1.5 min** (green). At 20 minutes the standard opening has about 3000 wood and 1560 metal, against 4200 and 2270 before. |
 | Not changed | Research, unit and building costs; the AI's starting stock. |
 
+### Patch 0.5a.2: supply chains (Kaan, 29 September 2026)
+
+| Topic | Decision |
+| --- | --- |
+| Costs | Lumber Camp and Mine cost **wood only** (Mine 70 wood instead of 60 wood + 10 metal), so mismanaged metal can't lock you out of harvesting. The Rubber Tapper was already wood only; the Refinery keeps its metal cost. |
+| Gatherer lines | Every Lumber Camp, Mine, Rubber Tapper and Refinery shows a slim line along the fastest walking route to its nearest drop-off: a **Depot or the HQ**. |
+| Stock and carriers | The building produces as before (base rate + assigned labour, now counting every assigned person, wherever they are on the line) into its **own stock, capped at 100**. The assigned Workers or soldiers carry **loads of 10** (soldiers **5**) along the line to the drop-off and walk back. Resources count only when dropped off. A destroyed building loses its stock; a carrier who is killed or reassigned loses his load. |
+| Depot lines | Each Depot has a line to the HQ. If going through another Depot is at most **20%** longer than going straight to the HQ, its line goes to that Depot instead, so the lines grow into a web. |
+| Cutting | Goods dropped at a Depot count at once **while its line to the HQ is unbroken**. Enemy soldiers standing on the line (within 20 m, proposed) cut it, and everything further out along the web. Goods dropped at a cut Depot wait there and count when the line is clear again. |
+| AI | The scripted AI keeps its direct income; its harvest buildings still credit it at once (DD Q23). |
+
 ---
 
 ## Still open

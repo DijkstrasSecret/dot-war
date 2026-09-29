@@ -5,6 +5,18 @@ each change live in `DESIGN_DECISIONS.md`.
 
 ---
 
+## 0.5a.2: Supply chains (29 September 2026)
+
+- **Carrying:** camps, mines, tappers and refineries now fill their own store (up to 100). The
+  Workers or soldiers you assign carry it, 10 at a time (soldiers 5), to the nearest Depot or the
+  HQ along a thin dashed line, and walk back. Only delivered goods can be spent, so distance matters
+  and carriers can be ambushed.
+- **Depot lines:** every Depot has a line to the HQ, or to another Depot when that is barely a
+  detour (at most 20% longer), so your lines grow into a web. Enemy soldiers standing on a line cut
+  it (it turns red), and goods at the cut Depots wait until you clear it.
+- **Costs:** the Mine costs 70 wood instead of 60 wood and 10 metal, so you can always start
+  harvesting even if your metal runs out. The Lumber Camp and Rubber Tapper were already wood only.
+
 ## 0.5a.1: A slower game (29 September 2026)
 
 - Every camp, mine, tapper and refinery gathers 30% slower, and so does the enemy commander's income.

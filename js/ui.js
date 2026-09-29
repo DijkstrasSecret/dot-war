@@ -229,7 +229,7 @@ const UI = (() => {
       const h = Terrain.hAt(u.x, u.y).toFixed(0);
       let s = 'Elevation ' + h + ' m. ';
       if (u.flee > 0) s += 'Panicking! '; else if (u.suppressed) s += u.def.obeysWhenSuppressed ? 'Suppressed: slowed, keeps its orders. ' : 'Suppressed: cannot pick targets. ';
-      if (u.work != null) s += 'Working. '; else if (u.order) s += (u.order.retreat ? 'Retreating' : ({ move: 'Moving', attackmove: 'Attack-moving', attack: 'Attacking target', bombard: u.order.smoke ? 'Firing smoke' : 'Bombarding', demolish: 'Setting a demolition charge', hold: 'Holding position', work: 'Going to work', garrison: 'Going to garrison', dig: u.order.fill ? 'Filling a trench' : 'Digging', grenade: 'Going to throw a grenade' })[u.order.type]) + '. '; else s += 'Idle. ';
+      if (u.work != null && !(u.order && u.order.type === 'haul')) s += 'Working. '; else if (u.order) s += (u.order.retreat ? 'Retreating' : ({ move: 'Moving', attackmove: 'Attack-moving', attack: 'Attacking target', bombard: u.order.smoke ? 'Firing smoke' : 'Bombarding', demolish: 'Setting a demolition charge', hold: 'Holding position', work: 'Going to work', haul: u.load ? 'Carrying ' + Math.floor(u.load.n) + ' ' + u.load.k : 'Collecting a load', garrison: 'Going to garrison', dig: u.order.fill ? 'Filling a trench' : 'Digging', grenade: 'Going to throw a grenade' })[u.order.type]) + '. '; else s += 'Idle. ';
       if (u.def.heal && u.patient && !u.patient.dead && u.patient.hp < u.patient.stats.hp) s += 'Treating a wounded ' + u.patient.def.name + '. ';
       if (Game.canThrow(u)) s += u.nadeT > 0 ? 'Grenade in ' + Math.ceil(u.nadeT) + ' s. ' : 'Grenade ready. ';
       if (u.target) s += 'Firing at ' + (u.target.def.name) + '.';
@@ -312,13 +312,15 @@ const UI = (() => {
     }
     if (own && b.built && b.def.harvest) {
       content.appendChild(el('h3', null, 'Harvesting'));
-      content.appendChild(el('div', 'small', 'Select Workers and right click this building to assign up to ' + Game.maxWorkers(b) + '. Each Worker adds ' + b.def.perWorker + '/s; a soldier adds half that.'));
+      content.appendChild(el('div', 'small', 'Select Workers and right click this building to assign up to ' + Game.maxWorkers(b) + '. Each Worker adds ' + b.def.perWorker + '/s; a soldier adds half that. Output goes into the building\'s stock (up to ' + Data.LOGISTICS.stockCap + '); the assigned people carry it along the dashed line to the nearest Depot or the HQ, ' + Data.LOGISTICS.load + ' per trip (soldiers ' + Data.LOGISTICS.soldierLoad + '). Only delivered goods can be spent.'));
       const row = el('div', 'row'); row.appendChild(btn('Release workers', () => { Game.command({ kind: 'stop', units: b.workers.slice() }); refresh(); })); content.appendChild(row);
     }
     tick = () => {
       hp.fill.style.width = (b.hp / b.maxHp * 100) + '%';
       if (prog) prog.fill.style.width = (b.progress * 100) + '%';
       let s = '';
+      if (b.def.harvest && b.built && b.owner === 1) { const k = b.def.harvest === 'wood' ? 'wood' : b.depositType, d = G.buildingById.get(b.drop); s += 'Stock ' + Math.floor((k && b.stock[k]) || 0) + '/' + Data.LOGISTICS.stockCap + '. Drop-off: ' + (d ? d.def.name + (d.type === 'depot' && !d.connected ? ' (line cut)' : '') : 'none') + '. '; }
+      if (b.type === 'depot' && b.built && b.owner === 1) { const par = G.buildingById.get(b.parent), wait = Object.entries(b.stock).filter(([, v]) => v >= 1); s += 'Supply line ' + (par ? 'to the ' + (par.type === 'hq' ? 'HQ' : 'Depot at ' + Math.round(par.x) + ',' + Math.round(par.y)) : '…') + ': ' + (b.connected ? 'open' : 'CUT, enemies on the line') + '. ' + (wait.length ? 'Waiting here: ' + wait.map(([k, v]) => Math.floor(v) + ' ' + k).join(', ') + '. ' : ''); }
       if (b.def.harvest && b.built) s += 'Rate ' + Game.harvestRate(b).toFixed(1) + ' ' + (b.def.harvest === 'wood' ? 'wood' : b.depositType || '?') + '/s, labour ' + Game.activeWorkers(b) + ', slots ' + b.workers.length + '/' + Game.maxWorkers(b) + '. ';
       if (b.queue.length) s += 'Training ' + Data.UNITS[b.queue[0].type].name + ' (' + Math.ceil(b.queue[0].total - b.queue[0].t) + ' s).';
       status.textContent = s;

@@ -2,7 +2,7 @@
 // Core simulation: players, economy, production, research, orders, movement, combat, garrisons,
 // line defences, grenades and healing.
 // TODO(patch 0.3): vehicles use cls 'vehicle' (Data.MOVE_CLASSES); transport = reuse enterBuilding/unloadBuilding with a unit as the container.
-// TODO(patch 0.4): replace the direct harvest credit in updateBuildings with workers carrying loads and trucks hauling to the HQ.
+// TODO(patch 0.5b): trucks haul along the supply lines (workers carry loads since 0.5a.2).
 // Randomness (patch 0.2.1): everything that can change a match's outcome draws from G.rng, a seeded
 // Util.mulberry32 stream; looks-only randomness (decals, facing) draws from G.vrng. Player actions
 // arrive through Game.command and are logged with their tick in G.orders, ready for replays.
@@ -39,6 +39,7 @@ const Game = (() => {
     G.decals = [];   // blood, splats and corpses left on the ground
     G.segs = []; G.segById = new Map(); G.segGrid = new Map(); G.segNext = 1; G.lineNext = 1; G.healT = 0;   // line defences, healing (0.4)
     G.smokes = []; G.smokeVer = 0; G.lastSeen = {}; G.seenT = 0;   // smoke clouds, Signals markers (0.5a)
+    G.planT = 1e9; G.cutT = 0;   // supply chains (0.5a.2): replan at once on the first tick
     G.players = { 0: newPlayer(0, {}), 1: newPlayer(1, Data.START.res), 2: newPlayer(2, { wood: 3000, metal: 1500, sulfur: 600 }) };
     for (const t of Object.keys(Data.UNITS)) G.players[0].unlocked.add(t);   // neutral guards; the AI unlocks over time (DD G7)
   }
@@ -139,7 +140,7 @@ const Game = (() => {
     const b = new Building(type, owner, x, y, built);
     const hm = G.players[owner].bhp[type] || 1; if (hm !== 1) { b.maxHp *= hm; b.hp *= hm; }   // Reinforced Concrete
     if (b.def.harvest === 'deposit') { const d = Terrain.depositNear(x, y, 60); b.depositType = d ? d.type : null; }
-    G.buildings.push(b); G.buildingById.set(b.id, b); Terrain.setBlocked(x, y, b.w, b.h, true); Path.invalidate();
+    G.buildings.push(b); G.buildingById.set(b.id, b); Terrain.setBlocked(x, y, b.w, b.h, true); Path.invalidate(); G.planT = 1e9;
     return b;
   }
 
@@ -211,6 +212,7 @@ const Game = (() => {
 
   // ---- orders ----
   function releaseWork(u) {
+    u.load = null;   // a reassigned carrier drops his load
     if (u.work == null) return;
     const b = G.buildings.find(b => b.id === u.work); if (b) b.workers = b.workers.filter(id => id !== u.id);
     u.work = null;
@@ -374,10 +376,11 @@ const Game = (() => {
       if (job.t >= job.total) { delete p.research[slot]; applyResearch(p, job.id); if (p.id === 1) toast('Research complete: ' + Data.RESEARCH[job.id].name); }
     }
   }
-  // Labour at a camp: a Worker counts 1, a soldier half (DD Q4). Only those standing near the camp count.
+  // Labour at a camp: a Worker counts 1, a soldier half (DD Q4). Since 0.5a.2 everyone assigned counts,
+  // wherever they are on the supply line (Kaan); the scripted AI has no carriers.
   function activeWorkers(b) {
     let n = 0;
-    for (const id of b.workers) { const u = G.unitById.get(id); if (u && !u.dead && dist(u.x, u.y, b.x, b.y) < 70) n += (u.def.labour || Data.ECONOMY.soldierLabour) * Math.pow(VET.perRank.work, u.def.labour ? u.rank : 0); }
+    for (const id of b.workers) { const u = G.unitById.get(id); if (u && !u.dead && u.work === b.id) n += (u.def.labour || Data.ECONOMY.soldierLabour) * Math.pow(VET.perRank.work, u.def.labour ? u.rank : 0); }
     return n;
   }
   function updateBuildings(dt) {
@@ -385,7 +388,7 @@ const Game = (() => {
       if (b.dead) continue;
       if (!b.built) {
         b.progress = Math.min(1, b.progress + dt / b.def.buildTime); b.hp = Math.min(b.maxHp, b.hp + b.maxHp * 0.9 * dt / b.def.buildTime);
-        if (b.built) { b.hp = b.maxHp; if (b.owner === 1) toast(b.def.name + ' complete'); if (b.type === 'lab') checkKit(G.players[b.owner]); }
+        if (b.built) { b.hp = b.maxHp; if (b.owner === 1) toast(b.def.name + ' complete'); if (b.type === 'lab') checkKit(G.players[b.owner]); G.planT = 1e9; }
         continue;
       }
       const p = G.players[b.owner];
@@ -402,7 +405,10 @@ const Game = (() => {
       if (b.def.harvest) {
         const rate = (b.def.rate + activeWorkers(b) * b.def.perWorker) * p.harvestMult * Data.ECONOMY.pace;
         const key = b.def.harvest === 'wood' ? 'wood' : b.depositType;
-        if (key) p.res[key] += rate * dt;
+        // Kaan, 0.5a.2: output goes into the building's stock, and carriers take it to a drop-off. The
+        // scripted AI keeps its direct income (DD Q23).
+        if (key && p.ai) p.res[key] += rate * dt;
+        else if (key) b.stock[key] = Math.min(Data.LOGISTICS.stockCap, (b.stock[key] || 0) + rate * dt);
       }
       if (b.def.trickle) for (const k in b.def.trickle) p.res[k] += b.def.trickle[k] * dt;   // DD G2: a Depot's oil trickle
       if (b.owner === 1 || Fog.visible(1, b.x, b.y)) b.seen = true;
@@ -604,7 +610,7 @@ const Game = (() => {
       if (!e.inside) addDecal({ kind: 'corpse', x: e.x, y: e.y, shape: e.def.shape, size: e.size, color: Data.PLAYER_COLORS[e.owner], facing: e.facing, life: 60 });
       for (const o of G.units) if (!o.dead && !o.inside && o.owner === e.owner && dist(o.x, o.y, e.x, e.y) < 45) o.alertT = Math.max(o.alertT, 1.2);
     } else {
-      Terrain.setBlocked(e.x, e.y, e.w, e.h, false); Path.invalidate();
+      Terrain.setBlocked(e.x, e.y, e.w, e.h, false); Path.invalidate(); G.planT = 1e9;   // supply lines re-route
       for (const id of e.workers) { const u = G.unitById.get(id); if (u) u.work = null; }
       e.workers = [];
       // a collapsing tower hurts everyone inside and throws the survivors out
@@ -833,6 +839,82 @@ const Game = (() => {
     }
   }
 
+  // ---- supply chains (Kaan, 0.5a.2) ----
+  // Gatherers send carriers to the nearest drop-off (a Depot or the HQ) by walking time. Each Depot's
+  // line runs to the HQ, or through another Depot when that is at most LOG.detour longer (a web). Enemy
+  // soldiers on a Depot's line cut it and every Depot beyond; goods left at a cut Depot count once it
+  // is clear again. Lines follow the flow fields, so they are the real fastest walking routes.
+  const LOG = Data.LOGISTICS;
+  const door = b => [b.x, b.y + b.h / 2 + 12];
+  function walkTo(u, o, tx, ty, dt, spd) {
+    const key = Terrain.cellIdxAt(tx, ty);
+    if (o.tk !== key || !u.field) { o.tk = key; u.field = Path.getField(tx, ty, u.def.cls, G.time); if (!u.field) return; }
+    if (followField(u, dt, spd)) moveToward(u, tx, ty, dt, spd);
+  }
+  const dropField = b => { const d = door(b); return Path.getField(d[0], d[1], 'infantry', G.time); };
+  const costFrom = (f, b) => { if (!f) return Infinity; const d = door(b); return f.cost[Terrain.cellIdxAt(d[0], d[1])]; };
+  function routeOf(f, b) {   // the flow field's path from b's door, a point every three cells
+    if (!f) return null; const W = Terrain.W; const d = door(b); let k = Terrain.cellIdxAt(d[0], d[1]); const pts = [[b.x, b.y]];
+    for (let n = 0; n < 4000 && k >= 0; n++) { if (n % 3 === 0) pts.push([Terrain.cx(k % W), Terrain.cy((k - k % W) / W)]); k = f.next[k]; }
+    pts.push([f.tx, f.ty]); return pts;
+  }
+  const chainPlayers = () => Object.values(G.players).filter(p => p.id !== 0 && !p.ai);
+  function planLogistics() {
+    for (const p of chainPlayers()) {
+      const hq = G.buildings.find(b => b.owner === p.id && b.type === 'hq' && !b.dead); if (!hq) continue;
+      const hqF = dropField(hq); hq.costHq = 0; hq.connected = true;
+      const depots = G.buildings.filter(b => b.owner === p.id && b.type === 'depot' && b.built && !b.dead);
+      for (const d of depots) d.c0 = costFrom(hqF, d);
+      depots.sort((a, b) => a.c0 - b.c0 || a.id - b.id);
+      for (const d of depots) {
+        let parent = hq, seg = d.c0;
+        for (const D of depots) {
+          if (D === d || !(D.c0 < d.c0) || !Number.isFinite(D.costHq)) continue;
+          const s = costFrom(dropField(D), d);
+          if (s + D.costHq <= d.c0 * (1 + LOG.detour) && s < seg) { parent = D; seg = s; }
+        }
+        d.parent = parent.id; d.costHq = parent === hq ? d.c0 : seg + parent.costHq; d.route = routeOf(dropField(parent), d);
+      }
+      for (const g of G.buildings) {
+        if (g.owner !== p.id || g.dead || !g.def.harvest) continue;
+        let best = null, bc = Infinity, bf = null;
+        for (const c of [hq, ...depots]) { const f = dropField(c), cst = costFrom(f, g); if (cst < bc) { bc = cst; best = c; bf = f; } }
+        g.drop = best ? best.id : null; g.route = best ? routeOf(bf, g) : null;
+      }
+    }
+  }
+  function lineThreat(route, pid) {
+    if (!route) return false; const r2 = LOG.cutRange;
+    for (const e of G.units) {
+      if (e.dead || e.inside || e.owner === pid || e.owner === 0) continue;
+      for (let i = 1; i < route.length; i++) {
+        const a = route[i - 1], b = route[i], dx = b[0] - a[0], dy = b[1] - a[1], t = clamp(((e.x - a[0]) * dx + (e.y - a[1]) * dy) / (dx * dx + dy * dy || 1), 0, 1);
+        if (dist(e.x, e.y, a[0] + dx * t, a[1] + dy * t) < r2) return true;
+      }
+    }
+    return false;
+  }
+  function checkCuts() {
+    for (const p of chainPlayers()) {
+      const depots = G.buildings.filter(b => b.owner === p.id && b.type === 'depot' && b.built && !b.dead).sort((a, b) => a.costHq - b.costHq || a.id - b.id);
+      for (const d of depots) {
+        const par = G.buildingById.get(d.parent), was = d.connected;
+        d.connected = !!par && !par.dead && (par.type === 'hq' || par.connected) && !lineThreat(d.route, p.id);
+        if (d.connected && !was) { for (const k in d.stock) p.res[k] += d.stock[k]; d.stock = {}; if (p.id === 1) toast('Supply line to the Depot is open again'); }
+        else if (!d.connected && was && p.id === 1) toast('A Depot\'s supply line is cut');
+      }
+    }
+  }
+  function deliver(d, load) {
+    if (!load) return; const p = G.players[d.owner];
+    if (d.type === 'hq' || d.connected) p.res[load.k] += load.n; else d.stock[load.k] = (d.stock[load.k] || 0) + load.n;
+  }
+  function updateLogistics(dt) {
+    G.planT += dt; G.cutT += dt;
+    if (G.planT >= LOG.replan) { G.planT = 0; planLogistics(); }
+    if (G.cutT >= LOG.cutCheck) { G.cutT = 0; checkCuts(); }
+  }
+
   // ---- squadrons (DD E) ----
   // A squadron: { id, members: [unit ids], move: 'slow'|'own', spacing: 'tight'|'loose',
   // contact: 'react'|'keep', target, leader }. One squadron per unit; fewer than two members disbands it.
@@ -969,7 +1051,7 @@ const Game = (() => {
     const retreating = !!(u.order && u.order.retreat);
     u.cooldown -= dt; u.nadeT -= dt; u.stress = Math.max(0, u.stress - stressDecay(u) * (retreating ? C.retreatDecayMult : 1) * dt);   // DD Q9, Q10, E, H1
     if (u.stress > VET.xp.underFireStress) { u.fireT += dt; if (u.fireT >= VET.xp.underFireEvery) { u.fireT -= VET.xp.underFireEvery; addXp(u, 1); } }
-    if (u.work != null && u.order && u.order.type === 'hold') { u.workT += dt; if (u.workT >= VET.xp.workEvery) { u.workT -= VET.xp.workEvery; addXp(u, 1); } }
+    if (u.work != null && u.order && u.order.type === 'haul') { u.workT += dt; if (u.workT >= VET.xp.workEvery) { u.workT -= VET.xp.workEvery; addXp(u, 1); } }
     if (u.hp < u.stats.hp * 0.5 && !u.inside) {   // wounded units leave blood behind (visual only)
       u.bleedT -= dt;
       if (u.bleedT <= 0) { u.bleedT = 0.6 + V() * 1.4; addDecal({ kind: 'blood', x: u.x + (V() - 0.5) * 6, y: u.y + (V() - 0.5) * 6, r: 1.1 + V() * 1.2, life: 25 }); }
@@ -1025,7 +1107,7 @@ const Game = (() => {
             const arrived = !ok || dist(u.x, u.y, sx, sy) < 2 || moveToward(u, sx, sy, dt, spd);
             if (arrived || u.stuck > 1.5) {
               u.stuck = 0;
-              if (o.type === 'work') { u.order = { type: 'hold', x: u.x, y: u.y }; u.field = null; }
+              if (o.type === 'work') { u.order = { type: 'haul', stage: 'load', wait: 0, tk: -1 }; u.field = null; }
               else { const more = u.queue.length > 0; nextOrder(u); if (!more) seekCover(u); }
             }
           }
@@ -1052,6 +1134,22 @@ const Game = (() => {
           break;
         }
         case 'hold': if (o.until && G.time >= o.until) nextOrder(u); break;
+        case 'haul': {   // Kaan, 0.5a.2: take a load from the building's stock, carry it to the drop-off, walk back
+          const b = G.buildingById.get(u.work);
+          if (!b || b.dead) { releaseWork(u); nextOrder(u); break; }
+          if (o.stage === 'load') {
+            if (dist(u.x, u.y, b.x, b.y) > b.size + 22) { const d = door(b); walkTo(u, o, d[0], d[1], dt, spd); break; }
+            const k = b.def.harvest === 'wood' ? 'wood' : b.depositType, have = (k && b.stock[k]) || 0, cap = u.def.labour ? LOG.load : LOG.soldierLoad;
+            o.wait += dt;
+            if (have >= cap || (have >= 1 && o.wait > LOG.loadWait)) { const n = Math.min(have, cap); b.stock[k] = have - n; u.load = { k, n }; o.stage = 'haul'; o.tk = -1; }
+          } else {
+            const d = G.buildingById.get(b.drop);
+            if (!d || d.dead) break;   // no drop-off yet: wait with the load
+            if (dist(u.x, u.y, d.x, d.y) > d.size + 22) { const p0 = door(d); walkTo(u, o, p0[0], p0[1], dt, spd); break; }
+            deliver(d, u.load); u.load = null; o.stage = 'load'; o.wait = 0; o.tk = -1;
+          }
+          break;
+        }
         case 'dig': {
           let sg = o.seg;
           if (!sg || sg.dead || (o.fill ? !sg.done : sg.done)) {
@@ -1206,7 +1304,7 @@ const Game = (() => {
     G.tick++;
     G.time += dt;
     updateResearch(dt); updateBuildings(dt);
-    updateSquads(); updateLines(); updateHealing(dt); updateSmokes(dt); updateSignals(dt);
+    updateSquads(); updateLines(); updateHealing(dt); updateSmokes(dt); updateSignals(dt); updateLogistics(dt);
     for (const u of G.units) if (!u.dead) updateUnit(u, dt);
     separate();
     updateProjectiles(dt); updateEffects(dt);
@@ -1226,6 +1324,6 @@ const Game = (() => {
     canEnter, unloadBuilding, upgradeTower, slotCount, hasTech, canThrow, lineAt, segNear, orderDig, orderGrenade,
     enqueue, cancelQueue, harvestRate, activeWorkers, effRange,
     squadCentre, membersOf, setSquad,
-    _dbg: { enter: enterBuilding, planLine, finishSeg, removeSeg, damageSeg, throwGrenade, addXp, validTarget, acquire, inRange, canSee, tryFire, applyDamage, kill, addStress, rangeMult, dmgMult, hitMult, heightDiff },
+    _dbg: { lineThreat, checkCuts, planLogistics, enter: enterBuilding, planLine, finishSeg, removeSeg, damageSeg, throwGrenade, addXp, validTarget, acquire, inRange, canSee, tryFire, applyDamage, kill, addStress, rangeMult, dmgMult, hitMult, heightDiff },
   };
 })();

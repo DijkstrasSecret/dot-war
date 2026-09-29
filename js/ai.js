@@ -25,7 +25,7 @@ const AI = (() => {
   // Commanded sides ignore the supply cap: the scripted AI keeps its own unit cap (DD Q23).
   function reset(pids = [2]) {
     sides = {};
-    for (const pid of pids) { const walk = walkTime(pid); if (G.players[pid]) G.players[pid].noSupply = true; sides[pid] = { thinkT: 0, walk, raidT: walk + params().buildUp, lastDefend: -99, raids: 0, seen: new Map() }; }
+    for (const pid of pids) { const walk = walkTime(pid); if (G.players[pid]) { G.players[pid].noSupply = true; G.players[pid].ai = true; } sides[pid] = { thinkT: 0, walk, raidT: walk + params().buildUp, lastDefend: -99, raids: 0, seen: new Map() }; }
   }
   // DD G7: the AI may train a unit only once its unlock time (per difficulty) has passed.
   function unlockDue(p, D) { for (const [t, at] of Object.entries(D.unlocks || {})) if (G.time >= at) p.unlocked.add(t); }
