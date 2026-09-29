@@ -239,7 +239,7 @@ const Game = (() => {
   // Orders are descriptors {kind, ...}. With queue=true they wait behind the unit's current order (Shift).
   function issue(u, o, queue) {
     if (u.dead) return;
-    const standing = u.order && (u.order.type === 'hold' || u.order.type === 'bombard');   // orders that never finish on their own
+    const standing = u.order && ['hold', 'bombard', 'haul', 'work'].includes(u.order.type);   // orders that never finish on their own (Shift replaces them)
     if (queue && !standing && (u.order || u.queue.length)) { u.queue.push(o); return; }
     u.queue = []; applyOrder(u, o);
   }
@@ -281,7 +281,7 @@ const Game = (() => {
       }
       case 'board': {   // walk to a Truck and get in (0.5b); the rest of the queue waits until it unloads
         const t = o.truck; if (!t || t.dead || !t.cargo || t.owner !== u.owner || u.def.cls !== 'infantry') break;
-        u.order = { type: 'board', truck: t, tk: -1 };
+        u.order = { type: 'board', truck: t, tk: -1, ferry: !!o.ferry };
         break;
       }
       case 'ferry':   // a squadron's Truck: wait for its riders, then drive and unload (DD E, G4)
@@ -310,10 +310,13 @@ const Game = (() => {
     const loose = [];
     for (const [n, members] of bySquad(list)) {
       if (n === 0) { loose.push(...members); continue; }
-      const s = G.squads[n], slots = formation(s, members, x, y, opts);
+      // Riders already in the squadron's Truck get their new place too, and the Truck unloads there.
+      const s = G.squads[n], t = members.find(m => m.cargo), aboard = t ? membersOf(s).filter(m => m.inside === t.id) : [];
+      const slots = formation(s, members.concat(aboard), x, y, opts);
+      if (!queue) for (const r of aboard) { const o = slots.get(r); r.queue = [{ kind: mode, x, y, offx: o[0], offy: o[1], arrive: o[2] }]; }
       if (!queue && !retreat && ferry(s, members, x, y, mode, slots)) continue;
       const maxSpeed = s.move === 'slow' ? Math.min(...members.map(u => u.stats.speed)) : 0;
-      for (const u of members) { const o = slots.get(u); issue(u, { kind: mode, x, y, offx: o[0], offy: o[1], arrive: o[2], retreat, maxSpeed }, queue); }
+      for (const u of members) { const o = slots.get(u); issue(u, { kind: mode, x, y, offx: o[0], offy: o[1], arrive: o[2], retreat, maxSpeed, unload: u === t && aboard.length > 0 }, queue); }
     }
     const n = loose.length; if (!n) return;
     const cols = Math.ceil(Math.sqrt(n)), rows = Math.ceil(n / cols), spacing = 15;
@@ -325,7 +328,7 @@ const Game = (() => {
   }
   function orderAttack(units, target, queue = false) {
     if (!queue && units.some(u => !u.dead && u.owner === 1 && u.suppressed && !u.def.obeysWhenSuppressed)) toast('Suppressed units cannot pick targets');
-    for (const u of units) issue(u, { kind: 'attack', target }, queue);
+    for (const u of units) if (u.stats.weapon) issue(u, { kind: 'attack', target }, queue);   // Medics, Workers and Trucks keep what they were doing
   }
   const isIndirect = u => !!(u.stats.weapon && u.stats.weapon.indirect);
   function orderBombard(units, x, y, queue = false) {
@@ -631,7 +634,8 @@ const Game = (() => {
       if (sq && sq.leader === e.id) for (const m of membersOf(sq)) if (m !== e && dist(m.x, m.y, e.x, e.y) < SQ.leaderRadius) { addStress(m, SQ.leaderDeathShock); shocked.add(m); }
       for (const o of G.units) if (!o.dead && !shocked.has(o) && o.owner === e.owner && dist(o.x, o.y, e.x, e.y) < 45) addStress(o, 0.2);
       if (sq) leaveSquad(e);
-      if (e.cargo) { let n = 0; for (const id of e.cargo) { const p = G.unitById.get(id); if (!p || p.dead) continue; placeOutside(p, e, n++); addStress(p, 0.6); applyDamage(p, p.stats.hp * 0.5, by); } e.cargo = []; }   // a wrecked Truck throws its passengers out, hurt
+      if (e.inside) { const c = G.buildingById.get(e.inside) || G.unitById.get(e.inside); if (c) { if (c.garrison) c.garrison = c.garrison.filter(id => id !== e.id); if (c.cargo) c.cargo = c.cargo.filter(id => id !== e.id); } }   // free the slot
+      if (e.cargo) { let n = 0; const riders = e.cargo; e.cargo = []; for (const id of riders) { const p = G.unitById.get(id); if (!p || p.dead) continue; placeOutside(p, e, n++); addStress(p, 0.6); applyDamage(p, p.stats.hp * 0.5, by); if (!p.dead && p.queue.length) nextOrder(p); } }   // a wrecked Truck throws its passengers out, hurt
       // blood, a corpse, and a morale shock that alerts nearby friends
       G.effects.push({ kind: 'shock', x: e.x, y: e.y, t: 0, dur: 0.7, r: 45 });
       const blobs = []; for (let i = 0; i < 5; i++) { const a = V() * Math.PI * 2, rr = V() * e.size * 1.6; blobs.push([Math.cos(a) * rr, Math.sin(a) * rr, e.size * (0.5 + V() * 0.7)]); }
@@ -882,6 +886,16 @@ const Game = (() => {
     if (o.tk !== key || !u.field) { o.tk = key; u.field = Path.getField(tx, ty, u.def.cls, G.time); if (!u.field) return; }
     if (followField(u, dt, spd)) moveToward(u, tx, ty, dt, spd);
   }
+  // Chasing something that moves: walk straight at it when the way is clear, and otherwise re-plan the
+  // route at most every 2 s and only when the target has moved 4+ cells (a full re-plan per
+  // cell stalled the game).
+  function chase(u, o, tx, ty, dt, spd) {
+    if (dist(u.x, u.y, tx, ty) < 150 && Terrain.straightPassable(u.x, u.y, tx, ty, u.cls)) { moveToward(u, tx, ty, dt, spd); return true; }
+    const f = u.field;
+    if (!f || (G.time - (o.pathT || -9) > 2 && dist(f.tx, f.ty, tx, ty) > Terrain.CELL * 4)) { u.field = Path.getField(tx, ty, u.def.cls, G.time); o.pathT = G.time; if (!u.field) return false; }
+    if (followField(u, dt, spd)) moveToward(u, tx, ty, dt, spd);
+    return true;
+  }
   const dropField = b => { const d = door(b); return Path.getField(d[0], d[1], 'infantry', G.time); };
   function routeOf(f, b) {   // the flow field's path from b's door, a point every three cells
     if (!f) return null; const W = Terrain.W; const d = door(b); let k = Terrain.cellIdxAt(d[0], d[1]); const pts = [[b.x, b.y]];
@@ -994,7 +1008,7 @@ const Game = (() => {
     if ((bp.level || 0) === u.bpLevel) return false;
     if (!G.buildings.some(b => b.owner === u.owner && b.type === 'workshop' && b.built && !b.dead && dist(b.x, b.y, u.x, u.y) < Data.REPAIR.range + b.size)) { if (u.owner === 1) toast('Retrofits are done at a Workshop: drive the Truck next to one'); return false; }
     const cost = retrofitCost(u); if (!canAfford(p, cost)) { if (u.owner === 1) toast('Not enough resources'); return false; }
-    pay(p, cost); const frac = u.hp / u.stats.hp; u.stats = statsFor(u.owner, u.type); u.hp = u.stats.hp * frac; u.fuel = Math.min(u.fuel, u.stats.fuel);
+    pay(p, cost); const frac = u.hp / u.stats.hp; u.stats = statsFor(u.owner, u.type); u.stats.hp *= Math.pow(VET.perRank.hp, u.rank); u.hp = u.stats.hp * frac;   // keeps its rank bonus u.fuel = Math.min(u.fuel, u.stats.fuel);
     u.price = { ...bp.cost }; u.bpLevel = bp.level || 0; if (u.owner === 1) toast('Truck retrofitted'); return true;
   }
   function retrofitCost(u) { const bp = G.players[u.owner].blueprints[u.type], c = {}; for (const k in bp.cost) c[k] = Math.max(0, Math.round((bp.cost[k] - (u.price[k] || 0)) * Data.TRUCK_TRACKS.retrofitShare)); return c; }
@@ -1019,7 +1033,7 @@ const Game = (() => {
     const slot = u => { const o = slots.get(u); return { kind: mode, x, y, offx: o[0], offy: o[1], arrive: o[2] }; };
     for (const m of members) {
       if (m === t) continue;
-      if (riders.includes(m)) { m.queue = []; applyOrder(m, { kind: 'board', truck: t }); m.queue = [slot(m)]; }
+      if (riders.includes(m)) { m.queue = []; applyOrder(m, { kind: 'board', truck: t, ferry: true }); m.queue = [slot(m)]; }
       else issue(m, Object.assign(slot(m), { maxSpeed: 0 }), false);
     }
     t.queue = []; applyOrder(t, { kind: 'ferry', riders: riders.map(m => m.id), next: Object.assign(slot(t), { kind: 'move', unload: true }) });
@@ -1037,6 +1051,7 @@ const Game = (() => {
   function joinSquad(s, u) { if (u.squad && u.squad !== s.id) leaveSquad(u); u.squad = s.id; if (!s.members.includes(u.id)) s.members.push(u.id); }
   // Ctrl+number: 2-12 units become squadron n, replacing it; they leave any squadron they were in.
   function setSquad(n, units) {
+    if (!units.length) return false;
     const list = units.filter(u => u instanceof Unit && !u.dead && u.owner === units[0].owner);
     if (list.length < SQ.min || list.length > SQ.max) return false;
     if (G.squads[n]) disband(n);
@@ -1095,7 +1110,7 @@ const Game = (() => {
       if (s.target && (s.target.dead || s.target.inside || !ms.some(m => m.target === s.target))) s.target = null;
       if (!s.target) { const counts = new Map(); for (const m of ms) if (m.target && !m.def.obeysWhenSuppressed) counts.set(m.target, (counts.get(m.target) || 0) + 1); let top = 0; for (const [t, c] of counts) if (c > top) { top = c; s.target = t; } }
       if (s.contact === 'react' && SQ.reactHalts && ms.some(m => m.order && (m.order.type === 'move' || m.order.type === 'attackmove') && !m.order.retreat && m.target && inRange(m, m.target))) {
-        for (const m of ms) if (m.order && (m.order.type === 'move' || m.order.type === 'attackmove') && !m.order.retreat) { m.queue = []; applyOrder(m, { kind: 'hold' }); }
+        for (const m of ms) if (m.order && (m.order.type === 'move' || m.order.type === 'attackmove') && !m.order.retreat && !m.cargo && !m.order.unload) { m.queue = []; applyOrder(m, { kind: 'hold' }); }   // a Truck keeps driving to unload
       }
     }
   }
@@ -1230,12 +1245,9 @@ const Game = (() => {
         }
         case 'attack': {
           const t = o.target;
-          if (!t || t.dead || !keepsOrders(u)) { nextOrder(u); break; }
+          if (!t || t.dead || t.inside || !keepsOrders(u)) { nextOrder(u); break; }   // a target that garrisons or boards is out of reach
           if (inRange(u, t) && canSee(u, t)) break;
-          const ci = Terrain.cellI(t.x), cj = Terrain.cellJ(t.y);
-          if (!u.field || u.field.ci !== ci || u.field.cj !== cj) u.field = Path.getField(t.x, t.y, u.def.cls, G.time);
-          if (!u.field) { nextOrder(u); break; }
-          followField(u, dt, spd);
+          if (!chase(u, o, t.x, t.y, dt, spd)) nextOrder(u);
           break;
         }
         case 'bombard': {
@@ -1283,7 +1295,8 @@ const Game = (() => {
         case 'board': {
           const t = o.truck;
           if (!t || t.dead || t.inside) { nextOrder(u); break; }
-          if (dist(u.x, u.y, t.x, t.y) > t.size + u.size + 10) { walkTo(u, o, t.x, t.y, dt, spd); break; }
+          if (o.ferry && !(t.order && t.order.type === 'ferry')) { nextOrder(u); break; }   // missed the squadron's Truck: march instead
+          if (dist(u.x, u.y, t.x, t.y) > t.size + u.size + 10) { if (!chase(u, o, t.x, t.y, dt, spd)) nextOrder(u); break; }
           if (seatsFree(t) >= seatCost(u)) embark(u, t); else { if (u.owner === 1) toast('The Truck is full'); nextOrder(u); }
           break;
         }
@@ -1310,13 +1323,7 @@ const Game = (() => {
         case 'grenade': {   // walk into reach, throw once the cooldown allows, then carry on
           const t = o.target && !o.target.dead ? o.target : null, tx = t ? t.x : o.x, ty = t ? t.y : o.y;
           const reach = NADE.range + (t instanceof Building ? t.size * 0.7 : 0);
-          if (dist(u.x, u.y, tx, ty) > reach) {
-            const ci = Terrain.cellI(tx), cj = Terrain.cellJ(ty);
-            if (!u.field || u.field.ci !== ci || u.field.cj !== cj) u.field = Path.getField(tx, ty, u.def.cls, G.time);
-            if (!u.field) { nextOrder(u); break; }
-            if (followField(u, dt, spd)) moveToward(u, tx, ty, dt, spd);
-            break;
-          }
+          if (dist(u.x, u.y, tx, ty) > reach) { if (!chase(u, o, tx, ty, dt, spd)) nextOrder(u); break; }
           if (u.nadeT <= 0 && !u.windup) startThrow(u, tx, ty, t);
           break;
         }
@@ -1354,7 +1361,7 @@ const Game = (() => {
     for (const p of G.projectiles) {
       p.t += dt; if (p.t < p.dur) continue;
       p.done = true;
-      if (p.kind === 'bullet') { if (p.target && !p.target.dead && p.dmg > 0) applyDamage(p.target, p.dmg, p.shooter); }
+      if (p.kind === 'bullet') { if (p.target && !p.target.dead && !p.target.inside && p.dmg > 0) applyDamage(p.target, p.dmg, p.shooter); }
       else explode(p);
     }
     G.projectiles = G.projectiles.filter(p => !p.done);
@@ -1405,7 +1412,7 @@ const Game = (() => {
       case 'upgrade': return !!b && upgradeTower(b);
       case 'link': return setLink(b, c.target, pid);   // Kaan, 0.5a.3: a gatherer's or Depot's supply link (null: the HQ)
       case 'unload': return b ? (b instanceof Unit ? unloadTruck(b) : unloadBuilding(b)) : 0;
-      case 'unloadOne': { const u = entById(c.unit); if (b instanceof Unit) { if (!b.cargo || !b.cargo.includes(c.unit)) return false; b.cargo = b.cargo.filter(x => x !== c.unit); placeOutside(u, b, b.cargo.length); if (u.queue.length) nextOrder(u); return true; } return unloadOne(b, u); }
+      case 'unloadOne': { const u = entById(c.unit); if (!u) return false; if (b instanceof Unit) { if (!b.cargo || !b.cargo.includes(c.unit)) return false; b.cargo = b.cargo.filter(x => x !== c.unit); placeOutside(u, b, b.cargo.length); if (u.queue.length) nextOrder(u); return true; } return unloadOne(b, u); }
       case 'board': { const t = entById(c.target); if (!(t instanceof Unit) || !t.cargo || t.owner !== pid) return 0; let n = 0; for (const u of us) if (u !== t && u.def.cls === 'infantry' && !u.inside) { issue(u, { kind: 'board', truck: t }, q); n++; } return n; }
       case 'retrofit': { let n = 0; for (const u of us) if (retrofit(u)) n++; return n; }
       case 'line': return planDig(pid, c.type, c.points, us, q);
