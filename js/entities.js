@@ -42,7 +42,7 @@ class Building {
     this.muzzle = 0;
     this.maxHp = this.def.hp;
     this.level = 1; this.garrison = []; this.upgrading = null;   // scout towers
-    this.stock = {}; this.drop = null; this.route = null; this.parent = null; this.connected = true; this.costHq = 0;   // supply chains (0.5a.2)
+    this.stock = {}; this.link = null; this.drop = null; this.route = null; this.parent = null; this.connected = true;   // supply chains (0.5a.2)
   }
   get levelDef() { return this.def.levels ? this.def.levels[this.level - 1] : null; }
   // Garrison slots: a Scout Tower's current level, or the building's own (HQ, Bunker); null if none.

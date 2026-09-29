@@ -196,9 +196,9 @@ const Render = (() => {
   // red and dashed while cut.
   function polyline(pts) { ctx.beginPath(); pts.forEach((q, i) => ctx[i ? 'lineTo' : 'moveTo'](q[0], q[1])); ctx.stroke(); }
   function drawSupplyLines() {
-    const col = Data.PLAYER_COLORS[1];
     for (const b of G.buildings) {
-      if (b.dead || b.owner !== 1 || !b.route) continue;
+      if (b.dead || !b.route || !(b.owner === 1 || (b.seen && b.def.harvest))) continue;   // enemy carrier lines once their mine is seen
+      const col = Data.PLAYER_COLORS[b.owner];
       if (b.def.harvest) { ctx.globalAlpha = 0.45; ctx.strokeStyle = col; ctx.lineWidth = 1; ctx.setLineDash([4, 3]); polyline(b.route); }
       else if (b.type === 'depot') {
         ctx.globalAlpha = 0.6; ctx.lineWidth = 2.2;
@@ -294,7 +294,7 @@ const Render = (() => {
       ctx.fillStyle = '#fff'; ctx.fillText(t.msg, w / 2, ty); ty -= 28;
     }
     ctx.globalAlpha = 1;
-    const banner = { build: st.buildType ? 'Click to place ' + Data.BUILDINGS[st.buildType].name + ' (right click cancels)' : '', walk: 'Move: click where to go (hold Shift to queue)', attack: 'Attack-move: click an enemy or a point (hold Shift to queue)', work: 'Enter: click a Lumber Camp, Mine, Scout Tower, Bunker or the HQ',
+    const banner = { build: st.buildType ? 'Click to place ' + Data.BUILDINGS[st.buildType].name + ' (right click cancels)' : '', walk: 'Move: click where to go (hold Shift to queue)', attack: 'Attack-move: click an enemy or a point (hold Shift to queue)', work: 'Enter: click a Lumber Camp, Mine, Scout Tower, Bunker or the HQ', link: 'Supply link: click one of your Depots, or the HQ',
       line: st.lineType ? Data.LINES[st.lineType].name + ': hold the left button and drag to draw (right click cancels)' : '', fill: 'Fill: click one of your trenches (Workers only)', grenade: 'Grenade: click an enemy or a point',
       smoke: 'Smoke: click where the mortars should put a smoke screen', demolish: 'Demolition: click a barricade, barbed wire or a bridge' }[st.mode];
     // Below the group bar, which floats at the top centre in the open-map layout.

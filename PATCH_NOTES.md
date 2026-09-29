@@ -5,6 +5,16 @@ each change live in `DESIGN_DECISIONS.md`.
 
 ---
 
+## 0.5a.3: You choose the supply links (29 September 2026)
+
+- Camps, mines, tappers, refineries and Depots now send their goods where **you** choose: press
+  "Pick supply link" on the building (or right click one of your Depots while it is selected). With
+  nothing picked, goods go straight to the HQ. The automatic "nearest Depot" and "20% detour" rules
+  are gone, so every web is one you built on purpose. Links that would go round in a circle are
+  refused.
+- The enemy commander's mines need carriers now too: it keeps two Workers on each mine, walking a
+  line you can see and ambush.
+
 ## 0.5a.2: Supply chains (29 September 2026)
 
 - **Carrying:** camps, mines, tappers and refineries now fill their own store (up to 100). The

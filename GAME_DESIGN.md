@@ -186,12 +186,15 @@ one mine per deposit.
 
 **Supply chains** (patch 0.5a.2). A harvest building's output goes into its own stock (up to 100).
 Its assigned Workers or soldiers carry loads of 10 (soldiers 5) along the fastest walking route to
-the nearest drop-off, a Depot or the HQ, shown as a thin dashed line, and walk back. Resources count
+its **supply link**, shown as a thin dashed line, and walk back. The link is the HQ unless you pick
+one of your Depots (the "Pick supply link" button on the building, or right click a Depot with the
+building selected; patch 0.5a.3). Resources count
 only once dropped off, so a far camp needs more carriers. A destroyed building loses its stock; a
-killed or reassigned carrier loses his load. Each Depot has a bolder line to the HQ, or to another
-Depot when that route is at most 20% longer (the lines form a web). Enemy soldiers within 20 m of a
+killed or reassigned carrier loses his load. Each Depot has a bolder line along its own supply link:
+the HQ, or another Depot you pick the same way, so webs are the ones you build (a loop is refused). Enemy soldiers within 20 m of a
 Depot's line cut it and every Depot beyond it: the line turns red and dashed, and goods dropped there
-wait until it is clear. The scripted AI keeps its direct income.
+wait until it is clear. The enemy commander's mines need carriers too: it keeps two Workers
+on each, and their lines show once you have seen the mine.
 
 **Supply** (patch 0.5a): every unit uses supply (1 each, a Mortar Crew 2), counted when it is queued.
 The cap is 30, plus 10 per finished Depot (15 with Supply Organisation), with no maximum; the top
@@ -297,7 +300,8 @@ Crews only after their unlock time. It has passive income instead of workers: 1.
 and 0.35 sulfur per second times the difficulty income factor and the game's pace (0.7). Raiders that lose their target walk
 home. Raids escalate: each sends 10% more of the army than the last (up to 90%), and once the AI's
 army is twice the enemy soldiers it has seen in the last two minutes (at least 3), it sends
-everyone. The AI does not build, research, expand, dig, throw grenades, train Medics or use towers.
+everyone. It trains Workers only to carry from its mines (two per mine; they never fight). The AI
+does not build, research, expand, dig, throw grenades, train Medics or use towers.
 
 The first raid comes at the enemy's walking time to the player's HQ plus 300 s of build-up; each
 raid interval adds the walking time too. The walking time is measured over the real terrain for a

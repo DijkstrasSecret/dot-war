@@ -1081,7 +1081,14 @@ old ones, so the tech tree alone doesn't move this. Not retuned; Kaan to decide.
 | Stock and carriers | The building produces as before (base rate + assigned labour, now counting every assigned person, wherever they are on the line) into its **own stock, capped at 100**. The assigned Workers or soldiers carry **loads of 10** (soldiers **5**) along the line to the drop-off and walk back. Resources count only when dropped off. A destroyed building loses its stock; a carrier who is killed or reassigned loses his load. |
 | Depot lines | Each Depot has a line to the HQ. If going through another Depot is at most **20%** longer than going straight to the HQ, its line goes to that Depot instead, so the lines grow into a web. |
 | Cutting | Goods dropped at a Depot count at once **while its line to the HQ is unbroken**. Enemy soldiers standing on the line (within 20 m, proposed) cut it, and everything further out along the web. Goods dropped at a cut Depot wait there and count when the line is clear again. |
-| AI | The scripted AI keeps its direct income; its harvest buildings still credit it at once (DD Q23). |
+| AI | The scripted AI keeps its direct income; its harvest buildings still credit it at once (DD Q23). Superseded by 0.5a.3 for its mines. |
+
+### Patch 0.5a.3: chosen supply links, AI carriers (Kaan, 29 September 2026)
+
+| Topic | Decision |
+| --- | --- |
+| Supply link | Replaces the automatic nearest drop-off and the 20% detour rule ("work smarter, not harder"). Every gatherer and every Depot has a **supply link** the player picks (a button on its panel, or right click one of your Depots with it selected). With no link set, it goes **straight to the HQ**. A Depot may link to another Depot, so webs exist only where the player builds them; a link that would make a loop is refused. Cutting works as before. |
+| AI | The enemy commander's **mines need carriers**: it trains a couple of Workers per mine and they carry along lines the player can see and cut. It keeps its passive income for everything else; the full AI economy stays "Later" (DD Q23). AI Workers don't count towards its army cap and never raid. |
 
 ---
 

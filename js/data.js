@@ -252,9 +252,10 @@ const Data = {
   },
   // DD I: every bonus and penalty multiplies, then these caps apply (Util.stack).
   CAPS: { hit: { max: 0.95 }, stressTaken: { min: 0.25 }, speed: { min: 0.2 }, vision: { min: 0.35 } },
-  // Supply chains (Kaan, 0.5a.2): gatherers fill their own stock; assigned people carry loads to the
-  // nearest Depot or the HQ. A Depot joins another Depot's line if that is at most `detour` longer than
-  // going straight to the HQ; enemies within cutRange of a Depot line cut it. Times in game seconds.
-  LOGISTICS: { load: 10, soldierLoad: 5, stockCap: 100, detour: 0.2, cutRange: 20, replan: 5, cutCheck: 1, loadWait: 4 },
+  // Supply chains (Kaan, 0.5a.2, 0.5a.3): gatherers fill their own stock; assigned people carry loads
+  // along the building's supply link (a Depot the player picked, or the HQ). Depots link to the HQ or
+  // to a chosen Depot; enemies within cutRange of a Depot line cut it. aiCarriers: Workers the enemy
+  // commander keeps on each of its mines. Times in game seconds.
+  LOGISTICS: { load: 10, soldierLoad: 5, stockCap: 100, cutRange: 20, replan: 5, cutCheck: 1, loadWait: 4, aiCarriers: 2 },
   ECONOMY: { soldierLabour: 0.5, pace: 0.7 },   // Kaan, 0.5a.1: a slower game. Every harvest rate and the AI's passive income x0.7                      // DD Q4: a soldier at a camp counts as half a Worker
 };
