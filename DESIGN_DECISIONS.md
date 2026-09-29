@@ -1116,6 +1116,22 @@ Built in 0.5b (notes for Kaan):
 | Meta snapshot | The Balance Lab gets a fixed battery of seeded tests (equal-supply duels, terrain and squads, fortifications, economy, enemy pressure on a player who stays home) with the 0.5b.1 results saved as the baseline in `lab/meta-baseline.js`, to compare 0.6 against. |
 | Audit | A full audit of code and docs after 0.5b; the fixes are listed in `PATCH_NOTES.md` under 0.5b.1. |
 
+### Patch 0.5b.2 (Kaan, 29 September 2026)
+
+| Topic | Decision |
+| --- | --- |
+| Carrier loads | If a camp, mine, tapper or refinery is destroyed while a carrier is holding a load, **the load lives on**: he delivers it to his drop-off (the HQ if that is gone too), then his job ends. |
+| Trucks at gatherers | In play Trucks looked useless (no labour, slow loads, no fuel on HQ links). Fixes: **the HQ refuels Trucks too** (as well as Depots); **Trucks carry first**: while a Truck of that building waits at it, Workers leave the stock to it; **the tank doubles to 120** (about 72 game seconds of driving). A Truck still adds no labour. |
+
+### Agreed for the next patches, not built yet (Kaan, 29 September 2026)
+
+| Topic | Decision |
+| --- | --- |
+| Sniper range abuse (built in 0.5b.2; idle loose soldiers within 60 m join) | Soldiers not on Defend who are shot by an enemy they can't reach **return fire**: they attack-move towards the shooter (the AI's soldiers too). Sniper stats stay. (Lab: 2 Snipers at 280 m killed 5–6 idle Riflemen in a minute unharmed; 4 Snipers v 6 Riflemen up close win only 5%.) |
+| Shooting needs sight (0.6) | Direct fire (Rifles, MGs, Snipers) may only target what the shooter's side can see, day and night. |
+| Weather mix (0.6) | Clear 40%, rain 25%, fog 20%, snow 15%, from the match seed. |
+| Searchlights (0.6) | The cone sweeps slowly over 120° towards the enemy side; can be switched off. |
+
 ---
 
 ## Still open

@@ -572,7 +572,7 @@ const Game = (() => {
     const tx = e.x + Math.cos(ang) * off, ty = e.y + Math.sin(ang) * off;
     G.projectiles.push(new Projectile({ kind: 'bullet', x: u.x, y: u.y, tx, ty, dur: Math.max(0.03, d / w.pspeed), dmg, target: hit ? e : null, shooter: u, owner: u.owner }));
     if (e instanceof Unit) {   // every shot at a unit stresses it, hit or miss
-      const was = e.suppressed; addStress(e, w.suppress); e.lastHitBy = u; alertUnit(e);
+      const was = e.suppressed; addStress(e, w.suppress); e.lastHitBy = u; alertUnit(e); returnFire(e, u);
       if (!was && e.suppressed) suppressXp(u, e);
       for (const o of G.units) if (o !== e && !o.dead && !o.inside && o.owner === e.owner && dist(o.x, o.y, e.x, e.y) < 30) addStress(o, w.suppress * 0.2);
     }
@@ -597,7 +597,7 @@ const Game = (() => {
       if (Terrain.ridgeCover(x, y, e.x, e.y)) m *= 0.35;
       if (Terrain.coverAt(e.x, e.y) < 1) m *= 0.85;
       const ls = lineAt(e.x, e.y); if (ls && LINES[ls.type].blast) m *= LINES[ls.type].blast;   // Kaan, 0.4.1: a trench halves blast damage
-      const was = e.suppressed; addStress(e, 0.3 * (1 - d / splash) + 0.1); e.lastHitBy = shooter; alertUnit(e);
+      const was = e.suppressed; addStress(e, 0.3 * (1 - d / splash) + 0.1); e.lastHitBy = shooter; alertUnit(e); returnFire(e, shooter);
       if (!was && e.suppressed && shooter && e.owner !== shooter.owner) suppressXp(shooter, e);
       applyDamage(e, dmg * m, shooter);
     }
@@ -613,6 +613,18 @@ const Game = (() => {
     }
     // DD I: explosives deal full damage to barricades and wire; trenches cannot be destroyed.
     for (const sg of G.segs) { if (!sg.done || !sg.maxHp) continue; const d = segDist(sg, x, y); if (d <= splash) damageSeg(sg, dmg * (0.5 + 0.5 * (1 - d / splash))); }
+  }
+  // Kaan, 0.5b.2: an idle soldier (no order, not on Defend) shot by an enemy he can't reach attack-moves
+  // towards the shooter, so Snipers and Mortars can't pick off a standing group for free. The whole
+  // squadron (or the idle loose soldiers within 60 m) goes with him.
+  function returnFire(e, by) {
+    if (!(by instanceof Unit) || by.dead || by.owner === e.owner || e.dead || e.inside || e.order || e.flee > 0 || !e.stats.weapon || e.work != null) return;
+    if (G.time - (e.returnT || -99) < Data.RETURN_FIRE.every || inRange(e, by)) return;
+    const idle = m => !m.order && !m.inside && !m.dead && m.stats.weapon && m.work == null && m.flee <= 0;
+    const group = e.squad && G.squads[e.squad] ? membersOf(G.squads[e.squad]).filter(idle)
+      : G.units.filter(m => m.owner === e.owner && !m.squad && idle(m) && dist(m.x, m.y, e.x, e.y) <= Data.RETURN_FIRE.join);   // loose soldiers standing together go together
+    for (const m of group) m.returnT = G.time;
+    orderMove(group, by.x, by.y, 'attackmove');
   }
   function applyDamage(e, dmg, by) {
     if (e.dead || dmg <= 0) return;
@@ -988,7 +1000,7 @@ const Game = (() => {
     for (const v of G.units) {
       if (v.dead || !v.cargo) continue; const p = G.players[v.owner];
       const near = type => G.buildings.find(b => b.owner === v.owner && b.type === type && b.built && !b.dead && dist(b.x, b.y, v.x, v.y) < (type === 'depot' ? FUEL.depotRange : Data.REPAIR.range) + b.size);
-      const dep = near('depot');
+      const dep = FUEL.refuelAt.map(near).find(Boolean);   // Kaan, 0.5b.2: Depots and the HQ refuel
       if (dep) for (const k of ['fuel', 'spare']) {
         const cap = k === 'fuel' ? v.stats.fuel : v.def.spare, need = cap - v[k]; if (need <= 0) continue;
         const amt = Math.min(need, FUEL.refuelRate * dt, (p.res.oil || 0) / FUEL.oilPerFuel); if (amt <= 0) continue;
@@ -1264,18 +1276,23 @@ const Game = (() => {
         }
         case 'hold': if (o.until && G.time >= o.until) nextOrder(u); break;
         case 'haul': {   // Kaan, 0.5a.2: take a load from the building's stock, carry it to the drop-off, walk back
-          const b = G.buildingById.get(u.work);
-          if (!b || b.dead) { releaseWork(u); nextOrder(u); break; }
+          const b = G.buildingById.get(u.work != null ? u.work : o.from);
+          // Kaan, 0.5b.2: if the camp is destroyed, a carrier already holding a load still delivers it.
+          if ((!b || b.dead) && !(u.load && o.stage === 'haul')) { releaseWork(u); nextOrder(u); break; }
           if (o.stage === 'load') {
             if (dist(u.x, u.y, b.x, b.y) > b.size + 22) { const d = door(b); walkTo(u, o, d[0], d[1], dt, spd); break; }
             const k = b.def.harvest === 'wood' ? 'wood' : b.depositType, have = (k && b.stock[k]) || 0, cap = u.def.load || (u.def.labour ? LOG.load : LOG.soldierLoad);
             o.wait += dt;
-            if (have >= cap || (have >= 1 && o.wait > (u.def.load ? LOG.truckWait : LOG.loadWait))) { const n = Math.min(have, cap); b.stock[k] = have - n; u.load = { k, n }; o.stage = 'haul'; o.tk = -1; }
+            // Kaan, 0.5b.2: Trucks carry first. While a Truck of this building waits here, Workers leave the stock to it.
+            if (!u.def.load && b.workers.some(id => { const t = G.unitById.get(id); return t && !t.dead && t.def.load && t.order && t.order.type === 'haul' && t.order.stage === 'load' && dist(t.x, t.y, b.x, b.y) <= b.size + 30; })) break;
+            if (have >= cap || (have >= 1 && o.wait > (u.def.load ? LOG.truckWait : LOG.loadWait))) { const n = Math.min(have, cap); b.stock[k] = have - n; u.load = { k, n }; o.stage = 'haul'; o.tk = -1; o.from = b.id; o.drop = b.drop; }
           } else {
-            const d = G.buildingById.get(b.drop);
-            if (!d || d.dead) break;   // no drop-off yet: wait with the load
+            let d = G.buildingById.get(b && !b.dead ? b.drop : o.drop);
+            if (!d || d.dead) d = G.buildings.find(x => x.owner === u.owner && x.type === 'hq' && !x.dead);   // its drop-off is gone: take it home
+            if (!d) break;   // nowhere to go yet: wait with the load
             if (dist(u.x, u.y, d.x, d.y) > d.size + 22) { const p0 = door(d); walkTo(u, o, p0[0], p0[1], dt, spd); break; }
             deliver(d, u.load); u.load = null; o.stage = 'load'; o.wait = 0; o.tk = -1;
+            if (!b || b.dead) { releaseWork(u); nextOrder(u); }   // the camp is gone: job done
           }
           break;
         }

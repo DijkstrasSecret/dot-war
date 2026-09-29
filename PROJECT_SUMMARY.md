@@ -418,8 +418,11 @@ Built and merged: 0.2a, 0.2b, 0.2.1, 0.3, 0.3.1, 0.4, 0.4.1, 0.4.2, 0.5a, 0.5a.1
 patch ..." notes in `DESIGN_DECISIONS.md`). `BALANCE_BASELINE.md` records the balance of 0.5b.1 for
 comparison.
 
-1. Patch 0.6: weather and night.
-2. Open questions: how long a Truck's tank should last (now about 36 game seconds of driving).
+To do, in order:
+1. Done in 0.5b.2: Trucks at gatherers (HQ refuels, Trucks carry first, tank 120).
+2. Done in 0.5b.2: return fire against Snipers; carriers keep their load.
+4. Patch 0.6: weather and night, with the answers already agreed (sight rule, weather mix, searchlights).
+
 
 ---
 

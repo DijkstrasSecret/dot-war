@@ -109,13 +109,14 @@ Entrenching Tools apply at once, to units already in the field too.
   with half their health gone.
 - **Moves like a vehicle:** max grade 0.4, forest ×0.3, swamp ×0.15, roads ×1.5. Barricades block it,
   trenches slow it to ×0.4 (your own too), wire doesn't. Vehicles take no stress and aren't healed.
-- **Fuel:** a 60 tank, 1 fuel per 100 m on roads and 1.5 off them. With an empty tank it crawls at
-  20% speed. A Depot refuels vehicles within 60 m for 1 oil per fuel, and refills the Truck's 60
+- **Fuel:** a 120 tank, 1 fuel per 100 m on roads and 1.5 off them. With an empty tank it crawls at
+  20% speed. A Depot or the HQ refuels vehicles within 60 m for 1 oil per fuel, and refills the Truck's 60
   spare fuel, which it shares with vehicles below half a tank within 30 m. A full tank lasts about
-  36 game seconds of driving (4 km off-road at 110, or 6 km on roads at 165).
+  72 game seconds of driving (8 km off-road at 110, or 12 km on roads at 165).
 - **Hauling:** assign a Truck to a camp, mine, tapper or refinery like a Worker (E or right click):
   it carries 40 per trip along the supply link (it waits up to 20 s for a full load) and adds no
-  labour. Worth it on busy, far buildings.
+  labour. While it waits at the building, Workers leave the stock to it (Trucks carry first). Worth it
+  on far buildings: at a mine 1.4 km away, 3 Workers and a Truck deliver about 45% more than 4 Workers.
 - **Squadrons:** a squadron with a Truck in it rides on moves over 600 m: members fill the seats
   (front ranks first), the rest march, and the riders unload at the destination and walk to their
   places in the line.
@@ -171,6 +172,10 @@ least x0.35 (`Util.stack`).
   45 explosive damage, splash 18, 1 sulfur each (paid on the throw), 20 s cooldown,
   friendly fire on. A grenade on a Bunker hurts the Bunker and reaches
   everyone inside for 30% damage and full stress.
+- **Return fire** (patch 0.5b.2): an idle soldier (no order, not on Defend, not working) shot by an
+  enemy he can't reach attack-moves towards the shooter, and so do his squadron's idle members, or the
+  idle loose soldiers within 60 m. So Snipers and Mortars can't pick off a standing group for free;
+  soldiers on Defend keep their ground.
 - **Moving fire.** On a plain move units shoot while walking at x0.35 accuracy; Machine Gunners
   cannot fire while moving. On attack-move units stop to shoot. Defend holds position.
 - **Retreat** moves the group 180 units towards its HQ with no suppression slowdown, and stress
@@ -215,8 +220,8 @@ Its assigned Workers or soldiers carry loads of 10 (soldiers 5) along the fastes
 its **supply link**, shown as a thin dashed line, and walk back. The link is the HQ unless you pick
 one of your Depots (the "Pick supply link" button on the building, or right click a Depot with the
 building selected; patch 0.5a.3). Resources count
-only once dropped off, so a far camp needs more carriers. A destroyed building loses its stock; a
-killed or reassigned carrier loses his load. Each Depot has a bolder line along its own supply link:
+only once dropped off, so a far camp needs more carriers. A destroyed building loses its stock, but a
+carrier already holding a load still delivers it; a killed or reassigned carrier loses his load. Each Depot has a bolder line along its own supply link:
 the HQ, or another Depot you pick the same way, so webs are the ones you build (a loop is refused). Enemy soldiers within 20 m of a
 Depot's line cut it and every Depot beyond it: the line turns red and dashed, and goods dropped there
 wait until it is clear. The enemy commander's mines need carriers too: it keeps two Workers
