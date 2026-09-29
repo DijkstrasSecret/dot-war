@@ -988,7 +988,7 @@ const Game = (() => {
     for (const v of G.units) {
       if (v.dead || !v.cargo) continue; const p = G.players[v.owner];
       const near = type => G.buildings.find(b => b.owner === v.owner && b.type === type && b.built && !b.dead && dist(b.x, b.y, v.x, v.y) < (type === 'depot' ? FUEL.depotRange : Data.REPAIR.range) + b.size);
-      const dep = near('depot');
+      const dep = FUEL.refuelAt.map(near).find(Boolean);   // Kaan, 0.5b.2: Depots and the HQ refuel
       if (dep) for (const k of ['fuel', 'spare']) {
         const cap = k === 'fuel' ? v.stats.fuel : v.def.spare, need = cap - v[k]; if (need <= 0) continue;
         const amt = Math.min(need, FUEL.refuelRate * dt, (p.res.oil || 0) / FUEL.oilPerFuel); if (amt <= 0) continue;
@@ -1271,6 +1271,8 @@ const Game = (() => {
             if (dist(u.x, u.y, b.x, b.y) > b.size + 22) { const d = door(b); walkTo(u, o, d[0], d[1], dt, spd); break; }
             const k = b.def.harvest === 'wood' ? 'wood' : b.depositType, have = (k && b.stock[k]) || 0, cap = u.def.load || (u.def.labour ? LOG.load : LOG.soldierLoad);
             o.wait += dt;
+            // Kaan, 0.5b.2: Trucks carry first. While a Truck of this building waits here, Workers leave the stock to it.
+            if (!u.def.load && b.workers.some(id => { const t = G.unitById.get(id); return t && !t.dead && t.def.load && t.order && t.order.type === 'haul' && t.order.stage === 'load' && dist(t.x, t.y, b.x, b.y) <= b.size + 30; })) break;
             if (have >= cap || (have >= 1 && o.wait > (u.def.load ? LOG.truckWait : LOG.loadWait))) { const n = Math.min(have, cap); b.stock[k] = have - n; u.load = { k, n }; o.stage = 'haul'; o.tk = -1; o.from = b.id; o.drop = b.drop; }
           } else {
             let d = G.buildingById.get(b && !b.dead ? b.drop : o.drop);

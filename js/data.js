@@ -60,7 +60,7 @@ const Data = {
     truck: {
       name: 'Truck', shape: 'rect', icon: 'truck', cls: 'vehicle', size: 8, role: 4, labour: 0,
       hp: 150, armor: 'light', speed: 110, vision: 150, cost: { wood: 40, metal: 30, rubber: 5 }, time: 18, supply: 2, requires: 'motorisation',
-      weapon: null, seats: 6, fuel: 60, spare: 60, load: 40,
+      weapon: null, seats: 6, fuel: 120, spare: 60, load: 40,   // Kaan, 0.5b.2: tank 60 -> 120
       desc: 'Carries 6 seats of infantry (a Mortar Crew takes 2) or 40 goods per trip on a supply link. Burns fuel; refuel at a Depot.',
     },
     // DD A: heals one unit at a time, squadmates first (DD E). Speed, vision, cost and time proposed.
@@ -211,7 +211,8 @@ const Data = {
   TRUCK_TRACKS: { armour: { stat: 'hp', mult: 1.15 }, engine: { stat: 'speed', mult: 1.08 }, tank: { stat: 'fuel', mult: 1.2 }, costGrow: 1.5, priceGrow: 1.1, retrofitShare: 0.4 },
   // Fuel (DD Q7, I, J): per 100 m driven; Depots refuel within range for 1 oil per fuel; Trucks share
   // their spare fuel with vehicles nearby. Kaan, 0.5b: an empty tank crawls at emptySpeed.
-  FUEL: { road: 1, offRoad: 1.5, emptySpeed: 0.2, refuelRate: 10, depotRange: 60, oilPerFuel: 1, shareRange: 30, shareBelow: 0.5 },
+  // Kaan, 0.5b.2: the HQ refuels too (refuelAt).
+  FUEL: { refuelAt: ['depot', 'hq'], road: 1, offRoad: 1.5, emptySpeed: 0.2, refuelRate: 10, depotRange: 60, oilPerFuel: 1, shareRange: 30, shareBelow: 0.5 },
   // Workshop repair (DD J): vehicles within range, 5 HP/s, 1 metal per 10 HP.
   REPAIR: { rate: 5, metalPerHp: 0.1, range: 60 },
   // Squad auto-carry (DD E, G4): moves longer than this ride in the squadron's Truck; the rest march.

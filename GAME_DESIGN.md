@@ -109,13 +109,14 @@ Entrenching Tools apply at once, to units already in the field too.
   with half their health gone.
 - **Moves like a vehicle:** max grade 0.4, forest ×0.3, swamp ×0.15, roads ×1.5. Barricades block it,
   trenches slow it to ×0.4 (your own too), wire doesn't. Vehicles take no stress and aren't healed.
-- **Fuel:** a 60 tank, 1 fuel per 100 m on roads and 1.5 off them. With an empty tank it crawls at
-  20% speed. A Depot refuels vehicles within 60 m for 1 oil per fuel, and refills the Truck's 60
+- **Fuel:** a 120 tank, 1 fuel per 100 m on roads and 1.5 off them. With an empty tank it crawls at
+  20% speed. A Depot or the HQ refuels vehicles within 60 m for 1 oil per fuel, and refills the Truck's 60
   spare fuel, which it shares with vehicles below half a tank within 30 m. A full tank lasts about
-  36 game seconds of driving (4 km off-road at 110, or 6 km on roads at 165).
+  72 game seconds of driving (8 km off-road at 110, or 12 km on roads at 165).
 - **Hauling:** assign a Truck to a camp, mine, tapper or refinery like a Worker (E or right click):
   it carries 40 per trip along the supply link (it waits up to 20 s for a full load) and adds no
-  labour. Worth it on busy, far buildings.
+  labour. While it waits at the building, Workers leave the stock to it (Trucks carry first). Worth it
+  on far buildings: at a mine 1.4 km away, 3 Workers and a Truck deliver about 45% more than 4 Workers.
 - **Squadrons:** a squadron with a Truck in it rides on moves over 600 m: members fill the seats
   (front ranks first), the rest march, and the riders unload at the destination and walk to their
   places in the line.

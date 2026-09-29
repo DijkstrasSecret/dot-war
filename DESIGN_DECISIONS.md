@@ -1121,6 +1121,7 @@ Built in 0.5b (notes for Kaan):
 | Topic | Decision |
 | --- | --- |
 | Carrier loads | If a camp, mine, tapper or refinery is destroyed while a carrier is holding a load, **the load lives on**: he delivers it to his drop-off (the HQ if that is gone too), then his job ends. |
+| Trucks at gatherers | In play Trucks looked useless (no labour, slow loads, no fuel on HQ links). Fixes: **the HQ refuels Trucks too** (as well as Depots); **Trucks carry first**: while a Truck of that building waits at it, Workers leave the stock to it; **the tank doubles to 120** (about 72 game seconds of driving). A Truck still adds no labour. |
 
 ### Agreed for the next patches, not built yet (Kaan, 29 September 2026)
 

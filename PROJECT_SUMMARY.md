@@ -419,12 +419,11 @@ patch ..." notes in `DESIGN_DECISIONS.md`). `BALANCE_BASELINE.md` records the ba
 comparison.
 
 To do, in order:
-1. **Bug (Kaan, in play): Trucks assigned to gatherers don't seem to work.** Reproduce in the browser
-   (right click a camp with a Truck selected) and fix.
+1. Done in 0.5b.2: Trucks at gatherers (HQ refuels, Trucks carry first, tank 120).
 2. Sniper fix: return fire (agreed, see "Agreed for the next patches" in `DESIGN_DECISIONS.md`).
 3. Merge branch `patch-0.5b.2` (carriers keep their load when the camp dies) with the fixes above.
 4. Patch 0.6: weather and night, with the answers already agreed (sight rule, weather mix, searchlights).
-5. Open question: how long a Truck's tank should last (now about 36 game seconds of driving).
+
 
 ---
 
