@@ -1151,6 +1151,14 @@ Built in 0.5b (notes for Kaan):
 | Trees (0.7) | Trees drawn in forest cells, mainly for decoration; forest rules unchanged. |
 | Roads (0.7) | Roads a bit wider: drawn wider, and a slightly wider walkable road band. |
 
+### Ideas from the data (Kaan, 30 September 2026)
+
+All sixteen proposals were accepted. Grouped as: **0.5c** balance and convenience (MG supply 2, forest
+cover only at the edge, first raid by difficulty +8 / +5 / +3.5 min, mortar minimum range 150 m, idle
+Worker button, army overview, under-attack alerts, repeat production); **0.5d** a smarter enemy
+(garrison and dig in, retreat damaged units, research over time, raid supply lines); **0.7**
+objectives / victory points; **0.9** Officer / radio unit, unit stances, after-match report.
+
 ---
 
 ## Still open
