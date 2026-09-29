@@ -60,8 +60,8 @@ const Data = {
     truck: {
       name: 'Truck', shape: 'rect', icon: 'truck', cls: 'vehicle', size: 8, role: 4, labour: 0,
       hp: 150, armor: 'light', speed: 110, vision: 150, cost: { wood: 40, metal: 30, rubber: 5 }, time: 18, supply: 2, requires: 'motorisation',
-      weapon: null, seats: 6, fuel: 120, spare: 60, load: 40,   // Kaan, 0.5b.2: tank 60 -> 120
-      desc: 'Carries 6 seats of infantry (a Mortar Crew takes 2) or 40 goods per trip on a supply link. Burns fuel; refuel at a Depot.',
+      weapon: null, seats: 6, fuel: 120, spare: 60, load: 120,   // Kaan: tank 60 -> 120 (0.5b.2), load 40 -> 120 (0.5b.3)
+      desc: 'Carries 6 seats of infantry (a Mortar Crew takes 2) or 120 goods per trip on a supply link. Burns fuel; refuel at a Depot.',
     },
     // DD A: heals one unit at a time, squadmates first (DD E). Speed, vision, cost and time proposed.
     medic: {
@@ -276,6 +276,10 @@ const Data = {
     movingAcc: 0.35,                                    // accuracy multiplier when firing on the move
   },
   // DD I: every bonus and penalty multiplies, then these caps apply (Util.stack).
+  // Kaan, 0.5b.3: vision along a clear line reaches farther the further the ground drops below the eye,
+  // like weapon range (DD Q8): x(1 + perSqrt * sqrt(drop)), at most +max; drops under deadZone count as flat.
+  // It comes on top of the flat bonus for standing high (Fog.visionRadius).
+  VISION: { perSqrt: 0.04, max: 0.5, deadZone: 3 },
   // Kaan, 0.5b.2: idle soldiers shot from beyond their reach attack-move at the shooter (at most every `every` s).
   RETURN_FIRE: { every: 5, join: 60 },
   CAPS: { hit: { max: 0.95 }, stressTaken: { min: 0.25 }, speed: { min: 0.2 }, vision: { min: 0.35 } },

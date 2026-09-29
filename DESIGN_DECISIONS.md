@@ -1132,6 +1132,15 @@ Built in 0.5b (notes for Kaan):
 | Weather mix (0.6) | Clear 40%, rain 25%, fog 20%, snow 15%, from the match seed. |
 | Searchlights (0.6) | The cone sweeps slowly over 120° towards the enemy side; can be switched off. |
 
+### Patch 0.5b.3 (Kaan, 30 September 2026)
+
+| Topic | Decision |
+| --- | --- |
+| Truck loads | A Truck carries **120** per trip (three times 40). |
+| Train a Worker | A camp, mine, tapper or refinery with free slots shows **"Train a Worker for this"**: the HQ trains a Worker who goes straight to work there. |
+| Vision from height | The flat bonus for standing high stays (up to +90% at 300 m altitude). **On top of it**, each clear line of sight reaches farther where the ground drops below the eye: ×(1 + 0.04 √drop), at most +50%, drops under 3 m count as flat (the same shape as weapon range from height). A first version replaced the flat bonus and lowered vision overall; Kaan chose to keep both. |
+| Bigger maps | Wait for patch 0.7 (the big-map engine), as planned. |
+
 ---
 
 ## Still open
