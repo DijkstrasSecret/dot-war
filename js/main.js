@@ -26,6 +26,7 @@ const Main = (() => {
       { label: 'Plotting routes', run: () => Sim.routes() },
       { label: 'Drawing the map', run: () => Terrain.flushDirty() },
       { label: 'Deploying', run: () => {
+        if (started) { Input.setMode('normal'); Input.state.rdrag = null; Input.state.linePts = null; }   // no build mode left over from the last match
         if (!started) { Render.init(); Input.init(); UI.init(); started = true; }
         const hq = G.buildings.find(b => b.owner === 1 && b.type === 'hq');
         Render.cam.zoom = 1.4; Render.centerOn(hq.x, hq.y - 40);

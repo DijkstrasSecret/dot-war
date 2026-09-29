@@ -191,7 +191,7 @@ const Terrain = (() => {
     for (let j = cj - rc; j <= cj + rc; j++) for (let i = ci - rc; i <= ci + rc; i++) if (inb(i, j) && type[idx(i, j)] === T_FOREST && Math.hypot(cx(i) - x, cy(j) - y) <= r) n++;
     return n;
   }
-  function depositNear(x, y, r) { for (const d of deposits) if (Math.hypot(d.x - x, d.y - y) <= r) return d; return null; }
+  function depositNear(x, y, r) { let best = null, bd = r; for (const d of deposits) { const dd = Math.hypot(d.x - x, d.y - y); if (dd <= bd) { best = d; bd = dd; } } return best; }   // the nearest one in reach
   function areaOk(x, y, w, h, cls, maxGrade) {
     for (let yy = y - h / 2; yy <= y + h / 2; yy += CELL / 2) for (let xx = x - w / 2; xx <= x + w / 2; xx += CELL / 2) {
       if (xx < 0 || yy < 0 || xx >= W * CELL || yy >= H * CELL) return false;

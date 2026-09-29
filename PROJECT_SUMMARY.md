@@ -27,7 +27,7 @@ The claude.ai project is called "Goat Wars"; the game is **Dot War**.
 | `DESIGN_DECISIONS.md` | Everything agreed but not yet built, sections 0 to K. |
 | `IMPLEMENTATION_PLAN.md` | Patch order (0.2a to 0.8) with checklists. |
 | `PATCH_0.2a_PORTRAITS.md` | Step-by-step guide for Claude Code to build patch 0.2a. |
-| `patch-0.2a-portraits.diff` | The tested code for patch 0.2a, ready for `git apply`. |
+| `patch-0.2a-portraits.diff` | The code for patch 0.2a (applied and deleted since). |
 | `PROJECT_SUMMARY.md` | This file. |
 
 All of these are also on the repo's `design-decisions` branch (the diff under `patches/`), so
@@ -37,8 +37,8 @@ Claude Code reads the same versions.
 
 | Branch | Contents |
 | --- | --- |
-| `main` | The game as built (patch 0.2) plus `assets/paintings/` (menu and loading paintings, `painting-fx.js`, previews and a README for Claude Code). Not wired into the game yet. Still has the old `CLAUDE.md` and no design docs. |
-| `design-decisions` | **Docs only, open as pull request #2, not merged yet.** Merges cleanly with the current `main`. Holds `GAME_DESIGN.md`, the newest `DESIGN_DECISIONS.md` and `IMPLEMENTATION_PLAN.md`, the updated `CLAUDE.md`, `PROJECT_SUMMARY.md`, `PATCH_0.2a_PORTRAITS.md`, `patches/patch-0.2a-portraits.diff` and `deploy.sh`. Built on top of `main-f0qn7m`. |
+| `main` | The game as built, with every patch merged by pull request (one branch per patch, e.g. `patch-0.5b`). Holds all the design docs. |
+| `design-decisions` | Docs only, merged long ago (pull request #2). Merges cleanly with the current `main`. Holds `GAME_DESIGN.md`, the newest `DESIGN_DECISIONS.md` and `IMPLEMENTATION_PLAN.md`, the updated `CLAUDE.md`, `PROJECT_SUMMARY.md`, `PATCH_0.2a_PORTRAITS.md`, `patches/patch-0.2a-portraits.diff` and `deploy.sh`. Built on top of `main-f0qn7m`. |
 | `main-f0qn7m` | Older branch that added `deploy.sh` (open pull request #1) and `GAME_DESIGN.md`. The first design chat read from here. Merging `design-decisions` brings these in too. |
 
 ### Other
@@ -168,7 +168,7 @@ marked "(proposed)" are starting points for play-testing.
   - Trench, 30 wood: −40% chance to be hit, half stress.
   - Barricade, 30 wood + 15 metal: cover 0.7, blocks vehicles.
   - Wire, 20 metal: infantry crossing at ×0.25 speed.
-- **Grenades:** Riflemen, 35 range, 45 explosive damage, 1 sulfur per throw, 20 s cooldown.
+- **Grenades:** Riflemen, 25 range (35 before 0.4.1), 45 explosive damage, 1 sulfur per throw, 20 s cooldown, 1 s wind-up, some scatter.
 - **Blueprint designer:**
   - Chassis: circle, square, rectangle, triangle.
   - Weapons: rifle, MG, sniper rifle, mortar, RPG, artillery, EMP.
@@ -355,7 +355,7 @@ Every army also has rare peaked caps, head bandages and bare heads.
 - **Don't reorder the tables.** Reordering face, kit or name tables, or changing the random
   draws, changes every soldier. Adding a new army at the end is safe.
 
-### Patch 0.2a (built on a local copy and tested, not yet in the repo)
+### Patch 0.2a (built and merged)
 
 - **Menu:** a "Your army" row.
 - **Selection panel:** the portrait, the full name, and "Musketeer · Soviet army".
@@ -363,8 +363,7 @@ Every army also has rare peaked caps, head bandages and bare heads.
 - **Simulation:** two lines in `Game.spawnUnit` copy `faction` and `kitEra` onto the unit.
 - **UI hook:** kept deliberately small (three helpers in `ui.js`), because a UI rework comes
   next.
-- **Not done yet:** era triggers (`kitEra` stays `'ww2'`), portraits anywhere else in the UI,
-  ranks (they come with veterancy in 0.3).
+- **Done later:** the Cold War kit trigger (0.5a), portraits in the group panel (0.2b), ranks (0.3).
 
 ---
 
@@ -387,8 +386,8 @@ Every army also has rare peaked caps, head bandages and bare heads.
   - Insignia follow section K (below).
 - **Known issue:** `06-the-light.jpg` shows a WW2 German cap eagle, which holds a swastika.
   Regenerate that image before release, keeping the file name and framing.
-- **Build slot:** patch 0.2b. The menu and loading screen are built; the panel layout (and where
-  portraits go) is still to be designed, and the light painting still needs regenerating.
+- **Build slot:** patch 0.2b, built: the menu, loading screen and open-map panel layout. The light
+  painting still needs regenerating.
 
 ---
 
@@ -414,12 +413,13 @@ section 11.
 
 ## 7. Next steps for Kaan
 
-Patches 0.2a, 0.2b, 0.2.1, 0.3, 0.3.1 and 0.4 are built and merged (see the ticks in
-`IMPLEMENTATION_PLAN.md` and the "Built in patch ..." notes in `DESIGN_DECISIONS.md`).
+Built and merged: 0.2a, 0.2b, 0.2.1, 0.3, 0.3.1, 0.4, 0.4.1, 0.4.2, 0.5a, 0.5a.1, 0.5a.2, 0.5a.3,
+0.5b and 0.5b.1 (see `PATCH_NOTES.md`, the ticks in `IMPLEMENTATION_PLAN.md` and the "Built in
+patch ..." notes in `DESIGN_DECISIONS.md`). `BALANCE_BASELINE.md` records the balance of 0.5b.1 for
+comparison.
 
-1. Play 0.4 and answer the grenade question at the end of "Built in patch 0.4" in
-   `DESIGN_DECISIONS.md` (grenades clear trenches and Bunkers very quickly).
-2. Then patch 0.5: vehicles, logistics and the tech tree.
+1. Patch 0.6: weather and night.
+2. Open questions: how long a Truck's tank should last (now about 36 game seconds of driving).
 
 ---
 
@@ -427,8 +427,6 @@ Patches 0.2a, 0.2b, 0.2.1, 0.3, 0.3.1 and 0.4 are built and merged (see the tick
 
 - Every value marked (proposed), to be tuned in the Balance Lab.
 - Designer extras' exact weights (1 or 2) and the chassis cost factors.
-- The UI rework (0.2b): panel layout, and where portraits appear (selection panel, squadron bar,
-  or both). The menu and loading screens are designed; the rest is not.
 - Final research triggers for Cold War and Modern kit, once the tech tree grows past WW2.
 - Drones: when they arrive and what research unlocks them.
 - National insignia on portraits and art (helmet decals, cap badges); patch 0.2a has none yet.

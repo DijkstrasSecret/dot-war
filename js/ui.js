@@ -102,7 +102,7 @@ const UI = (() => {
     const sel = new Set(G.selection);
     const alive = n => Game.membersOf(G.squads[n]).filter(u => u.owner === 1);
     const isSelected = n => { const us = alive(n).filter(u => !u.inside); return us.length && us.length === sel.size && us.every(u => sel.has(u)); };
-    const s = keys.map(n => n + ':' + alive(n).map(u => u.id + '.' + u.rank).join(',') + (isSelected(n) ? '*' : '')).join('|');
+    const s = keys.map(n => n + ':' + alive(n).map(u => u.id + '.' + u.rank).join(',') + (isSelected(n) ? '*' : '') + Game.squadMarchers(G.squads[n])).join('|');
     if (s !== groupSig) {
       groupSig = s; groupBar.innerHTML = ''; const bars = [];
       for (const n of keys) {
@@ -116,6 +116,8 @@ const UI = (() => {
           const d = Data.UNITS[type], sp = el('span'); sp.title = by[type] + ' ' + d.name + (by[type] > 1 ? 's' : '');
           sp.appendChild(Icons.makeCanvas(d.icon, 28, '#fff', Data.PLAYER_COLORS[1], d.shape)); sp.appendChild(document.createTextNode('×' + by[type])); counts.appendChild(sp);
         }
+        const march = Game.squadMarchers(G.squads[n]);   // Kaan, 0.5b.1: soldiers who won't fit in the squadron's Truck
+        if (march) { const w = el('span', 'gwarn', '!'); w.title = march + ' soldier' + (march > 1 ? 's' : '') + ' won\'t fit in the Truck and will march on long moves'; counts.appendChild(w); }
         const avg = us.reduce((a, u) => a + u.rank, 0) / us.length;
         if (avg >= 0.5) { const r = el('span', 'grank', chevrons(avg)); r.title = 'Average rank ' + avg.toFixed(1); counts.appendChild(r); }
         t.appendChild(counts);
@@ -145,7 +147,7 @@ const UI = (() => {
   function signature() {
     const p = G.players[1];
     let s = tab + '|' + Input.state.mode + '|' + (Input.state.buildType || Input.state.lineType || '') + '|' + [...p.unlocked].join(',') + '|' + [...p.done].join(',') + '|' + Object.entries(p.research).map(([k, j]) => k + j.id).join(',') + '|' + G.buildings.filter(b => b.owner === 1 && b.built).length + '|';
-    if (tab === 'sel') s += Object.values(G.squads).map(q => q.id + q.move + q.spacing + q.contact + q.members.length).join('') + '|' + G.selection.map(e => e.id + ':' + (e.dead ? 'd' : '') + (e instanceof Building ? e.queue.map(q => q.type).join('.') + ':' + e.built + ':' + e.workers.length + ':' + e.level + ':' + e.garrison.join('.') + ':' + !!e.upgrading + ':' + e.link : (e.work || '') + ':' + (e.order ? e.order.type : '') + ':' + (e.flee > 0) + ':' + e.suppressed + ':' + e.rank + ':' + e.squad + ':' + (e.cargo ? e.cargo.length + '.' + e.bpLevel : ''))).join(',');
+    if (tab === 'sel') s += Object.values(G.squads).map(q => q.id + q.move + q.spacing + q.contact + q.members.length).join('') + '|' + G.selection.map(e => e.id + ':' + (e.dead ? 'd' : '') + (e instanceof Building ? e.queue.map(q => q.type).join('.') + ':' + e.built + ':' + e.workers.length + ':' + e.level + ':' + e.garrison.join('.') + ':' + !!e.upgrading + ':' + e.link + ':' + (e.def.levels && e.level < e.def.levels.length ? Game.canAfford(p, e.def.levels[e.level].cost) : '') : (e.work || '') + ':' + (e.order ? e.order.type : '') + ':' + (e.flee > 0) + ':' + e.suppressed + ':' + e.rank + ':' + e.squad + ':' + (e.cargo ? e.cargo.length + '.' + e.bpLevel : ''))).join(',');
     if (tab === 'build') s += Data.BUILD_LIST.map(t => Game.canAfford(p, Game.costOf(1, t)) + Util.costStr(Game.costOf(1, t))).join(',');
     if (tab === 'research') s += Data.RESEARCH_ORDER.map(r => Game.researchState(p, r)).join(',');
     if (tab === 'sel') { const b = G.selection[0]; if (b instanceof Building && b.def.produces) s += '|' + b.def.produces.map(t => p.unlocked.has(t) && Game.canAfford(p, p.blueprints[t].cost)).join(','); }
@@ -166,7 +168,7 @@ const UI = (() => {
       ['Defend', 'R', () => Game.command({ kind: 'hold', units: ids }), false, 'Hold this position and fire at anything in range.'],
       ['Retreat', 'G', () => Game.command({ kind: 'retreat', units: ids }), false, 'Pull back a short way towards your headquarters. No suppression slowdown, stress drains twice as fast.'],
       ['Stop', 'X', () => Game.command({ kind: 'stop', units: ids }), false, 'Cancel all orders (also releases workers).'],
-      ['Enter', 'E', () => Input.setMode('work'), mode === 'work', 'Then click a Lumber Camp or Mine to work there, or a Scout Tower, Bunker or the HQ to garrison it.'],
+      ['Enter', 'E', () => Input.setMode('work'), mode === 'work', 'Then click a camp, mine, tapper or refinery to work there, a Scout Tower, Bunker or the HQ to garrison it, or a Truck to board it.'],
       ['Trench', 'B Y', () => Input.setMode('build', 'trench'), mode === 'line', 'Hold the left button and drag to draw a line; the selected soldiers dig it. Each 10 m is paid when digging on it starts.'],
     ];
     const pl = G.players[1];
@@ -262,7 +264,7 @@ const UI = (() => {
       const h = Terrain.hAt(u.x, u.y).toFixed(0);
       let s = 'Elevation ' + h + ' m. ';
       if (u.flee > 0) s += 'Panicking! '; else if (u.suppressed) s += u.def.obeysWhenSuppressed ? 'Suppressed: slowed, keeps its orders. ' : 'Suppressed: cannot pick targets. ';
-      if (u.work != null && !(u.order && u.order.type === 'haul')) s += 'Working. '; else if (u.order) s += (u.order.retreat ? 'Retreating' : ({ move: 'Moving', attackmove: 'Attack-moving', attack: 'Attacking target', bombard: u.order.smoke ? 'Firing smoke' : 'Bombarding', demolish: 'Setting a demolition charge', hold: 'Holding position', work: 'Going to work', haul: u.load ? 'Carrying ' + Math.floor(u.load.n) + ' ' + u.load.k : 'Collecting a load', garrison: 'Going to garrison', dig: u.order.fill ? 'Filling a trench' : 'Digging', grenade: 'Going to throw a grenade' })[u.order.type]) + '. '; else s += 'Idle. ';
+      if (u.work != null && !(u.order && u.order.type === 'haul')) s += 'Working. '; else if (u.order) s += (u.order.retreat ? 'Retreating' : ({ move: 'Moving', attackmove: 'Attack-moving', attack: 'Attacking target', bombard: u.order.smoke ? 'Firing smoke' : 'Bombarding', demolish: 'Setting a demolition charge', hold: 'Holding position', board: 'Boarding a Truck', ferry: 'Waiting for riders', work: 'Going to work', haul: u.load ? 'Carrying ' + Math.floor(u.load.n) + ' ' + u.load.k : 'Collecting a load', garrison: 'Going to garrison', dig: u.order.fill ? 'Filling a trench' : 'Digging', grenade: 'Going to throw a grenade' })[u.order.type] || '') + '. '; else s += 'Idle. ';
       if (u.def.heal && u.patient && !u.patient.dead && u.patient.hp < u.patient.stats.hp) s += 'Treating a wounded ' + u.patient.def.name + '. ';
       if (Game.canThrow(u)) s += u.nadeT > 0 ? 'Grenade in ' + Math.ceil(u.nadeT) + ' s. ' : 'Grenade ready. ';
       if (u.target) s += 'Firing at ' + (u.target.def.name) + '.';
@@ -274,6 +276,8 @@ const UI = (() => {
     const whole = sq && Game.membersOf(sq).filter(u => !u.inside).length === units.length;
     content.appendChild(el('h3', null, whole ? 'Squadron ' + sq.id + ' · ' + units.length + ' soldiers' : units.length + ' units selected'));
     if (whole) content.appendChild(squadToggles(sq));
+    const march = sq ? Game.squadMarchers(sq) : 0;
+    if (whole && march) { const w = el('div', 'small warnline', '! ' + march + ' soldier' + (march > 1 ? 's' : '') + ' won\'t fit in the Truck and will march on moves over ' + Data.FERRY.minDist + ' m.'); content.appendChild(w); }
     // One face per soldier with a class badge and a health bar; click a face to select only them.
     const faces = el('div', 'faces'), fills = [];
     for (const u of units.slice(0, 24)) {

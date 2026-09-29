@@ -11,7 +11,7 @@ Tick each box when it's done and checked in the game.
 
 ## Patch 0.2a: Portraits, names and factions
 
-Guide and ready-made diff: `PATCH_0.2a_PORTRAITS.md` and `patches/patch-0.2a-portraits.diff`.
+Guide: `PATCH_0.2a_PORTRAITS.md` (the diff it used is applied and deleted).
 
 - [x] Add `js/portraits.js` (visual only, own random stream; never called from the simulation) [K].
 - [x] "Your army" picker in the start menu; the AI gets a different random army; neutrals stay
@@ -225,10 +225,17 @@ Built in two parts (Kaan): **0.5a** tech tree, buildings and supply (done); **0.
 - [x] Mermaid tree in the docs updated if items move.
 - [x] Cold War kit trigger (R&D Lab + 2 Tier III items, proposed) [K].
 
+**Follow-ups (Kaan)**
+- [x] 0.5a.1: economy ×0.7 and 20 starting metal.
+- [x] 0.5a.2: supply chains (carriers, Depot lines, cutting); Mine costs wood only.
+- [x] 0.5a.3: player-chosen supply links; the AI's mines need carriers.
+- [x] 0.5b.1: "!" on squadrons whose Truck can't seat everyone; meta snapshot in the Balance Lab;
+      audit fixes.
+
 **Done when**
 - [x] Balance Lab economy timeline: first Tier II research affordable. Kaan (0.5a.1): economy ×0.7,
       20 starting metal, target 1–3 min; measured 1.5 min.
-- [ ] `GAME_DESIGN.md` updated.
+- [x] `GAME_DESIGN.md` updated.
 
 ---
 

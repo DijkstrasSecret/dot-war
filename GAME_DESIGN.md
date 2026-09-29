@@ -1,6 +1,6 @@
 # Dot War: game design summary
 
-A self-contained description of the game as it is built today (patch 0.2.1), written so it can be
+A self-contained description of the game as it is built today (patch 0.5b.1), written so it can be
 pasted into a chat and discussed without the code. Every number here is the live value from
 `js/data.js` or the formula from `js/game.js`, `js/terrain.js` and `js/fog.js`. Section 12 lists
 the questions worth fine-tuning; section 13 says how to hand decisions back so they can be coded.
@@ -34,14 +34,14 @@ Victory: destroy the enemy Headquarters. Defeat: lose yours. The sandbox map has
   mountain), Western Ridge and Southern Reach (the same spec mirrored), Open Valley (sandbox with
   neutral guards and no enemy commander).
 - Resource deposits are placed by the map spec: iron ore (metal), sulfur, rubber trees, oil seeps.
-  Rubber and oil exist on the map but nothing uses them yet.
+  Rubber (Rubber Tapper) pays for Trucks and Motorisation; oil (Refinery, Depot trickle) is Truck fuel.
 
 ### Movement rules
 
 | Rule | Value |
 | --- | --- |
 | Max passable grade, infantry | 0.8 (cells up to 0.88 tolerated) |
-| Max passable grade, vehicle (planned) | 0.4 |
+| Max passable grade, vehicle | 0.4 |
 | Uphill speed factor | `1 / (1 + 5 * grade)` (a 0.2 grade halves speed) |
 | Downhill speed factor | up to 1.25x |
 | Forest / swamp / road factor, infantry | 0.65 / 0.45 / 1.25 |
@@ -88,8 +88,8 @@ Weapons:
 | Medic | – | – | – | – | – | – | – | unarmed; heals one soldier at a time, 4 HP/s within 40 m |
 | Grenade (Riflemen) | 45 | explosive | 25 | 0 | – | 20 s | – | after the Grenades research; splash 18, 1 sulfur each, 1 s wind-up standing still |
 
-Speeds are world units per game second. Times are game seconds. All units have armor class
-"none" today; the armor table already exists for the vehicle patch:
+Speeds are world units per game second. Times are game seconds. Every soldier has armor class
+"none"; the Truck is "light", or "heavy" after Heavy Truck Armour:
 
 | Damage type | vs none | vs light | vs heavy | vs building |
 | --- | --- | --- | --- | --- |
@@ -111,8 +111,8 @@ Entrenching Tools apply at once, to units already in the field too.
   trenches slow it to ×0.4 (your own too), wire doesn't. Vehicles take no stress and aren't healed.
 - **Fuel:** a 60 tank, 1 fuel per 100 m on roads and 1.5 off them. With an empty tank it crawls at
   20% speed. A Depot refuels vehicles within 60 m for 1 oil per fuel, and refills the Truck's 60
-  spare fuel, which it shares with vehicles below half a tank within 30 m. At 110 speed a full tank
-  lasts about a minute of driving.
+  spare fuel, which it shares with vehicles below half a tank within 30 m. A full tank lasts about
+  36 game seconds of driving (4 km off-road at 110, or 6 km on roads at 165).
 - **Hauling:** assign a Truck to a camp, mine, tapper or refinery like a Worker (E or right click):
   it carries 40 per trip along the supply link (it waits up to 20 s for a full load) and adds no
   labour. Worth it on busy, far buildings.
@@ -191,7 +191,7 @@ are gathered from patch 0.5a and spent from 0.5b (trucks and fuel).
 Harvest buildings produce `(rate + labour * perWorker) x 0.7` per game second (the 0.7 is the game's
 pace, `Data.ECONOMY.pace`, set in patch 0.5a.1 to slow the game), times the player's harvest
 multiplier (Logistics research gives 1.25). The table below lists the rates before the pace. Labour counts 1 for each Worker and 0.5 for each soldier
-assigned with E, wherever they are on the supply line. A camp has four slots whoever fills them. Workers cannot garrison towers. A Lumber Camp needs forest within 70 units; a Mine sits on a metal or sulfur deposit,
+assigned with E, wherever they are on the supply line. A camp has four slots whoever fills them (Mines six with Deep Shafts); a Truck in a slot carries but adds no labour. Workers cannot garrison towers. A Lumber Camp needs forest within 70 units; a Mine sits on a metal or sulfur deposit,
 one mine per deposit.
 
 | Building | Size | HP | Cost | Build time | Role |
@@ -222,7 +222,7 @@ Depot's line cut it and every Depot beyond it: the line turns red and dashed, an
 wait until it is clear. The enemy commander's mines need carriers too: it keeps two Workers
 on each, and their lines show once you have seen the mine.
 
-**Supply** (patch 0.5a): every unit uses supply (1 each, a Mortar Crew 2), counted when it is queued.
+**Supply** (patch 0.5a): every unit uses supply (1 each; a Mortar Crew and a Truck 2), counted when it is queued.
 The cap is 30, plus 10 per finished Depot (15 with Supply Organisation), with no maximum; the top
 bar shows used/cap. The scripted AI keeps its own unit cap instead.
 
@@ -263,8 +263,8 @@ routes are recalculated once a whole line is finished. A Worker earns 1 XP per 1
 | Barbed wire | 20 metal | Fortification | nothing | everyone x0.25 | 80; only explosives |
 
 A unit within 6 m of a line stands in it. Barricades and wire also make routes through them dearer,
-so units walk around them when there is a way. Vehicles (patch 0.5) will be blocked by barricades
-and slowed by trenches.
+so units walk around them when there is a way. Barricades block vehicles; trenches slow them to x0.4,
+your own too; wire doesn't slow them.
 
 ### Healing (patch 0.4)
 
@@ -277,8 +277,8 @@ earns 1 XP per 20 HP healed.
 
 Five branches with three tiers each (`DESIGN_DECISIONS.md` section F). **Tier I** is researched at
 the HQ; **Tiers II and III** at the branch building; **Tier III** also needs an R&D Lab. There is
-**one research slot per building type** (a second Barracks adds no slot), so up to six projects run at
-once: HQ, Barracks, Ordnance Works, Workshop, Depot, Field Hospital. A project pauses while you own
+**one research slot per building type** (a second Barracks adds no slot), so up to seven projects run at
+once: HQ, Barracks, Ordnance Works, Workshop, Depot, Field Hospital and R&D Lab (Truck upgrades). A project pauses while you own
 none of its buildings. N opens the overview: the slots on top, then each branch by tier. Tags: **B**
 changes stats of units trained afterwards, **G** changes a rule at once (units in the field too),
 **U** unlocks.
@@ -321,9 +321,10 @@ from its seed and its log. Looks-only randomness (blood, corpse shapes) has its 
 ## 8. Enemy commander and neutrals
 
 The AI holds the plateau, trains from its factories with unit weights rifle 5, HMG 2, sniper 1,
-mortar 1 (never Workers), keeps a garrison home, and sends raids downhill at the player's HQ once it
-has enough units (at least 6, or 70% of its cap). It may train Machine Gunners, Snipers and Mortar
-Crews only after their unlock time. It has passive income instead of workers: 1.5 wood, 0.8 metal
+mortar 1 (Workers only as mine carriers, below), keeps a garrison home, and sends raids downhill at
+the player's HQ once it has enough units (at least 6 and at least 70% of its starting cap; a raid
+takes at least 3). Its cap grows every 4 game minutes. It may train Machine Gunners, Snipers and Mortar
+Crews only after their unlock time. Apart from its mines it has passive income: 1.5 wood, 0.8 metal
 and 0.35 sulfur per second times the difficulty income factor and the game's pace (0.7). Raiders that lose their target walk
 home. Raids escalate: each sends 10% more of the army than the last (up to 90%), and once the AI's
 army is twice the enemy soldiers it has seen in the last two minutes (at least 3), it sends
@@ -345,14 +346,15 @@ garrison units spawn; the garrison is placed, not trained, so it can hold Machin
 Mortars from the start. Neutral guards (creeps) hold deposits and hills in small groups of three to
 five and fight anyone who comes close.
 
-## 9. Controls (patch 0.2.1, `DESIGN_DECISIONS.md` section 9)
+## 9. Controls (`DESIGN_DECISIONS.md` section 9, extended through 0.5b)
 
 W A S D, arrow keys, screen edge or middle mouse pan the camera; the wheel zooms. Right click is the
 smart command: ground moves, an enemy attacks, your camp or mine puts the selection to work, your
-tower, Bunker or HQ garrisons it, your unfinished line gets dug on. F attack-move, R defend
-position, G retreat, X stop, E enter (camp, mine, tower, Bunker or HQ), Q exit (unload a tower,
-Bunker or HQ), T upgrade a tower, K fill a trench (Workers), V throw a grenade (Riflemen). With a factory selected Z X C V train, and Tab
-flips to the next four when a factory has more (otherwise Tab cycles factories). B opens the Build tab, and only while it is open a letter picks a building (L Lumber Camp, M Mine,
+tower, Bunker or HQ garrisons it, your Truck is boarded, your unfinished line gets dug on; with a
+camp, mine, tapper, refinery or Depot selected, right click one of your Depots to set its supply
+link. F attack-move, R defend position, G retreat, X stop, E enter (camp, mine, tapper, refinery,
+tower, Bunker, HQ or Truck), Q exit (unload a tower, Bunker, HQ or Truck), T upgrade a tower, K fill a trench (Workers), V throw a grenade (Riflemen). With a factory selected Z X C V train, and Tab
+flips to the next four when a factory has more (otherwise Tab cycles factories). B opens the Build tab (placing something or Esc goes back to your selection), and only while it is open a letter picks a building (L Lumber Camp, M Mine,
 Z Rubber Tapper, F Refinery, C Barracks, O Ordnance Works, K Workshop, G Depot, R R&D Lab, T Scout
 Tower, U Bunker, P Field Hospital) or a line (Y trench, I barricade, J barbed wire, E road, V
 bridge); M smoke and C demolition are unit orders (patch 0.5a), N research, H headquarters, Shift queues
@@ -426,9 +428,9 @@ Every soldier has a face and a name built from his unit id, so the same soldier 
 the whole match. About 85% of an army's soldiers carry names from their own nation; the rest are
 volunteers with names from neighbouring nations in the army's uniform. Nicknames sometimes come
 from the face ("Red", "Specs", "Smokes"). Kit comes in three eras, WW2, Cold War and Modern; the
-game is on WW2 for now, and later eras will unlock through research and apply to soldiers trained
-after that, so veterans keep their old kit. Rank titles (Pvt., Cpl., Sgt., Sgt. Maj.) will follow
-veterancy once it exists. Portraits show no national insignia yet; the only marking is the team
+game starts in WW2, the Cold War kit arrives with an R&D Lab and two Tier III items (patch 0.5a), and
+a new kit applies to soldiers trained after that, so veterans keep their old kit. Rank titles (Pvt.,
+Cpl., Sgt., Sgt. Maj.) follow veterancy. Portraits show no national insignia yet; the only marking is the team
 colour on collar tabs and cap bands.
 
 ## 11. Planned patches

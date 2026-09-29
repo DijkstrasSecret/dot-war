@@ -5,6 +5,35 @@ each change live in `DESIGN_DECISIONS.md`.
 
 ---
 
+## 0.5b.1: Marching warning, audit fixes, balance baseline (29 September 2026)
+
+- **"!" when soldiers will march:** a squadron whose Truck can't seat everyone shows an orange "!"
+  on its squadron tile, on its panel and beside the Truck; hover it to see how many will walk.
+- **Fixes from a full audit of the game:**
+  - Chasing a moving enemy (or a moving Truck) no longer stutters the game with route planning.
+  - Soldiers who miss their squadron's Truck now march instead of boarding it later and getting stuck
+    inside; re-ordering a squadron while some ride in its Truck sends them to the new spot.
+  - Passengers thrown out of a wrecked Truck obey queued orders again; dead soldiers free their
+    Bunker, tower or Truck slot (so Riflemen stop grenading an empty Bunker).
+  - Medics, Workers and Trucks ignore attack orders instead of walking into the enemy; an attack on
+    a soldier who garrisons ends; bullets in flight no longer hit someone who has just gone inside.
+  - Shift-queued orders behind a work order now run (Shift replaces the work).
+  - Cancelling a queued Truck refunds what you paid, not the upgraded price.
+  - Blowing one barricade segment no longer opens its neighbours to vehicles.
+  - Only Workers earn work experience; a retrofit keeps a Truck's rank bonus.
+  - Only armed enemies cut a Depot's supply line, as intended.
+  - Shift+number adds a squadron to the selection (and number keys work on AZERTY keyboards);
+    Ctrl+A and double-click no longer pick soldiers inside buildings or Trucks.
+  - After placing a building or pressing Esc, the panel goes back to your selection, so the letters
+    are unit orders again.
+  - The tower Upgrade button lights up as soon as you can afford it; a soldier walking to a Truck
+    shows "Boarding a Truck".
+  - A thrower turns to face his grenade again.
+- **Balance Lab:** a new **Meta snapshot** runs a fixed set of tests (duels between every unit,
+  terrain, fortifications, economy, enemy pressure) and compares them to the saved 0.5b.1 baseline
+  (`BALANCE_BASELINE.md`). Only one lab test runs at a time now, and the duels give both sides the
+  same sulfur (side A's mortars used to have none).
+
 ## 0.5b: Trucks (29 September 2026)
 
 - **The Truck** (Workshop, after Motorisation research): 6 seats, where a Mortar Crew takes 2. Right

@@ -100,6 +100,53 @@
     $('ecoOut').innerHTML = html;
   };
 
+  // ---- meta snapshot (0.5b.1) ----
+  // Runs LabTests' meta pieces one at a time and prints each value beside the saved baseline.
+  const base = typeof META_BASELINE !== 'undefined' ? META_BASELINE : null;
+  const delta = (v, b, d = 1, unit = '') => v == null ? '–' : fmt(v, d) + unit + (b == null ? '' : ' <span class="pending">(base ' + fmt(b, d) + unit + ')</span>');
+  $('runMeta').onclick = async () => {
+    const runs = +$('metaRuns').value, tb = $('metaOut'); let step = 0; const steps = 10 + 5 + 5 + 1 + 3;
+    const tick = async () => { setBar('metaBar', ++step / steps); await pause(); };
+    const head = cols => { const tr = document.createElement('tr'); tr.innerHTML = cols.map(c => '<th>' + c + '</th>').join(''); tb.appendChild(tr); };
+    const row = cells => { const tr = document.createElement('tr'); tr.innerHTML = cells.map(c => '<td>' + c + '</td>').join(''); tb.appendChild(tr); };
+    tb.innerHTML = ''; head(['Equal-supply duel (flat)', 'A wins', 'B wins', 'Draws', 'Avg time']);
+    const A = ['rifle', 'hmg', 'sniper', 'mortar'], ns = t => Math.round(6 / (Data.UNITS[t].supply || 1));
+    for (let i = 0; i < A.length; i++) for (let j = i; j < A.length; j++) {
+      const a = A[i], b = A[j], r = LabTests.duels({ typeA: a, nA: ns(a), typeB: b, nB: ns(b), ground: 'flat', maxTime: 180 }, runs);
+      const bd = base && base.duels.find(x => x.a === a && x.b === b);
+      row([ns(a) + ' ' + name(a) + ' v ' + ns(b) + ' ' + name(b), delta(r.winA, bd && bd.winA, 0, '%'), delta(r.winB, bd && bd.winB, 0, '%'), delta(r.draw, bd && bd.draw, 0, '%'), delta(r.avgTime, bd && bd.time, 1, ' s')]);
+      await tick();
+    }
+    head(['Terrain and squads', 'A wins', 'B wins', 'Draws', 'Pin time']);
+    const terr = [[{ ground: 'flat' }, '5 v 5 Riflemen, flat'], [{ ground: 'height' }, 'B 30 m higher'], [{ ground: 'forest' }, 'B in forest'], [{ ground: 'flat', nA: 6, nB: 6, squadA: true }, '6 v 6, A as a squadron'], [{ typeA: 'hmg', nA: 1, typeB: 'rifle', nB: 1, maxTime: 60, keepAliveB: true }, 'MG pins a Rifleman']];
+    for (const [o, label] of terr) {
+      const r = LabTests.duels(Object.assign({ typeA: 'rifle', nA: 5, typeB: 'rifle', nB: 5 }, o), Math.max(runs, 50)), bd = base && base.terrain.find(x => x.label === label);
+      row([label, delta(r.winA, bd && bd.winA, 0, '%'), delta(r.winB, bd && bd.winB, 0, '%'), delta(r.draw, bd && bd.draw, 0, '%'), delta(r.avgPin, bd && bd.avgPin, 1, ' s')]);
+      await tick();
+    }
+    head(['Fortifications', 'Attackers win', 'Defenders win', 'Draws', 'Avg time']);
+    const fo = [[{ setup: 'open', nA: 8 }, '8 Riflemen v 5 in the open'], [{ setup: 'trench', nA: 8 }, '8 v 5 in a trench'], [{ setup: 'trench', nA: 8, grenades: true }, '8 with grenades v 5 in a trench'], [{ setup: 'bunker', nA: 8 }, '8 grenadiers v full Bunker (5 inside)'], [{ setup: 'bunker', nA: 10 }, '10 grenadiers v full Bunker (5 inside)']];
+    for (const [o, label] of fo) {
+      const r = LabTests.forts(o, runs), bd = base && base.forts.find(x => x.label === label);
+      row([label, delta(r.winA, bd && bd.winA, 0, '%'), delta(r.winB, bd && bd.winB, 0, '%'), delta(r.draw, bd && bd.draw, 0, '%'), delta(r.avgTime, bd && bd.avgTime, 1, ' s')]);
+      await tick();
+    }
+    head(['Economy (standard opening)', 'Wood', 'Metal', 'Workers', '']);
+    const e = LabTests.metaEconomy(), be = base && base.economy;
+    row(['First Tier II affordable', delta(e.tier2Min, be && be.tier2Min, 2, ' min'), '', '', '']);
+    for (const k of ['at5', 'at10', 'at15', 'at20']) row([k.slice(2) + ' min', delta(e[k].wood, be && be[k].wood, 0), delta(e[k].metal, be && be[k].metal, 0), String(e[k].workers), '']);
+    await tick();
+    head(['Enemy pressure on a player who stays home', 'First contact', 'HQ fell', 'Raids by 30 min', 'AI army at 30 min']);
+    for (const d of ['easy', 'normal', 'hard']) {
+      const run = LabTests.aiPressureRun({ seed: 1, difficulty: d, minutes: 30 }); let r = null;
+      while (!(r = run.step(900))) await pause();
+      const bd = base && base.ai.find(x => x.difficulty === d), last = r.log[r.log.length - 1], bl = bd && bd.log[bd.log.length - 1];
+      row([d, delta(r.firstContactMin, bd && bd.firstContactMin, 1, ' min'), r.hqFellMin == null ? 'no' + (bd ? ' <span class="pending">(base ' + (bd.hqFellMin == null ? 'no' : fmt(bd.hqFellMin) + ' min') + ')</span>' : '') : fmt(r.hqFellMin) + ' min', delta(r.raids, bd && bd.raids, 0), delta(last.aiArmy, bl && bl.aiArmy, 0)]);
+      await tick();
+    }
+    setBar('metaBar', 1);
+  };
+
   // ---- AI versus AI ----
   $('runAi').onclick = async () => {
     const n = +$('aiN').value, diff = $('aiDiff').value, max = +$('aiMax').value, rows = [];
@@ -120,5 +167,8 @@
     results.aiMatchLength = decided.length ? decided.reduce((s, r) => s + r.minutes, 0) / decided.length : null; drawTargets();
   };
 
+  // Only one test at a time: they share the one simulation state, so a second run would corrupt the first.
+  const buttons = ['runDuel', 'runGates', 'runFort', 'runEco', 'runMeta', 'runAi'].map($).filter(Boolean);
+  for (const b of buttons) { const fn = b.onclick; b.onclick = async () => { if (buttons.some(x => x.disabled)) return; buttons.forEach(x => { x.disabled = true; }); try { await fn(); } finally { buttons.forEach(x => { x.disabled = false; }); } }; }
   drawTargets();
 })();
