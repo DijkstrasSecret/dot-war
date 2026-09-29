@@ -110,7 +110,7 @@ const Game = (() => {
   }
   const slotCount = lv => lv.cap + (lv.heavy || 0) + (lv.mg || 0);
   function enterBuilding(u, b) {
-    releaseWork(u); u.queue = []; u.order = null; u.field = null; u.forced = null; u.target = null; u.micro = null; u.flee = 0;
+    releaseWork(u); u.queue = []; u.order = null; u.field = null; u.forced = null; u.target = null; u.micro = null; u.flee = 0; u.windup = null;
     u.inside = b.id; u.hBonus = b.slots.height; u.x = b.x; u.y = b.y; u.stress = Math.min(u.stress, 0.3);
     b.garrison.push(u.id);
     G.selection = G.selection.filter(s => s !== u);
@@ -175,7 +175,7 @@ const Game = (() => {
     u.queue = []; applyOrder(u, o);
   }
   function applyOrder(u, o) {
-    releaseWork(u); u.forced = null; u.micro = null; u.stuck = 0; u.field = null; u.order = null;
+    releaseWork(u); u.forced = null; u.micro = null; u.stuck = 0; u.field = null; u.order = null; u.windup = null;
     switch (o.kind) {
       case 'move': case 'attackmove': {
         const f = Path.getField(o.x, o.y, u.def.cls, G.time); if (!f) break;
@@ -251,7 +251,7 @@ const Game = (() => {
     for (const u of units) if (!u.dead && isIndirect(u)) issue(u, { kind: 'bombard', x, y }, queue);
     if (direct.length) orderMove(direct, x, y, 'attackmove', queue);
   }
-  function orderStop(units) { for (const u of units) { u.queue = []; releaseWork(u); u.order = null; u.field = null; u.forced = null; u.micro = null; } }
+  function orderStop(units) { for (const u of units) { u.queue = []; releaseWork(u); u.windup = null; u.order = null; u.field = null; u.forced = null; u.micro = null; } }
   function orderHold(units, queue = false) { for (const u of units) issue(u, { kind: 'hold' }, queue); }
   function orderDig(units, line, fill, queue = false) {
     let n = 0;
@@ -480,6 +480,7 @@ const Game = (() => {
       let m = (0.35 + 0.65 * (1 - d / splash)) * Data.ARMOR_MULT[dtype][e.armor];
       if (Terrain.ridgeCover(x, y, e.x, e.y)) m *= 0.35;
       if (Terrain.coverAt(e.x, e.y) < 1) m *= 0.85;
+      const ls = lineAt(e.x, e.y); if (ls && LINES[ls.type].blast) m *= LINES[ls.type].blast;   // Kaan, 0.4.1: a trench halves blast damage
       const was = e.suppressed; addStress(e, 0.3 * (1 - d / splash) + 0.1); e.lastHitBy = shooter; alertUnit(e);
       if (!was && e.suppressed && shooter && e.owner !== shooter.owner) suppressXp(shooter, e);
       applyDamage(e, dmg * m, shooter);
@@ -663,6 +664,18 @@ const Game = (() => {
     G.projectiles.push(new Projectile({ kind: 'shell', grenade: true, x: u.x, y: u.y, tx: tx + Math.cos(ang) * off, ty: ty + Math.sin(ang) * off, dur: NADE.flight, arc: 12, dmg: NADE.dmg, splash: NADE.splash, dtype: NADE.dtype, shooter: u, owner: u.owner }));
     return true;
   }
+  // Kaan, 0.4.1: the thrower stands still NADE.windup seconds, then throws at the target's position then.
+  // A new order or a panic cancels it; the sulfur is paid only on the throw.
+  function startThrow(u, tx, ty, target) {
+    if (u.owner !== 0 && !canAfford(G.players[u.owner], NADE.ammo)) { throwGrenade(u, tx, ty); return; }   // throwGrenade shows the no-sulfur message
+    u.windup = { t: NADE.windup, x: tx, y: ty, target: target || null };
+  }
+  function updateWindup(u, dt) {
+    const w = u.windup; w.t -= dt; if (w.t > 0) return;
+    u.windup = null; const t = w.target && !w.target.dead && !w.target.inside ? w.target : null;
+    throwGrenade(u, t ? t.x : w.x, t ? t.y : w.y);
+    if (u.order && u.order.type === 'grenade') nextOrder(u);
+  }
   // Thrown on its own at the nearest enemy in a trench, or at an occupied enemy Bunker, within reach.
   function autoGrenade(u) {
     let best = null, bd = Infinity;
@@ -674,7 +687,7 @@ const Game = (() => {
       if (b.dead || b.owner === u.owner || !b.slots || !b.slots.grenadeReach || !b.garrison.length) continue;
       const d = dist(u.x, u.y, b.x, b.y) - b.size * 0.7; if (d <= NADE.range && d < bd) { best = b; bd = d; }
     }
-    if (best) throwGrenade(u, best.x, best.y);
+    if (best) startThrow(u, best.x, best.y, best);
   }
 
   // ---- healing (DD A, B, I): sources add up, infantry only ----
@@ -862,9 +875,10 @@ const Game = (() => {
         if (c) { const cx = c[0] - u.x, cy = c[1] - u.y, cl = Math.hypot(cx, cy); if (cl > 20) { dx += cx / cl; dy += cy / cl; } }
         moveToward(u, u.x + dx * 40, u.y + dy * 40, dt, 1.1); return;
       }
-    } else if (u.stress >= C.panicAt && !u.def.neverPanics) { u.flee = 2.5 + R(); u.target = null; return; }   // DD Q12: snipers never panic
+    } else if (u.stress >= C.panicAt && !u.def.neverPanics) { u.flee = 2.5 + R(); u.target = null; u.windup = null; return; }   // DD Q12: snipers never panic
+    if (u.windup) { updateWindup(u, dt); return; }   // winding up a throw: no moving, no firing
     tryFire(u);
-    if (u.def.grenade && u.nadeT <= 0 && G.tick % 10 === u.id % 10 && canThrow(u) && !(u.order && u.order.type === 'grenade')) autoGrenade(u);
+    if (u.def.grenade && u.nadeT <= 0 && !u.windup && G.tick % 10 === u.id % 10 && canThrow(u) && !(u.order && u.order.type === 'grenade')) autoGrenade(u);
     // An idle Medic walks over to the nearest wounded soldier it can see (squadmates first).
     if (u.def.heal && !u.order && !u.micro && G.tick % 30 === u.id % 30 && !u.patient) {
       const t = findPatient(u, u.stats.vision);
@@ -947,7 +961,7 @@ const Game = (() => {
             if (followField(u, dt, spd)) moveToward(u, tx, ty, dt, spd);
             break;
           }
-          if (u.nadeT <= 0) { throwGrenade(u, tx, ty); nextOrder(u); }
+          if (u.nadeT <= 0 && !u.windup) startThrow(u, tx, ty, t);
           break;
         }
       }

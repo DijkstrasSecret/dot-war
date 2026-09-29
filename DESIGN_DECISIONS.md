@@ -996,6 +996,27 @@ built: a trench halves blast damage; bunker occupants take 15% instead of 30%, o
 one occupant; the thrower must stand still about 1 s to throw; a shorter reach (25 m). Numbers are
 in `Data.GRENADE` and `Data.LINES`, so any of these is quick.
 
+### Patch 0.4.1: grenades made harder to use (Kaan, 29 September 2026)
+
+| Topic | Decision |
+| --- | --- |
+| Trench and blasts | A soldier in a trench takes **half damage from explosions** (grenades and mortar shells). |
+| Wind-up | A Rifleman stands still for **1 s** before each throw and does not fire meanwhile. A new order or a panic cancels the throw; the sulfur is paid only when it leaves his hand. |
+| Reach | Grenade reach **35 → 25 m**. |
+| Not changed | Bunker occupants still take 30% of a grenade's damage. |
+
+Balance Lab after 0.4.1 (50 runs; attackers win / avg time / survivors att. / def.):
+
+| Test | Before (0.4) | After (0.4.1) |
+| --- | --- | --- |
+| 8 Riflemen with grenades attack 5 in a trench | 100%, 4 s, 8.0 / 0 | 100%, 8 s, 6.8 / 0 |
+| 6 Riflemen with grenades attack 5 in a trench | 100%, 7 s, 5.8 / 0 | 46%, 13 s, 1.8 / 1.9 |
+| 10 Riflemen with grenades assault a full Bunker | 100%, 4 s, 8.4 / 0 | 100%, 6 s, 7.0 / 0 |
+| 5 Riflemen with grenades assault a full Bunker | 0% | 0% |
+
+Target duels unchanged: MG pin 4.9 s, height 74%, squadron 59%. A Bunker still falls to about ten
+grenadiers; lowering the occupants' 30% share is the remaining lever if it should hold longer.
+
 ---
 
 ## Still open

@@ -172,6 +172,9 @@ Goal: the game plays at the new core values, and every run can be repeated exact
 - [x] Research items for these systems (Fortification, Entrenching Tools, Grenades, Field
       Medicine, Field Hospital), temporarily on the HQ list until 0.5.
 
+- [x] 0.4.1 (Kaan, after the lab results): trench halves blast damage, 1 s grenade wind-up,
+      grenade reach 25 m.
+
 **Done when**
 - [x] Balance Lab tests for a bunker assault and a trench hold.
 - [x] `GAME_DESIGN.md` updated.

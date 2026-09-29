@@ -167,7 +167,7 @@ const UI = (() => {
       ['Trench', 'Y', () => Input.setMode('build', 'trench'), mode === 'line', 'Hold the left button and drag to draw a line; the selected soldiers dig it. Each 10 m is paid when digging on it starts.'],
     ];
     if (units.some(u => u.def.labour)) items.push(['Fill', 'K', () => Input.setMode('fill'), mode === 'fill', 'Workers fill in one of your trenches, as slowly as it was dug.']);
-    if (units.some(u => Game.canThrow(u))) items.push(['Grenade', 'V', () => Input.setMode('grenade'), mode === 'grenade', 'Riflemen walk within 35 m and throw a grenade (1 sulfur, 20 s cooldown). Friendly fire is on.']);
+    if (units.some(u => Game.canThrow(u))) items.push(['Grenade', 'V', () => Input.setMode('grenade'), mode === 'grenade', 'Riflemen walk within 25 m, stand still 1 s and throw a grenade (1 sulfur, 20 s cooldown). Friendly fire is on.']);
     for (const [label, key, fn, on, tip] of items) {
       const b = el('button', 'cmd' + (on ? ' on' : '')); b.title = tip;
       b.appendChild(el('span', 'key', key)); b.appendChild(el('span', 'lbl', label)); b.onclick = fn; grid.appendChild(b);

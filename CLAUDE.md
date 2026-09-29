@@ -21,6 +21,7 @@ that are easy to mix up.
 | `GAME_DESIGN.md` | The game **as built**. When a balance number or rule changes, update it too, so it keeps describing the code. |
 | `DESIGN_DECISIONS.md` | Everything **agreed but not yet built** (28 September 2026). When its sections disagree: **J > I > G > F > the rest**. |
 | `IMPLEMENTATION_PLAN.md` | The patch order (0.2a → 0.8, infantry first) with task checklists. Tick boxes as you finish. It supersedes the patch order in `ROADMAP.md`. |
+| `PATCH_NOTES.md` | Player-facing notes per patch, newest first. Add an entry with every patch. |
 | `PATCH_0.2a_PORTRAITS.md` | Step-by-step guide for patch 0.2a (built and merged; the diff it mentions is gone, the notes for later patches still apply). |
 
 If a decision contradicts itself in a way the precedence doesn't settle, or proves broken in play:

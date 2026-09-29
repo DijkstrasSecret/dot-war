@@ -98,8 +98,9 @@ const Data = {
   // when digging on it starts (Kaan, for 0.4). hit: chance to be hit for units standing in it; stress:
   // stress taken there; slowEnemy / slowOwn: speed for infantry crossing it; hp: null = indestructible.
   LINES: {
-    trench: { name: 'Trench', icon: 'trench', cost: { wood: 30 }, hit: 0.6, stress: 0.5, slowEnemy: 0.4, slowOwn: 1, hp: null,
-      desc: 'Soldiers in it are 40% harder to hit and take half stress. Enemies cross it at 0.4x speed. Cannot be destroyed; Workers fill it (K).' },
+    trench: { name: 'Trench', icon: 'trench', cost: { wood: 30 }, hit: 0.6, stress: 0.5, blast: 0.5,   // blast: explosion damage taken in it (Kaan, 0.4.1)
+      slowEnemy: 0.4, slowOwn: 1, hp: null,
+      desc: 'Soldiers in it are 40% harder to hit and take half stress and half blast damage. Enemies cross it at 0.4x speed. Cannot be destroyed; Workers fill it (K).' },
     barricade: { name: 'Barricade', icon: 'barricade', cost: { wood: 30, metal: 15 }, hit: 0.7, stress: 1, slowEnemy: 0.5, slowOwn: 0.5, hp: 200, requires: 'fortification',
       desc: 'Cover 0.7 for soldiers behind it. Every infantryman crosses at half speed. 200 HP per 10 m; explosives break it, rifles only chip it.' },
     wire: { name: 'Barbed Wire', icon: 'wire', cost: { metal: 20 }, hit: 1, stress: 1, slowEnemy: 0.25, slowOwn: 0.25, hp: 80, requires: 'fortification',
@@ -112,7 +113,8 @@ const Data = {
 
   // DD C: thrown by Riflemen once researched, automatically at enemies in trenches or bunkers, or by order.
   // Bunker occupants take 30% damage and full stress (DD G13). Friendly fire is on (DD I).
-  GRENADE: { range: 35, dmg: 45, dtype: 'explosive', splash: 18, ammo: { sulfur: 1 }, cooldown: 20, bunkerDmg: 0.3, flight: 0.8 },
+  // Kaan, 0.4.1: grenades made harder to use: reach 35 -> 25 m, and the thrower stands still `windup` s first.
+  GRENADE: { range: 25, dmg: 45, dtype: 'explosive', splash: 18, ammo: { sulfur: 1 }, cooldown: 20, bunkerDmg: 0.3, flight: 0.8, windup: 1 },
   // DD I: healing sources add up, infantry only. Medic XP 1 per 20 HP healed (DD H1).
   HEAL: { medicXpPer: 20, tick: 0.5 },
   TRAIN_HOTKEYS: ['Z', 'X', 'C', 'V'],   // DD 9: Tab flips to the next four when a factory has more
@@ -130,7 +132,7 @@ const Data = {
     // Patch 0.4, on the HQ list until the tech tree arrives in 0.5 (DD F). (p) values from DD F.
     fortification: { name: 'Fortification', icon: 'bunker', cost: { wood: 60, metal: 60 }, time: 45, req: [], desc: 'Unlocks the Bunker, barricades and barbed wire.' },
     entrenching: { name: 'Entrenching Tools', icon: 'trench', cost: { wood: 60, metal: 20 }, time: 35, req: [], effects: [{ dig: 1.3 }], desc: 'Digging 30% faster, for every digger.' },
-    grenades: { name: 'Grenades', icon: 'grenade', cost: { metal: 30, sulfur: 40 }, time: 40, req: [], desc: 'Riflemen throw grenades (1 sulfur each) at enemies in trenches and bunkers, or on order (V).' },
+    grenades: { name: 'Grenades', icon: 'grenade', cost: { metal: 30, sulfur: 40 }, time: 40, req: [], desc: 'Riflemen throw grenades (1 sulfur each, 25 m, 1 s wind-up) at enemies in trenches and bunkers, or on order (V).' },
     medicine: { name: 'Field Medicine', cost: { wood: 40, metal: 40 }, time: 40, req: [], unlock: 'medic', desc: 'Unlocks Medics at the Barracks.' },
     hospital: { name: 'Field Hospital', icon: 'hospital', cost: { wood: 60, metal: 50 }, time: 45, req: ['medicine'], desc: 'Unlocks the Field Hospital building.' },
   },

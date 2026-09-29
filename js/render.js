@@ -43,6 +43,7 @@ const Render = (() => {
     Icons.drawIcon(ctx, u.def.icon, 0, 0, s * 0.64, '#fff');
     if (u.muzzle > 0) { ctx.fillStyle = '#ffe680'; ctx.beginPath(); ctx.arc(Math.cos(u.facing) * (s + 3.5), Math.sin(u.facing) * (s + 3.5), 2.2, 0, Math.PI * 2); ctx.fill(); }
     if (u.work != null || G.time - (u.digT || -9) < 0.3) { ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(s + 2, -s - 2, 3.2, 0, Math.PI * 2); ctx.fill(); Icons.drawIcon(ctx, 'worker', s + 2, -s - 2, 2.2, '#222'); }
+    if (u.windup) { ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(-s - 2, -s - 2, 3.2, 0, Math.PI * 2); ctx.fill(); Icons.drawIcon(ctx, 'grenade', -s - 2, -s - 2, 2.2, '#222'); }   // about to throw
     if (u.flee > 0 || u.alertT > 0) {   // "!!" while panicking, "!" when fire starts coming in
       const txt = u.flee > 0 ? '!!' : '!'; const bob = Math.sin((u.flee > 0 ? u.flee : u.alertT) * 14) * 1.2;
       ctx.font = 'bold 11px "Segoe UI", Arial, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';

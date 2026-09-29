@@ -84,7 +84,7 @@ Weapons:
 | Sniper | 65 | ballistic | 300 | 0 | 0.85 | 3.5 s | 0.25 | half stress, never panics, keeps target orders when suppressed |
 | Mortar Crew | 50 | explosive | 380 | 90 | 0.50 | 5 s | 0.35 | indirect, splash 32, costs 2 sulfur per shell, needs a spotter |
 | Medic | – | – | – | – | – | – | – | unarmed; heals one soldier at a time, 4 HP/s within 40 m |
-| Grenade (Riflemen) | 45 | explosive | 35 | 0 | – | 20 s | – | after the Grenades research; splash 18, 1 sulfur each |
+| Grenade (Riflemen) | 45 | explosive | 25 | 0 | – | 20 s | – | after the Grenades research; splash 18, 1 sulfur each, 1 s wind-up standing still |
 
 Speeds are world units per game second. Times are game seconds. All units have armor class
 "none" today; the armor table already exists for the vehicle patch:
@@ -137,9 +137,11 @@ least x0.35 (`Util.stack`).
   consumes ammo (2 sulfur), splash damage falls off linearly to the edge, reverse slopes take only
   35% of it, and friendly fire is on.
 - **Grenades** (Riflemen, after the Grenades research): thrown automatically at the nearest enemy
-  standing in a trench, or at an occupied enemy Bunker, within 35 m; or on order (V, then click a
-  point or an enemy: the Rifleman walks into reach and throws). 45 explosive damage, splash 18,
-  1 sulfur each, 20 s cooldown, friendly fire on. A grenade on a Bunker hurts the Bunker and reaches
+  standing in a trench, or at an occupied enemy Bunker, within 25 m; or on order (V, then click a
+  point or an enemy: the Rifleman walks into reach and throws). Before each throw the Rifleman
+  stands still for 1 s without firing (a grenade mark shows over him); a new order or a panic
+  cancels it. 45 explosive damage, splash 18, 1 sulfur each (paid on the throw), 20 s cooldown,
+  friendly fire on. A grenade on a Bunker hurts the Bunker and reaches
   everyone inside for 30% damage and full stress.
 - **Moving fire.** On a plain move units shoot while walking at x0.35 accuracy; Machine Gunners
   cannot fire while moving. On attack-move units stop to shoot. Defend holds position.
@@ -206,7 +208,7 @@ routes are recalculated once a whole line is finished. A Worker earns 1 XP per 1
 
 | Type | Cost per 10 m | Research | Holders | Crossing infantry | HP per 10 m |
 | --- | --- | --- | --- | --- | --- |
-| Trench | 30 wood | none | hit chance x0.6, half stress | enemies x0.4, your own x1 | cannot be destroyed; Workers fill it (K), as slowly as digging |
+| Trench | 30 wood | none | hit chance x0.6, half stress, half blast damage (grenades and shells) | enemies x0.4, your own x1 | cannot be destroyed; Workers fill it (K), as slowly as digging |
 | Barricade | 30 wood, 15 metal | Fortification | hit chance x0.7 | everyone x0.5 | 200; explosives full damage, a rifle or MG bullet that misses someone behind it does 10% |
 | Barbed wire | 20 metal | Fortification | nothing | everyone x0.25 | 80; only explosives |
 
