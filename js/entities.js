@@ -17,7 +17,7 @@ class Unit {
     this.work = null; this.squad = 0; this.dead = false; this.queue = [];
     this.xp = 0; this.rank = 0; this.fireT = 0; this.workT = 0; this.suppXp = null;   // veterancy (DD H1)
     this.inside = null; this.hBonus = 0;   // garrisoned building id and the extra height it gives
-    this.nadeT = 0; this.patient = null;   // grenade cooldown; the unit a Medic is treating (patch 0.4)
+    this.nadeT = 0; this.windup = null; this.patient = null;   // grenade cooldown; the unit a Medic is treating (patch 0.4)
     this.recoil = 0; this.alertT = 0; this.bleedT = 0; this.lastAttackedT = -99;   // presentation timers
     this.cls = Data.MOVE_CLASSES[this.def.cls];
     this.spawn = { x, y };
