@@ -167,3 +167,6 @@ input[type=range] { flex: 1; accent-color: var(--brass); }
 .rslot .rsname { display: block; color: var(--brass2); text-transform: uppercase; letter-spacing: 0.8px; font-size: 10px; }
 .rslot .rsjob { display: block; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .rslot .bar { margin-top: 2px; }
+/* 0.5b.1: squadron has more soldiers than its Truck seats */
+.gtile .gwarn { color: #ffb000; font-weight: 700; font-size: 14px; margin-left: 2px; cursor: help; }
+.warnline { color: #ffb000; margin: 4px 0; }

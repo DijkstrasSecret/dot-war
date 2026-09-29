@@ -102,7 +102,7 @@ const UI = (() => {
     const sel = new Set(G.selection);
     const alive = n => Game.membersOf(G.squads[n]).filter(u => u.owner === 1);
     const isSelected = n => { const us = alive(n).filter(u => !u.inside); return us.length && us.length === sel.size && us.every(u => sel.has(u)); };
-    const s = keys.map(n => n + ':' + alive(n).map(u => u.id + '.' + u.rank).join(',') + (isSelected(n) ? '*' : '')).join('|');
+    const s = keys.map(n => n + ':' + alive(n).map(u => u.id + '.' + u.rank).join(',') + (isSelected(n) ? '*' : '') + Game.squadMarchers(G.squads[n])).join('|');
     if (s !== groupSig) {
       groupSig = s; groupBar.innerHTML = ''; const bars = [];
       for (const n of keys) {
@@ -116,6 +116,8 @@ const UI = (() => {
           const d = Data.UNITS[type], sp = el('span'); sp.title = by[type] + ' ' + d.name + (by[type] > 1 ? 's' : '');
           sp.appendChild(Icons.makeCanvas(d.icon, 28, '#fff', Data.PLAYER_COLORS[1], d.shape)); sp.appendChild(document.createTextNode('×' + by[type])); counts.appendChild(sp);
         }
+        const march = Game.squadMarchers(G.squads[n]);   // Kaan, 0.5b.1: soldiers who won't fit in the squadron's Truck
+        if (march) { const w = el('span', 'gwarn', '!'); w.title = march + ' soldier' + (march > 1 ? 's' : '') + ' won\'t fit in the Truck and will march on long moves'; counts.appendChild(w); }
         const avg = us.reduce((a, u) => a + u.rank, 0) / us.length;
         if (avg >= 0.5) { const r = el('span', 'grank', chevrons(avg)); r.title = 'Average rank ' + avg.toFixed(1); counts.appendChild(r); }
         t.appendChild(counts);
@@ -274,6 +276,8 @@ const UI = (() => {
     const whole = sq && Game.membersOf(sq).filter(u => !u.inside).length === units.length;
     content.appendChild(el('h3', null, whole ? 'Squadron ' + sq.id + ' · ' + units.length + ' soldiers' : units.length + ' units selected'));
     if (whole) content.appendChild(squadToggles(sq));
+    const march = sq ? Game.squadMarchers(sq) : 0;
+    if (whole && march) { const w = el('div', 'small warnline', '! ' + march + ' soldier' + (march > 1 ? 's' : '') + ' won\'t fit in the Truck and will march on moves over ' + Data.FERRY.minDist + ' m.'); content.appendChild(w); }
     // One face per soldier with a class badge and a health bar; click a face to select only them.
     const faces = el('div', 'faces'), fills = [];
     for (const u of units.slice(0, 24)) {

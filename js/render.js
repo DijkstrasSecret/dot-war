@@ -40,6 +40,7 @@ const Render = (() => {
       ctx.save(); ctx.rotate(u.facing); ctx.fillRect(-s * 1.4, -s * 0.8, s * 2.8, s * 1.6); ctx.strokeRect(-s * 1.4, -s * 0.8, s * 2.8, s * 1.6);
       ctx.fillStyle = 'rgba(0,0,0,0.35)'; ctx.fillRect(s * 0.6, -s * 0.8, s * 0.8, s * 1.6); ctx.restore();
       if (u.cargo && u.cargo.length) { ctx.font = 'bold 8px Consolas, monospace'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.lineWidth = 2.5; ctx.strokeStyle = '#111'; const txt = '×' + u.cargo.length + ' ○'; ctx.strokeText(txt, 0, s + 6); ctx.fillStyle = '#fff'; ctx.fillText(txt, 0, s + 6); }
+      if (u.owner === 1 && u.squad && G.squads[u.squad] && Game.squadMarchers(G.squads[u.squad])) { ctx.font = 'bold 11px "Segoe UI", Arial, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.lineWidth = 3; ctx.strokeStyle = '#111'; ctx.strokeText('!', s * 1.8, -s); ctx.fillStyle = '#ffb000'; ctx.fillText('!', s * 1.8, -s); }   // Kaan, 0.5b.1: some squadmates will march
       if (u.fuel <= 0) { ctx.fillStyle = '#ff5a3a'; ctx.font = 'bold 8px sans-serif'; ctx.textAlign = 'center'; ctx.fillText('NO FUEL', 0, -s - 10); }
     }
     else if (u.def.shape === 'square') { ctx.fillRect(-s, -s, 2 * s, 2 * s); ctx.strokeRect(-s, -s, 2 * s, 2 * s); }

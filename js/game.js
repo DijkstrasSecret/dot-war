@@ -999,6 +999,14 @@ const Game = (() => {
     u.price = { ...bp.cost }; u.bpLevel = bp.level || 0; if (u.owner === 1) toast('Truck retrofitted'); return true;
   }
   function retrofitCost(u) { const bp = G.players[u.owner].blueprints[u.type], c = {}; for (const k in bp.cost) c[k] = Math.max(0, Math.round((bp.cost[k] - (u.price[k] || 0)) * Data.TRUCK_TRACKS.retrofitShare)); return c; }
+  // Kaan, 0.5b.1: how many members of a squadron with a Truck won't fit and will march on a long move
+  // (same seat order as ferry()). 0 when there is no Truck or everyone fits.
+  function squadMarchers(s) {
+    const ms = membersOf(s), t = ms.find(m => m.cargo); if (!t) return 0;
+    let free = t.def.seats, n = 0;
+    for (const r of [1, 2, 0, 3]) for (const m of ms) if (m !== t && m.def.cls === 'infantry' && (m.def.role != null ? m.def.role : 1) === r) { if (seatCost(m) <= free) free -= seatCost(m); else n++; }
+    return n;
+  }
   // Squad auto-carry (DD E, G4): on a long move the squadron's Truck takes as many members as fit, the
   // rest march; the riders unload at the destination and walk to their places in the line.
   function ferry(s, members, x, y, mode, slots) {
@@ -1443,7 +1451,7 @@ const Game = (() => {
     canAfford, researchState, startResearch, statsFor, prodTime,
     spawnUnit, addBuilding, canPlace, placeBuilding,
     orderMove, orderAttack, orderBombard, orderStop, orderHold, orderWork, orderRetreat, orderGarrison,
-    setLink, researchLock, researchCost, slotOf, owns, seatsFree, retrofitCost, supplyCap, supplyUsed, costOf, maxWorkers, detected, raidLaunched, smokeBlocks,
+    squadMarchers, setLink, researchLock, researchCost, slotOf, owns, seatsFree, retrofitCost, supplyCap, supplyUsed, costOf, maxWorkers, detected, raidLaunched, smokeBlocks,
     canEnter, unloadBuilding, upgradeTower, slotCount, hasTech, canThrow, lineAt, segNear, orderDig, orderGrenade,
     enqueue, cancelQueue, harvestRate, activeWorkers, effRange,
     squadCentre, membersOf, setSquad,
