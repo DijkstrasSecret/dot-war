@@ -918,7 +918,7 @@ const Game = (() => {
   function lineThreat(route, pid) {
     if (!route) return false; const r2 = LOG.cutRange;
     for (const e of G.units) {
-      if (e.dead || e.inside || e.owner === pid || e.owner === 0) continue;
+      if (e.dead || e.inside || e.owner === pid || e.owner === 0 || !e.stats.weapon) continue;   // Kaan, 0.5a.2: enemy soldiers cut lines, not Workers or Trucks
       for (let i = 1; i < route.length; i++) {
         const a = route[i - 1], b = route[i], dx = b[0] - a[0], dy = b[1] - a[1], t = clamp(((e.x - a[0]) * dx + (e.y - a[1]) * dy) / (dx * dx + dy * dy || 1), 0, 1);
         if (dist(e.x, e.y, a[0] + dx * t, a[1] + dy * t) < r2) return true;
