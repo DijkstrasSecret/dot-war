@@ -42,6 +42,7 @@ const Render = (() => {
     ctx.moveTo(Math.cos(u.facing) * s * 0.75, Math.sin(u.facing) * s * 0.75); ctx.lineTo(Math.cos(u.facing) * (s + 2.5), Math.sin(u.facing) * (s + 2.5)); ctx.stroke();
     Icons.drawIcon(ctx, u.def.icon, 0, 0, s * 0.64, '#fff');
     if (u.muzzle > 0) { ctx.fillStyle = '#ffe680'; ctx.beginPath(); ctx.arc(Math.cos(u.facing) * (s + 3.5), Math.sin(u.facing) * (s + 3.5), 2.2, 0, Math.PI * 2); ctx.fill(); }
+    if (u.load) { ctx.fillStyle = Data.RES_COLORS[u.load.k] || '#ccc'; ctx.strokeStyle = '#111'; ctx.lineWidth = 0.8; ctx.fillRect(-s - 4, -2.5, 4.5, 5); ctx.strokeRect(-s - 4, -2.5, 4.5, 5); }   // a carried load
     if (u.work != null || G.time - (u.digT || -9) < 0.3) { ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(s + 2, -s - 2, 3.2, 0, Math.PI * 2); ctx.fill(); Icons.drawIcon(ctx, 'worker', s + 2, -s - 2, 2.2, '#222'); }
     if (u.windup) { ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(-s - 2, -s - 2, 3.2, 0, Math.PI * 2); ctx.fill(); Icons.drawIcon(ctx, 'grenade', -s - 2, -s - 2, 2.2, '#222'); }   // about to throw
     if (u.flee > 0 || u.alertT > 0) {   // "!!" while panicking, "!" when fire starts coming in
@@ -191,6 +192,23 @@ const Render = (() => {
     ctx.lineCap = 'round';
   }
 
+  // Supply chains (0.5a.2): thin lines from gatherers to their drop-off, bolder Depot lines to the HQ,
+  // red and dashed while cut.
+  function polyline(pts) { ctx.beginPath(); pts.forEach((q, i) => ctx[i ? 'lineTo' : 'moveTo'](q[0], q[1])); ctx.stroke(); }
+  function drawSupplyLines() {
+    const col = Data.PLAYER_COLORS[1];
+    for (const b of G.buildings) {
+      if (b.dead || b.owner !== 1 || !b.route) continue;
+      if (b.def.harvest) { ctx.globalAlpha = 0.45; ctx.strokeStyle = col; ctx.lineWidth = 1; ctx.setLineDash([4, 3]); polyline(b.route); }
+      else if (b.type === 'depot') {
+        ctx.globalAlpha = 0.6; ctx.lineWidth = 2.2;
+        if (b.connected) { ctx.strokeStyle = col; ctx.setLineDash([]); } else { ctx.strokeStyle = '#d23a2e'; ctx.setLineDash([6, 4]); }
+        polyline(b.route);
+      }
+    }
+    ctx.setLineDash([]); ctx.globalAlpha = 1;
+  }
+
   // Blood, splatter and corpses stay on the ground and fade out.
   function drawDecals() {
     for (const d of G.decals) {
@@ -220,6 +238,7 @@ const Render = (() => {
     if (vx1 > vx0 && vy1 > vy0) { ctx.imageSmoothingEnabled = cam.zoom < 1; ctx.drawImage(Terrain.cache, vx0, vy0, vx1 - vx0, vy1 - vy0, vx0, vy0, vx1 - vx0, vy1 - vy0); }
     const sel = new Set(G.selection);
     drawDecals();
+    drawSupplyLines();
     for (const sg of G.segs) if (sg.owner === 1 || sg.seen) drawSeg(sg);
     for (const b of G.buildings) if (!b.dead && buildingVisible(b)) drawBuilding(b, sel.has(b));
     for (const b of G.buildings) if (!b.dead && b.rally && sel.has(b)) { ctx.strokeStyle = '#fff'; ctx.lineWidth = 1; ctx.setLineDash([3, 3]); ctx.beginPath(); ctx.moveTo(b.x, b.y); ctx.lineTo(b.rally.x, b.rally.y); ctx.stroke(); ctx.setLineDash([]); ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(b.rally.x, b.rally.y, 3, 0, Math.PI * 2); ctx.fill(); }

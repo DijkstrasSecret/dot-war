@@ -17,7 +17,7 @@ class Unit {
     this.work = null; this.squad = 0; this.dead = false; this.queue = [];
     this.xp = 0; this.rank = 0; this.fireT = 0; this.workT = 0; this.suppXp = null;   // veterancy (DD H1)
     this.inside = null; this.hBonus = 0;   // garrisoned building id and the extra height it gives
-    this.nadeT = 0; this.windup = null; this.patient = null;   // grenade cooldown; the unit a Medic is treating (patch 0.4)
+    this.nadeT = 0; this.windup = null; this.patient = null; this.load = null;   // load: { k: resource, n } a carrier holds   // grenade cooldown; the unit a Medic is treating (patch 0.4)
     this.recoil = 0; this.alertT = 0; this.bleedT = 0; this.lastAttackedT = -99;   // presentation timers
     this.cls = Data.MOVE_CLASSES[this.def.cls];
     this.spawn = { x, y };
@@ -42,6 +42,7 @@ class Building {
     this.muzzle = 0;
     this.maxHp = this.def.hp;
     this.level = 1; this.garrison = []; this.upgrading = null;   // scout towers
+    this.stock = {}; this.drop = null; this.route = null; this.parent = null; this.connected = true; this.costHq = 0;   // supply chains (0.5a.2)
   }
   get levelDef() { return this.def.levels ? this.def.levels[this.level - 1] : null; }
   // Garrison slots: a Scout Tower's current level, or the building's own (HQ, Bunker); null if none.

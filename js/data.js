@@ -74,7 +74,7 @@ const Data = {
     barracks: { name: 'Barracks', w: 48, h: 40, hp: 600, icon: 'circle', produces: ['rifle', 'hmg', 'sniper', 'medic'], cost: { wood: 80, metal: 20 }, buildTime: 30, vision: 120, desc: 'Trains infantry (circles).' },
     ordnance: { name: 'Ordnance Works', w: 52, h: 44, hp: 700, icon: 'square', produces: ['mortar'], cost: { wood: 60, metal: 60 }, buildTime: 40, vision: 120, desc: 'Builds mortars and other heavy weapons (squares).' },
     lumber: { name: 'Lumber Camp', w: 40, h: 32, hp: 350, icon: 'lumber', harvest: 'wood', rate: 1.0, perWorker: 0.6, maxWorkers: 4, cost: { wood: 40 }, buildTime: 20, vision: 100, needs: 'forest', desc: 'Place next to forest. Assign Workers (or soldiers, at half rate) to speed it up.' },
-    mine: { name: 'Mine', w: 40, h: 36, hp: 400, icon: 'mine', harvest: 'deposit', rate: 0.5, perWorker: 0.35, maxWorkers: 4, cost: { wood: 60, metal: 10 }, buildTime: 25, vision: 100, needs: 'deposit', deposits: ['metal', 'sulfur'], desc: 'Place on a metal or sulfur deposit. Assign Workers (or soldiers, at half rate).' },
+    mine: { name: 'Mine', w: 40, h: 36, hp: 400, icon: 'mine', harvest: 'deposit', rate: 0.5, perWorker: 0.35, maxWorkers: 4, cost: { wood: 70 }, buildTime: 25, vision: 100, needs: 'deposit', deposits: ['metal', 'sulfur'], desc: 'Place on a metal or sulfur deposit. Assign Workers (or soldiers, at half rate).' },
     // Patch 0.5a (DD B, G1, I, G14). (p) values proposed in DD B.
     rubber: { name: 'Rubber Tapper', w: 40, h: 32, hp: 350, icon: 'rubber', harvest: 'deposit', rate: 0.6, perWorker: 0.3, maxWorkers: 4, cost: { wood: 50 }, buildTime: 25, vision: 100, needs: 'deposit', deposits: ['rubber'], desc: 'Place on rubber trees. Assign Workers (or soldiers, at half rate).' },
     refinery: { name: 'Refinery', w: 60, h: 48, hp: 600, icon: 'refinery', harvest: 'deposit', rate: 1.0, perWorker: 0.4, maxWorkers: 4, cost: { wood: 100, metal: 80 }, buildTime: 40, vision: 100, needs: 'deposit', deposits: ['oil'], requires: 'refinery', desc: 'Place on an oil seep. Assign Workers (or soldiers, at half rate).' },
@@ -252,5 +252,9 @@ const Data = {
   },
   // DD I: every bonus and penalty multiplies, then these caps apply (Util.stack).
   CAPS: { hit: { max: 0.95 }, stressTaken: { min: 0.25 }, speed: { min: 0.2 }, vision: { min: 0.35 } },
+  // Supply chains (Kaan, 0.5a.2): gatherers fill their own stock; assigned people carry loads to the
+  // nearest Depot or the HQ. A Depot joins another Depot's line if that is at most `detour` longer than
+  // going straight to the HQ; enemies within cutRange of a Depot line cut it. Times in game seconds.
+  LOGISTICS: { load: 10, soldierLoad: 5, stockCap: 100, detour: 0.2, cutRange: 20, replan: 5, cutCheck: 1, loadWait: 4 },
   ECONOMY: { soldierLabour: 0.5, pace: 0.7 },   // Kaan, 0.5a.1: a slower game. Every harvest rate and the AI's passive income x0.7                      // DD Q4: a soldier at a camp counts as half a Worker
 };

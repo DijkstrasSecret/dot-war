@@ -165,8 +165,7 @@ are gathered from patch 0.5a and spent from 0.5b (trucks and fuel).
 Harvest buildings produce `(rate + labour * perWorker) x 0.7` per game second (the 0.7 is the game's
 pace, `Data.ECONOMY.pace`, set in patch 0.5a.1 to slow the game), times the player's harvest
 multiplier (Logistics research gives 1.25). The table below lists the rates before the pace. Labour counts 1 for each Worker and 0.5 for each soldier
-assigned with E, and only while standing within 70 units of their camp; they do not animate or
-carry anything yet. A camp has four slots whoever fills them. Workers cannot garrison towers. A Lumber Camp needs forest within 70 units; a Mine sits on a metal or sulfur deposit,
+assigned with E, wherever they are on the supply line. A camp has four slots whoever fills them. Workers cannot garrison towers. A Lumber Camp needs forest within 70 units; a Mine sits on a metal or sulfur deposit,
 one mine per deposit.
 
 | Building | Size | HP | Cost | Build time | Role |
@@ -175,7 +174,7 @@ one mine per deposit.
 | Barracks | 48x40 | 600 | 80 wood, 20 metal | 30 s | trains Riflemen, Machine Gunners, Snipers, Medics; Infantry research |
 | Ordnance Works | 52x44 | 700 | 60 wood, 60 metal | 40 s | trains squares (mortar); Fire support research |
 | Lumber Camp | 40x32 | 350 | 40 wood | 20 s | 1.0 wood/s + 0.6 per worker, max 4 workers |
-| Mine | 40x36 | 400 | 60 wood, 10 metal | 25 s | 0.5/s + 0.35 per worker, max 4 workers |
+| Mine | 40x36 | 400 | 70 wood | 25 s | 0.5/s + 0.35 per worker, max 4 workers |
 | Scout Tower | 30x30 | 400 | 60 wood, 10 metal | 25 s | garrison, see below |
 | Bunker | 32x32 | 1200 | 120 wood, 90 metal | 45 s | 4 infantry + 1 Machine Gunner slot, occupants shoot x1.1, no height; needs Fortification |
 | Field Hospital | 48x40 | 500 | 80 wood, 40 metal | 35 s | heals your infantry within 120 m at 1.5 HP/s; needs Field Hospital research; Command & medical research |
@@ -184,6 +183,15 @@ one mine per deposit.
 | Workshop | 56x44 | 700 | 80 wood, 60 metal | 40 s | Engineering research; vehicles and repair in 0.5b |
 | Depot | 48x40 | 500 | 80 wood, 40 metal, +25% per Depot you have | 30 s | +10 supply, 0.1 oil/s, Logistics research |
 | R&D Lab | 52x44 | 600 | 100 wood, 80 metal | 45 s | needed for Tier III research; truck upgrades in 0.5b |
+
+**Supply chains** (patch 0.5a.2). A harvest building's output goes into its own stock (up to 100).
+Its assigned Workers or soldiers carry loads of 10 (soldiers 5) along the fastest walking route to
+the nearest drop-off, a Depot or the HQ, shown as a thin dashed line, and walk back. Resources count
+only once dropped off, so a far camp needs more carriers. A destroyed building loses its stock; a
+killed or reassigned carrier loses his load. Each Depot has a bolder line to the HQ, or to another
+Depot when that route is at most 20% longer (the lines form a web). Enemy soldiers within 20 m of a
+Depot's line cut it and every Depot beyond it: the line turns red and dashed, and goods dropped there
+wait until it is clear. The scripted AI keeps its direct income.
 
 **Supply** (patch 0.5a): every unit uses supply (1 each, a Mortar Crew 2), counted when it is queued.
 The cap is 30, plus 10 per finished Depot (15 with Supply Organisation), with no maximum; the top
