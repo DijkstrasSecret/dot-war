@@ -140,7 +140,9 @@ least x0.35 (`Util.stack`).
   standing in a trench, or at an occupied enemy Bunker, within 25 m; or on order (V, then click a
   point or an enemy: the Rifleman walks into reach and throws). Before each throw the Rifleman
   stands still for 1 s without firing (a grenade mark shows over him); a new order or a panic
-  cancels it. 45 explosive damage, splash 18, 1 sulfur each (paid on the throw), 20 s cooldown,
+  cancels it. Throws are never quite on target: they land up to 3 m + 0.2 m per metre thrown off
+  (8 m at full reach, more when the thrower is stressed), and 15% go wide by a further 6 to 14 m.
+  45 explosive damage, splash 18, 1 sulfur each (paid on the throw), 20 s cooldown,
   friendly fire on. A grenade on a Bunker hurts the Bunker and reaches
   everyone inside for 30% damage and full stress.
 - **Moving fire.** On a plain move units shoot while walking at x0.35 accuracy; Machine Gunners

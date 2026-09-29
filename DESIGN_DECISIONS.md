@@ -982,9 +982,9 @@ Balance Lab, 50 seeded runs each (new "Fortifications" section; no targets agree
 | 6 Riflemen attack 5 in the open | 66% | 21 s | 2.5 / 1.2 |
 | 6 Riflemen attack 5 in a trench | 10% | 23 s | 0.3 / 3.7 |
 | 8 Riflemen with grenades attack 5 in a trench | 100% | 4 s | 8.0 / 0 |
-| 10 Riflemen with grenades assault a full Bunker (4 Riflemen + 1 MG) | 100% | 4 s | 8.4 / 0 |
-| 5 Riflemen with grenades assault a full Bunker | 0% | 11 s | 0 / 5 |
-| 10 Riflemen without grenades against a full Bunker | 0% | 34 s | 0 / 5 |
+| 10 Riflemen with grenades assault a full Bunker (5 inside: 4 Riflemen + 1 MG) | 100% | 4 s | 8.4 / 0 |
+| 5 Riflemen with grenades assault a full Bunker (5 inside) | 0% | 11 s | 0 / 5 |
+| 10 Riflemen without grenades against a full Bunker (5 inside) | 0% | 34 s | 0 / 5 |
 
 Target duels after 0.4: MG pin 4.9 s, height 74%, squadron 59%, all green.
 
@@ -1016,6 +1016,23 @@ Balance Lab after 0.4.1 (50 runs; attackers win / avg time / survivors att. / de
 
 Target duels unchanged: MG pin 4.9 s, height 74%, squadron 59%. A Bunker still falls to about ten
 grenadiers; lowering the occupants' 30% share is the remaining lever if it should hold longer.
+
+### Patch 0.4.2: grenade scatter (Kaan, 29 September 2026)
+
+Throws should be a little off so results are less certain. A grenade lands up to **3 m + 0.2 m per
+metre thrown** from its aim point (8 m at the full 25 m), times (1 + the thrower's stress), and
+**15%** of throws go wide by a further **6–14 m** (`Data.GRENADE.scatter`, `scatterPerM`,
+`badChance`, `badMin`, `badMax`). Every Bunker test below has the Bunker **full: 5 men inside
+(4 Riflemen + 1 Machine Gunner)**; the trench is held by **5 Riflemen**.
+
+| Test (50 runs) | 0.4.1 | 0.4.2 |
+| --- | --- | --- |
+| 8 grenadiers v 5 Riflemen in a trench | attackers win 100% | 94% |
+| 6 grenadiers v 5 Riflemen in a trench | 46% | 42% |
+| 5 grenadiers v full Bunker (5 inside) | 0% | 0% |
+| 8 grenadiers v full Bunker (5 inside) | not run | 12% (defenders left: 2.0 of 5) |
+| 10 grenadiers v full Bunker (5 inside) | 100% | 98% |
+| 12 grenadiers v full Bunker (5 inside) | not run | 100% |
 
 ---
 

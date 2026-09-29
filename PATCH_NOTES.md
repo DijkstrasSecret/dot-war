@@ -5,6 +5,15 @@ each change live in `DESIGN_DECISIONS.md`.
 
 ---
 
+## 0.4.2: Grenades a little off (29 September 2026)
+
+- Grenades no longer land exactly on target: up to about 8 m off at full reach, more when the
+  thrower is under stress, and about one throw in seven goes wide by another 6 to 14 m.
+- Result in the Balance Lab: fights are less certain. 8 grenadiers now clear 5 Riflemen in a trench
+  94% of the time instead of always. A full Bunker (5 men inside: 4 Riflemen and a Machine Gunner)
+  holds against 8 grenadiers 88% of the time and falls to 10 almost always.
+- The Balance Lab now says how many men are inside the Bunker.
+
 ## 0.4.1: Grenades made harder to use (29 September 2026)
 
 - Soldiers in a **trench take half damage from explosions** (grenades and mortar shells).
@@ -13,7 +22,7 @@ each change live in `DESIGN_DECISIONS.md`.
   leaves his hand.
 - Grenade **reach cut from 35 m to 25 m**.
 - Result in the Balance Lab: 6 grenadiers used to clear 5 soldiers in a trench every time; now they
-  win about half the time. Ten grenadiers still take a full Bunker.
+  win about half the time. Ten grenadiers still take a full Bunker (5 men inside).
 
 ## 0.4: Fortifications and medical (28 September 2026)
 

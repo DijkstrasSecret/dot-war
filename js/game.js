@@ -660,7 +660,9 @@ const Game = (() => {
   function throwGrenade(u, tx, ty) {
     if (u.owner !== 0) { const p = G.players[u.owner]; if (!canAfford(p, NADE.ammo)) { if (u.owner === 1 && G.time - (u.noAmmoT || -99) > 15) { u.noAmmoT = G.time; toast('No sulfur for grenades'); } return false; } pay(p, NADE.ammo); }
     u.nadeT = NADE.cooldown; u.facing = Math.atan2(ty - u.y, tx - u.x);
-    const ang = R() * Math.PI * 2, off = R() * 4 * (1 + u.stress);
+    // Kaan, 0.4.2: never quite on target, and now and then a throw goes wide.
+    const ang = R() * Math.PI * 2, bad = R() < NADE.badChance;
+    const off = R() * (NADE.scatter + NADE.scatterPerM * dist(u.x, u.y, tx, ty)) * (1 + u.stress) + (bad ? NADE.badMin + R() * (NADE.badMax - NADE.badMin) : 0);
     G.projectiles.push(new Projectile({ kind: 'shell', grenade: true, x: u.x, y: u.y, tx: tx + Math.cos(ang) * off, ty: ty + Math.sin(ang) * off, dur: NADE.flight, arc: 12, dmg: NADE.dmg, splash: NADE.splash, dtype: NADE.dtype, shooter: u, owner: u.owner }));
     return true;
   }

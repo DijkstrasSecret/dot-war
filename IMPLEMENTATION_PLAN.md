@@ -174,6 +174,7 @@ Goal: the game plays at the new core values, and every run can be repeated exact
 
 - [x] 0.4.1 (Kaan, after the lab results): trench halves blast damage, 1 s grenade wind-up,
       grenade reach 25 m.
+- [x] 0.4.2 (Kaan): grenade scatter, 15% of throws go wide.
 
 **Done when**
 - [x] Balance Lab tests for a bunker assault and a trench hold.

@@ -114,7 +114,10 @@ const Data = {
   // DD C: thrown by Riflemen once researched, automatically at enemies in trenches or bunkers, or by order.
   // Bunker occupants take 30% damage and full stress (DD G13). Friendly fire is on (DD I).
   // Kaan, 0.4.1: grenades made harder to use: reach 35 -> 25 m, and the thrower stands still `windup` s first.
-  GRENADE: { range: 25, dmg: 45, dtype: 'explosive', splash: 18, ammo: { sulfur: 1 }, cooldown: 20, bunkerDmg: 0.3, flight: 0.8, windup: 1 },
+  GRENADE: { range: 25, dmg: 45, dtype: 'explosive', splash: 18, ammo: { sulfur: 1 }, cooldown: 20, bunkerDmg: 0.3, flight: 0.8, windup: 1,
+    // Kaan, 0.4.2: throws are a little off. Scatter up to scatter + scatterPerM x distance metres (more
+    // when stressed); badChance of throws go wide by a further badMin..badMax metres.
+    scatter: 3, scatterPerM: 0.2, badChance: 0.15, badMin: 6, badMax: 14 },
   // DD I: healing sources add up, infantry only. Medic XP 1 per 20 HP healed (DD H1).
   HEAL: { medicXpPer: 20, tick: 0.5 },
   TRAIN_HOTKEYS: ['Z', 'X', 'C', 'V'],   // DD 9: Tab flips to the next four when a factory has more
