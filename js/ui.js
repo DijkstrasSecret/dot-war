@@ -145,7 +145,7 @@ const UI = (() => {
   function signature() {
     const p = G.players[1];
     let s = tab + '|' + Input.state.mode + '|' + (Input.state.buildType || Input.state.lineType || '') + '|' + [...p.unlocked].join(',') + '|' + [...p.done].join(',') + '|' + Object.entries(p.research).map(([k, j]) => k + j.id).join(',') + '|' + G.buildings.filter(b => b.owner === 1 && b.built).length + '|';
-    if (tab === 'sel') s += Object.values(G.squads).map(q => q.id + q.move + q.spacing + q.contact + q.members.length).join('') + '|' + G.selection.map(e => e.id + ':' + (e.dead ? 'd' : '') + (e instanceof Building ? e.queue.map(q => q.type).join('.') + ':' + e.built + ':' + e.workers.length + ':' + e.level + ':' + e.garrison.join('.') + ':' + !!e.upgrading : (e.work || '') + ':' + (e.order ? e.order.type : '') + ':' + (e.flee > 0) + ':' + e.suppressed + ':' + e.rank + ':' + e.squad)).join(',');
+    if (tab === 'sel') s += Object.values(G.squads).map(q => q.id + q.move + q.spacing + q.contact + q.members.length).join('') + '|' + G.selection.map(e => e.id + ':' + (e.dead ? 'd' : '') + (e instanceof Building ? e.queue.map(q => q.type).join('.') + ':' + e.built + ':' + e.workers.length + ':' + e.level + ':' + e.garrison.join('.') + ':' + !!e.upgrading + ':' + e.link : (e.work || '') + ':' + (e.order ? e.order.type : '') + ':' + (e.flee > 0) + ':' + e.suppressed + ':' + e.rank + ':' + e.squad)).join(',');
     if (tab === 'build') s += Data.BUILD_LIST.map(t => Game.canAfford(p, Game.costOf(1, t)) + Util.costStr(Game.costOf(1, t))).join(',');
     if (tab === 'research') s += Data.RESEARCH_ORDER.map(r => Game.researchState(p, r)).join(',');
     if (tab === 'sel') { const b = G.selection[0]; if (b instanceof Building && b.def.produces) s += '|' + b.def.produces.map(t => p.unlocked.has(t) && Game.canAfford(p, p.blueprints[t].cost)).join(','); }
@@ -310,9 +310,18 @@ const UI = (() => {
       content.appendChild(row);
       if (b.upgrading) { upBar = bar('#ffd257'); content.appendChild(el('div', 'small', 'Upgrading')); content.appendChild(upBar); }
     }
+    if (own && b.built && (b.def.harvest || b.type === 'depot')) {   // Kaan, 0.5a.3: the supply link
+      const t = b.link != null ? G.buildingById.get(b.link) : null;
+      content.appendChild(el('h3', null, 'Supply link'));
+      content.appendChild(el('div', 'small', (b.def.harvest ? 'Carriers take the goods to ' : 'This Depot\'s goods go to ') + (t && !t.dead ? 'the Depot you linked' : 'the HQ') + '. Pick a Depot to shorten the walk; a cut line holds goods until it is clear. Or right click one of your Depots with this selected.'));
+      const row = el('div', 'row');
+      row.appendChild(btn('Pick supply link', () => Input.setMode('link'), 'Then click one of your Depots'));
+      if (t) row.appendChild(btn('Send to HQ', () => { Game.command({ kind: 'link', building: b.id, target: null }); refresh(); }));
+      content.appendChild(row);
+    }
     if (own && b.built && b.def.harvest) {
       content.appendChild(el('h3', null, 'Harvesting'));
-      content.appendChild(el('div', 'small', 'Select Workers and right click this building to assign up to ' + Game.maxWorkers(b) + '. Each Worker adds ' + b.def.perWorker + '/s; a soldier adds half that. Output goes into the building\'s stock (up to ' + Data.LOGISTICS.stockCap + '); the assigned people carry it along the dashed line to the nearest Depot or the HQ, ' + Data.LOGISTICS.load + ' per trip (soldiers ' + Data.LOGISTICS.soldierLoad + '). Only delivered goods can be spent.'));
+      content.appendChild(el('div', 'small', 'Select Workers and right click this building to assign up to ' + Game.maxWorkers(b) + '. Each Worker adds ' + b.def.perWorker + '/s; a soldier adds half that. Output goes into the building\'s stock (up to ' + Data.LOGISTICS.stockCap + '); the assigned people carry it along the dashed line to its supply link, ' + Data.LOGISTICS.load + ' per trip (soldiers ' + Data.LOGISTICS.soldierLoad + '). Only delivered goods can be spent.'));
       const row = el('div', 'row'); row.appendChild(btn('Release workers', () => { Game.command({ kind: 'stop', units: b.workers.slice() }); refresh(); })); content.appendChild(row);
     }
     tick = () => {

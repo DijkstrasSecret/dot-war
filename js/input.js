@@ -105,6 +105,12 @@ const Input = (() => {
       else Game.toast('Click one of your trenches');
       return;
     }
+    if (state.mode === 'link') {   // Kaan, 0.5a.3: click one of your Depots, or the HQ to clear the link
+      const b = selectedBuilding(), ent = entityAt(wx, wy);
+      if (b && ent instanceof Building && ent.owner === 1 && (ent.type === 'depot' || ent.type === 'hq')) { if (cmd({ kind: 'link', building: b.id, target: ent.id })) { Game.toast('Supply link: ' + ent.def.name); marker(ent.x, ent.y, '#3c3'); } setMode('normal'); }
+      else Game.toast('Click one of your Depots, or the HQ');
+      return;
+    }
     if (state.mode === 'smoke') {
       const n = cmd({ kind: 'smoke', units: ids(units), x: wx, y: wy, queue: q });
       if (!n) Game.toast('Smoke needs Mortar Crews and the Smoke Shells research'); marker(wx, wy, '#aaa'); if (!q) setMode('normal'); return;
@@ -202,6 +208,8 @@ const Input = (() => {
       cmd({ kind: 'move', units: ids(units), x: wx, y: wy, queue: q }); marker(wx, wy, '#3c3'); return;
     }
     const b = selectedBuilding();
+    // Kaan, 0.5a.3: with a gatherer or Depot selected, right click one of your Depots (or the HQ) to link it.
+    if (b && (b.def.harvest || b.type === 'depot') && ent instanceof Building && ent.owner === 1 && (ent.type === 'depot' || ent.type === 'hq') && ent !== b) { if (cmd({ kind: 'link', building: b.id, target: ent.id })) { Game.toast('Supply link: ' + ent.def.name); marker(ent.x, ent.y, '#3c3'); } return; }
     // A rally point on one of your squad members makes new units join that squadron (DD E).
     if (b && b.def.produces) { const sq = ent instanceof Unit && ent.owner === 1 && ent.squad ? ent.squad : 0; cmd({ kind: 'rally', building: b.id, x: wx, y: wy, squad: sq }); marker(wx, wy, sq ? '#e0bb45' : '#fff'); if (sq) Game.toast('New units will join squadron ' + sq); }
   }

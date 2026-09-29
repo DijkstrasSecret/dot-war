@@ -1,5 +1,7 @@
 'use strict';
 // Scripted commander: produces units, defends its base, sends periodic raids at the other side's HQ.
+// Kaan, 0.5a.3: its mines need carriers, so it keeps LOGISTICS.aiCarriers Workers on each (they never
+// fight or count towards the army cap); everything else is passive income.
 // Normally it commands player 2 on the mountain; the Balance Lab can hand it player 1 as well
 // (AI.reset([1, 2])) for AI-versus-AI matches. Strength comes from Data.DIFFICULTY[G.difficulty];
 // a side without an HQ (sandbox maps) is idle.
@@ -36,6 +38,20 @@ const AI = (() => {
     return choices[0];
   }
 
+  // Keep aiCarriers Workers on each finished mine: idle Workers are sent to the emptiest one, and the HQ
+  // trains more while there are too few.
+  function carriers(pid, hq) {
+    const want = Data.LOGISTICS.aiCarriers;
+    const mines = G.buildings.filter(b => b.owner === pid && !b.dead && b.built && b.type === 'mine'); if (!mines.length) return;
+    const workers = G.units.filter(u => u.owner === pid && !u.dead && u.def.labour);
+    for (const w of workers) {
+      if (w.work != null || w.order) continue;
+      const m = mines.filter(b => b.workers.length < want).sort((a, b) => a.workers.length - b.workers.length || a.id - b.id)[0];
+      if (m) Game.orderWork([w], m);
+    }
+    const queuedW = hq.queue.filter(q => q.type === 'worker').length;
+    if (workers.length + queuedW < mines.length * want && !queuedW) Game.enqueue(hq, 'worker');
+  }
   function update(dt) { for (const pid of Object.keys(sides)) updateSide(+pid, sides[pid], dt); }
   function updateSide(pid, st, dt) {
     const p = G.players[pid]; if (!p) return;
@@ -45,8 +61,9 @@ const AI = (() => {
     p.res.wood += 1.5 * inc; p.res.metal += 0.8 * inc; p.res.sulfur += 0.35 * inc;
     st.thinkT -= dt; if (st.thinkT > 0) return; st.thinkT = 1;
     unlockDue(p, D);
-    const mine = G.units.filter(u => u.owner === pid && !u.dead);
-    const queued = G.buildings.reduce((n, b) => n + (b.owner === pid ? b.queue.length : 0), 0);
+    carriers(pid, hq);
+    const mine = G.units.filter(u => u.owner === pid && !u.dead && !u.def.labour);   // the army: Workers only carry
+    const queued = G.buildings.reduce((n, b) => n + (b.owner === pid ? b.queue.filter(q => q.type !== 'worker').length : 0), 0);
     const cap = D.cap + Math.floor(G.time / 240) * D.capGrow;
     if (mine.length + queued < cap) {
       for (const b of G.buildings) {

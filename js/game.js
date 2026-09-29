@@ -407,7 +407,7 @@ const Game = (() => {
         const key = b.def.harvest === 'wood' ? 'wood' : b.depositType;
         // Kaan, 0.5a.2: output goes into the building's stock, and carriers take it to a drop-off. The
         // scripted AI keeps its direct income (DD Q23).
-        if (key && p.ai) p.res[key] += rate * dt;
+        if (key && p.ai && b.type !== 'mine') p.res[key] += rate * dt;   // Kaan, 0.5a.3: the AI's mines need carriers too
         else if (key) b.stock[key] = Math.min(Data.LOGISTICS.stockCap, (b.stock[key] || 0) + rate * dt);
       }
       if (b.def.trickle) for (const k in b.def.trickle) p.res[k] += b.def.trickle[k] * dt;   // DD G2: a Depot's oil trickle
@@ -839,11 +839,11 @@ const Game = (() => {
     }
   }
 
-  // ---- supply chains (Kaan, 0.5a.2) ----
-  // Gatherers send carriers to the nearest drop-off (a Depot or the HQ) by walking time. Each Depot's
-  // line runs to the HQ, or through another Depot when that is at most LOG.detour longer (a web). Enemy
-  // soldiers on a Depot's line cut it and every Depot beyond; goods left at a cut Depot count once it
-  // is clear again. Lines follow the flow fields, so they are the real fastest walking routes.
+  // ---- supply chains (Kaan, 0.5a.2, 0.5a.3) ----
+  // Every gatherer and Depot has a supply link the player picks: one of their Depots, or (unset) the
+  // HQ. Carriers walk the fastest route to it. Enemy soldiers on a Depot's line cut it and every Depot
+  // linked through it; goods left at a cut Depot count once it is clear again. Lines follow the flow
+  // fields, so they are the real fastest walking routes.
   const LOG = Data.LOGISTICS;
   const door = b => [b.x, b.y + b.h / 2 + 12];
   function walkTo(u, o, tx, ty, dt, spd) {
@@ -852,37 +852,38 @@ const Game = (() => {
     if (followField(u, dt, spd)) moveToward(u, tx, ty, dt, spd);
   }
   const dropField = b => { const d = door(b); return Path.getField(d[0], d[1], 'infantry', G.time); };
-  const costFrom = (f, b) => { if (!f) return Infinity; const d = door(b); return f.cost[Terrain.cellIdxAt(d[0], d[1])]; };
   function routeOf(f, b) {   // the flow field's path from b's door, a point every three cells
     if (!f) return null; const W = Terrain.W; const d = door(b); let k = Terrain.cellIdxAt(d[0], d[1]); const pts = [[b.x, b.y]];
     for (let n = 0; n < 4000 && k >= 0; n++) { if (n % 3 === 0) pts.push([Terrain.cx(k % W), Terrain.cy((k - k % W) / W)]); k = f.next[k]; }
     pts.push([f.tx, f.ty]); return pts;
   }
-  const chainPlayers = () => Object.values(G.players).filter(p => p.id !== 0 && !p.ai);
+  const chainPlayers = () => Object.values(G.players).filter(p => p.id !== 0);
+  const isDepot = (b, pid) => b && !b.dead && b.built && b.owner === pid && b.type === 'depot';
+  // Where b's link points now: its chosen Depot if that still stands, otherwise the HQ.
+  function linkTarget(b, hq) { const t = b.link != null ? G.buildingById.get(b.link) : null; return isDepot(t, b.owner) ? t : hq; }
+  // Would linking `from` to Depot `to` make a loop? Follow to's links back towards the HQ.
+  function makesLoop(from, to) { for (let t = to, n = 0; t && n < 64; n++) { if (t === from) return true; t = t.link != null ? G.buildingById.get(t.link) : null; } return false; }
+  function setLink(b, targetId, pid) {
+    if (!b || b.dead || b.owner !== pid || !(b.def.harvest || b.type === 'depot')) return false;
+    const t = targetId != null ? G.buildingById.get(targetId) : null;
+    if (!t || t.type === 'hq') { b.link = null; G.planT = 1e9; return true; }
+    if (!isDepot(t, pid) || t === b || (b.type === 'depot' && makesLoop(b, t))) { if (pid === 1) toast('That link would make a loop'); return false; }
+    b.link = t.id; G.planT = 1e9; return true;
+  }
   function planLogistics() {
     for (const p of chainPlayers()) {
       const hq = G.buildings.find(b => b.owner === p.id && b.type === 'hq' && !b.dead); if (!hq) continue;
-      const hqF = dropField(hq); hq.costHq = 0; hq.connected = true;
-      const depots = G.buildings.filter(b => b.owner === p.id && b.type === 'depot' && b.built && !b.dead);
-      for (const d of depots) d.c0 = costFrom(hqF, d);
-      depots.sort((a, b) => a.c0 - b.c0 || a.id - b.id);
-      for (const d of depots) {
-        let parent = hq, seg = d.c0;
-        for (const D of depots) {
-          if (D === d || !(D.c0 < d.c0) || !Number.isFinite(D.costHq)) continue;
-          const s = costFrom(dropField(D), d);
-          if (s + D.costHq <= d.c0 * (1 + LOG.detour) && s < seg) { parent = D; seg = s; }
-        }
-        d.parent = parent.id; d.costHq = parent === hq ? d.c0 : seg + parent.costHq; d.route = routeOf(dropField(parent), d);
-      }
-      for (const g of G.buildings) {
-        if (g.owner !== p.id || g.dead || !g.def.harvest) continue;
-        let best = null, bc = Infinity, bf = null;
-        for (const c of [hq, ...depots]) { const f = dropField(c), cst = costFrom(f, g); if (cst < bc) { bc = cst; best = c; bf = f; } }
-        g.drop = best ? best.id : null; g.route = best ? routeOf(bf, g) : null;
+      hq.connected = true;
+      for (const b of G.buildings) {
+        if (b.owner !== p.id || b.dead || !(b.def.harvest || isDepot(b, p.id))) continue;
+        const t = linkTarget(b, hq), f = dropField(t);
+        if (b.def.harvest) b.drop = t.id; else b.parent = t.id;
+        b.route = routeOf(f, b);
       }
     }
   }
+  // Depot depth along its links, so parents are checked before the Depots linked through them.
+  function depth(d) { let n = 0; for (let t = d; t && t.link != null && n < 64; n++) t = G.buildingById.get(t.link); return n; }
   function lineThreat(route, pid) {
     if (!route) return false; const r2 = LOG.cutRange;
     for (const e of G.units) {
@@ -896,7 +897,7 @@ const Game = (() => {
   }
   function checkCuts() {
     for (const p of chainPlayers()) {
-      const depots = G.buildings.filter(b => b.owner === p.id && b.type === 'depot' && b.built && !b.dead).sort((a, b) => a.costHq - b.costHq || a.id - b.id);
+      const depots = G.buildings.filter(b => isDepot(b, p.id)).sort((a, b) => depth(a) - depth(b) || a.id - b.id);
       for (const d of depots) {
         const par = G.buildingById.get(d.parent), was = d.connected;
         d.connected = !!par && !par.dead && (par.type === 'hq' || par.connected) && !lineThreat(d.route, p.id);
@@ -1276,6 +1277,7 @@ const Game = (() => {
       case 'build': return placeBuilding(c.type, pid, c.x, c.y);
       case 'rally': if (b) b.rally = { x: c.x, y: c.y, squad: c.squad || 0 }; return true;
       case 'upgrade': return !!b && upgradeTower(b);
+      case 'link': return setLink(b, c.target, pid);   // Kaan, 0.5a.3: a gatherer's or Depot's supply link (null: the HQ)
       case 'unload': return b ? unloadBuilding(b) : 0;
       case 'unloadOne': return unloadOne(b, entById(c.unit));
       case 'line': return planDig(pid, c.type, c.points, us, q);
@@ -1320,7 +1322,7 @@ const Game = (() => {
     canAfford, researchState, startResearch, statsFor, prodTime,
     spawnUnit, addBuilding, canPlace, placeBuilding,
     orderMove, orderAttack, orderBombard, orderStop, orderHold, orderWork, orderRetreat, orderGarrison,
-    researchLock, slotOf, owns, supplyCap, supplyUsed, costOf, maxWorkers, detected, raidLaunched, smokeBlocks,
+    setLink, researchLock, slotOf, owns, supplyCap, supplyUsed, costOf, maxWorkers, detected, raidLaunched, smokeBlocks,
     canEnter, unloadBuilding, upgradeTower, slotCount, hasTech, canThrow, lineAt, segNear, orderDig, orderGrenade,
     enqueue, cancelQueue, harvestRate, activeWorkers, effRange,
     squadCentre, membersOf, setSquad,
