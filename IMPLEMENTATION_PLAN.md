@@ -250,7 +250,7 @@ Built in two parts (Kaan): **0.5a** tech tree, buildings and supply (done); **0.
 - [x] Army overview tab (O): units by type, idle / working / in Trucks / inside / busy; click to select.
 - [x] Under-attack alerts: minimap ping, toast, J jumps there.
 - [x] Repeat production: right click a unit in a factory's list to train it on repeat.
-- [ ] Meta snapshot re-run and compared with the baseline.
+- [x] Meta snapshot re-run and compared with the baseline (`BALANCE_BASELINE.md`, "Patch 0.5c").
 
 ## Patch 0.5d: A smarter enemy (Kaan, 30 Sept)
 
