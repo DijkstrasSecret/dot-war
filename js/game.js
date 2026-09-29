@@ -572,7 +572,7 @@ const Game = (() => {
     const tx = e.x + Math.cos(ang) * off, ty = e.y + Math.sin(ang) * off;
     G.projectiles.push(new Projectile({ kind: 'bullet', x: u.x, y: u.y, tx, ty, dur: Math.max(0.03, d / w.pspeed), dmg, target: hit ? e : null, shooter: u, owner: u.owner }));
     if (e instanceof Unit) {   // every shot at a unit stresses it, hit or miss
-      const was = e.suppressed; addStress(e, w.suppress); e.lastHitBy = u; alertUnit(e);
+      const was = e.suppressed; addStress(e, w.suppress); e.lastHitBy = u; alertUnit(e); returnFire(e, u);
       if (!was && e.suppressed) suppressXp(u, e);
       for (const o of G.units) if (o !== e && !o.dead && !o.inside && o.owner === e.owner && dist(o.x, o.y, e.x, e.y) < 30) addStress(o, w.suppress * 0.2);
     }
@@ -597,7 +597,7 @@ const Game = (() => {
       if (Terrain.ridgeCover(x, y, e.x, e.y)) m *= 0.35;
       if (Terrain.coverAt(e.x, e.y) < 1) m *= 0.85;
       const ls = lineAt(e.x, e.y); if (ls && LINES[ls.type].blast) m *= LINES[ls.type].blast;   // Kaan, 0.4.1: a trench halves blast damage
-      const was = e.suppressed; addStress(e, 0.3 * (1 - d / splash) + 0.1); e.lastHitBy = shooter; alertUnit(e);
+      const was = e.suppressed; addStress(e, 0.3 * (1 - d / splash) + 0.1); e.lastHitBy = shooter; alertUnit(e); returnFire(e, shooter);
       if (!was && e.suppressed && shooter && e.owner !== shooter.owner) suppressXp(shooter, e);
       applyDamage(e, dmg * m, shooter);
     }
@@ -613,6 +613,18 @@ const Game = (() => {
     }
     // DD I: explosives deal full damage to barricades and wire; trenches cannot be destroyed.
     for (const sg of G.segs) { if (!sg.done || !sg.maxHp) continue; const d = segDist(sg, x, y); if (d <= splash) damageSeg(sg, dmg * (0.5 + 0.5 * (1 - d / splash))); }
+  }
+  // Kaan, 0.5b.2: an idle soldier (no order, not on Defend) shot by an enemy he can't reach attack-moves
+  // towards the shooter, so Snipers and Mortars can't pick off a standing group for free. The whole
+  // squadron (or the idle loose soldiers within 60 m) goes with him.
+  function returnFire(e, by) {
+    if (!(by instanceof Unit) || by.dead || by.owner === e.owner || e.dead || e.inside || e.order || e.flee > 0 || !e.stats.weapon || e.work != null) return;
+    if (G.time - (e.returnT || -99) < Data.RETURN_FIRE.every || inRange(e, by)) return;
+    const idle = m => !m.order && !m.inside && !m.dead && m.stats.weapon && m.work == null && m.flee <= 0;
+    const group = e.squad && G.squads[e.squad] ? membersOf(G.squads[e.squad]).filter(idle)
+      : G.units.filter(m => m.owner === e.owner && !m.squad && idle(m) && dist(m.x, m.y, e.x, e.y) <= Data.RETURN_FIRE.join);   // loose soldiers standing together go together
+    for (const m of group) m.returnT = G.time;
+    orderMove(group, by.x, by.y, 'attackmove');
   }
   function applyDamage(e, dmg, by) {
     if (e.dead || dmg <= 0) return;

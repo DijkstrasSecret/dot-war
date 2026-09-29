@@ -1127,7 +1127,7 @@ Built in 0.5b (notes for Kaan):
 
 | Topic | Decision |
 | --- | --- |
-| Sniper range abuse | Soldiers not on Defend who are shot by an enemy they can't reach **return fire**: they attack-move towards the shooter (the AI's soldiers too). Sniper stats stay. (Lab: 2 Snipers at 280 m killed 5–6 idle Riflemen in a minute unharmed; 4 Snipers v 6 Riflemen up close win only 5%.) |
+| Sniper range abuse (built in 0.5b.2; idle loose soldiers within 60 m join) | Soldiers not on Defend who are shot by an enemy they can't reach **return fire**: they attack-move towards the shooter (the AI's soldiers too). Sniper stats stay. (Lab: 2 Snipers at 280 m killed 5–6 idle Riflemen in a minute unharmed; 4 Snipers v 6 Riflemen up close win only 5%.) |
 | Shooting needs sight (0.6) | Direct fire (Rifles, MGs, Snipers) may only target what the shooter's side can see, day and night. |
 | Weather mix (0.6) | Clear 40%, rain 25%, fog 20%, snow 15%, from the match seed. |
 | Searchlights (0.6) | The cone sweeps slowly over 120° towards the enemy side; can be switched off. |

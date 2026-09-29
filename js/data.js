@@ -276,6 +276,8 @@ const Data = {
     movingAcc: 0.35,                                    // accuracy multiplier when firing on the move
   },
   // DD I: every bonus and penalty multiplies, then these caps apply (Util.stack).
+  // Kaan, 0.5b.2: idle soldiers shot from beyond their reach attack-move at the shooter (at most every `every` s).
+  RETURN_FIRE: { every: 5, join: 60 },
   CAPS: { hit: { max: 0.95 }, stressTaken: { min: 0.25 }, speed: { min: 0.2 }, vision: { min: 0.35 } },
   // Supply chains (Kaan, 0.5a.2, 0.5a.3): gatherers fill their own stock; assigned people carry loads
   // along the building's supply link (a Depot the player picked, or the HQ). Depots link to the HQ or

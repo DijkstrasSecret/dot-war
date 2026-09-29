@@ -420,8 +420,7 @@ comparison.
 
 To do, in order:
 1. Done in 0.5b.2: Trucks at gatherers (HQ refuels, Trucks carry first, tank 120).
-2. Sniper fix: return fire (agreed, see "Agreed for the next patches" in `DESIGN_DECISIONS.md`).
-3. Merge branch `patch-0.5b.2` (carriers keep their load when the camp dies) with the fixes above.
+2. Done in 0.5b.2: return fire against Snipers; carriers keep their load.
 4. Patch 0.6: weather and night, with the answers already agreed (sight rule, weather mix, searchlights).
 
 

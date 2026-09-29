@@ -172,6 +172,10 @@ least x0.35 (`Util.stack`).
   45 explosive damage, splash 18, 1 sulfur each (paid on the throw), 20 s cooldown,
   friendly fire on. A grenade on a Bunker hurts the Bunker and reaches
   everyone inside for 30% damage and full stress.
+- **Return fire** (patch 0.5b.2): an idle soldier (no order, not on Defend, not working) shot by an
+  enemy he can't reach attack-moves towards the shooter, and so do his squadron's idle members, or the
+  idle loose soldiers within 60 m. So Snipers and Mortars can't pick off a standing group for free;
+  soldiers on Defend keep their ground.
 - **Moving fire.** On a plain move units shoot while walking at x0.35 accuracy; Machine Gunners
   cannot fire while moving. On attack-move units stop to shoot. Defend holds position.
 - **Retreat** moves the group 180 units towards its HQ with no suppression slowdown, and stress

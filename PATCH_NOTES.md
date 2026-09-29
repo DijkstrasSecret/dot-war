@@ -10,6 +10,10 @@ each change live in `DESIGN_DECISIONS.md`.
 - **Trucks at camps and mines are worth it now:** the HQ refuels Trucks too (not only Depots), the
   fuel tank is twice as big, and while a Truck waits at a building the Workers leave the stock to it.
   On a far mine, 3 Workers and a Truck deliver about 45% more than 4 Workers.
+- **Snipers can't pick off idle soldiers for free:** soldiers standing around with no orders who
+  are shot from beyond their reach now go after the shooter together (your soldiers and the enemy's).
+  Two Snipers used to kill six idle Riflemen from 280 m unharmed; now the Riflemen charge and win.
+  Soldiers on Defend (R) still hold their ground.
 - **Carriers keep their load:** if a camp or mine is destroyed while a Worker is carrying from it, he
   still delivers what he holds (to the HQ if his Depot is gone too).
 
