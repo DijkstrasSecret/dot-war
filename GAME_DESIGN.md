@@ -159,11 +159,12 @@ are gathered from patch 0.5a and spent from 0.5b (trucks and fuel).
 
 | Who | Starting stock |
 | --- | --- |
-| Player | 400 wood, 60 metal, and 6 Riflemen and 4 Workers |
+| Player | 400 wood, 20 metal, and 6 Riflemen and 4 Workers |
 | Enemy commander | 3000 wood, 1500 metal, 600 sulfur, plus passive income |
 
-Harvest buildings produce `rate + labour * perWorker` per game second, times the player's harvest
-multiplier (Logistics research gives 1.25). Labour counts 1 for each Worker and 0.5 for each soldier
+Harvest buildings produce `(rate + labour * perWorker) x 0.7` per game second (the 0.7 is the game's
+pace, `Data.ECONOMY.pace`, set in patch 0.5a.1 to slow the game), times the player's harvest
+multiplier (Logistics research gives 1.25). The table below lists the rates before the pace. Labour counts 1 for each Worker and 0.5 for each soldier
 assigned with E, and only while standing within 70 units of their camp; they do not animate or
 carry anything yet. A camp has four slots whoever fills them. Workers cannot garrison towers. A Lumber Camp needs forest within 70 units; a Mine sits on a metal or sulfur deposit,
 one mine per deposit.
@@ -188,7 +189,7 @@ one mine per deposit.
 The cap is 30, plus 10 per finished Depot (15 with Supply Organisation), with no maximum; the top
 bar shows used/cap. The scripted AI keeps its own unit cap instead.
 
-A Lumber Camp with four Workers yields 3.4 wood/s; a Mine with four Workers 1.9 metal or sulfur/s.
+With the pace, a Lumber Camp with four Workers yields 2.4 wood/s; a Mine with four Workers 1.3 metal or sulfur/s.
 Production cost is paid when queued and refunded on cancel; new units walk to the building's
 rally point.
 
@@ -285,7 +286,7 @@ The AI holds the plateau, trains from its factories with unit weights rifle 5, H
 mortar 1 (never Workers), keeps a garrison home, and sends raids downhill at the player's HQ once it
 has enough units (at least 6, or 70% of its cap). It may train Machine Gunners, Snipers and Mortar
 Crews only after their unlock time. It has passive income instead of workers: 1.5 wood, 0.8 metal
-and 0.35 sulfur per second times the difficulty income factor. Raiders that lose their target walk
+and 0.35 sulfur per second times the difficulty income factor and the game's pace (0.7). Raiders that lose their target walk
 home. Raids escalate: each sends 10% more of the army than the last (up to 90%), and once the AI's
 army is twice the enemy soldiers it has seen in the last two minutes (at least 3), it sends
 everyone. The AI does not build, research, expand, dig, throw grenades, train Medics or use towers.

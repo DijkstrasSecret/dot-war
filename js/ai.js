@@ -41,7 +41,8 @@ const AI = (() => {
     const p = G.players[pid]; if (!p) return;
     const D = params();
     const hq = hqOf(pid); if (!hq) return;
-    p.res.wood += 1.5 * D.income * dt; p.res.metal += 0.8 * D.income * dt; p.res.sulfur += 0.35 * D.income * dt;
+    const inc = D.income * Data.ECONOMY.pace * dt;   // the AI's passive income follows the same pace as harvesting
+    p.res.wood += 1.5 * inc; p.res.metal += 0.8 * inc; p.res.sulfur += 0.35 * inc;
     st.thinkT -= dt; if (st.thinkT > 0) return; st.thinkT = 1;
     unlockDue(p, D);
     const mine = G.units.filter(u => u.owner === pid && !u.dead);

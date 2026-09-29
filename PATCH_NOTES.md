@@ -5,6 +5,13 @@ each change live in `DESIGN_DECISIONS.md`.
 
 ---
 
+## 0.5a.1: A slower game (29 September 2026)
+
+- Every camp, mine, tapper and refinery gathers 30% slower, and so does the enemy commander's income.
+- You start with 20 metal instead of 60.
+- The first Tier II research is now affordable after about 1.5 minutes instead of under 1. The
+  Balance Lab target for it moved to 1–3 minutes.
+
 ## 0.5a: Tech tree, new buildings and supply (29 September 2026)
 
 **Tech tree.** Research now has five branches with three tiers: Infantry doctrine, Fire support,
