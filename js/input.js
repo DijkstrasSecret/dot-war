@@ -74,12 +74,15 @@ const Input = (() => {
     if (m === 'build' && Data.LINES[buildType]) { m = 'line'; }   // line tools share the build menu and keys
     state.mode = m; state.buildType = m === 'build' ? buildType : null; state.lineType = m === 'line' ? buildType : null; state.linePts = null; UI.refresh();
   }
+  // After placing something or pressing Esc, go back to the Selection tab when something is selected,
+  // so the letters are unit orders again (build keys work only while the Build tab is open).
+  function leaveBuild(always) { if (UI.tab === 'build' && (always || G.selection.length)) UI.showTab('sel'); }
   // A clicked point on one of your own line segments (null if none).
   const ownSegAt = (wx, wy, doneOnly) => { const s = Game.segNear(wx, wy, doneOnly); return s && s.owner === 1 ? s : null; };
   function finishDraw(q) {
     const pts = state.linePts; state.linePts = null; if (!pts || pts.length < 2) return;
     const n = cmd({ kind: 'line', type: state.lineType, points: pts.map(p => [Math.round(p[0]), Math.round(p[1])]), units: ids(selectedUnits()), queue: q });
-    if (n) { Game.toast(n + ' digging the ' + Data.LINES[state.lineType].name.toLowerCase()); if (!q) setMode('normal'); }
+    if (n) { Game.toast(n + ' digging the ' + Data.LINES[state.lineType].name.toLowerCase()); if (!q) { setMode('normal'); leaveBuild(); } }
   }
   // Garrisonable: towers, Bunkers and the HQ (DD 9: right click or E on them garrisons).
   const canHold = ent => ent instanceof Building && ent.owner === 1 && ent.slots && ent.built;
@@ -128,7 +131,7 @@ const Input = (() => {
     }
     if (state.mode === 'build') {
       const b = cmd({ kind: 'build', type: state.buildType, x: wx, y: wy });
-      if (b && !q) setMode('normal'); else UI.refresh();
+      if (b && !q) { setMode('normal'); leaveBuild(); } else UI.refresh();
       return;
     }
     if (state.mode === 'walk') { cmd({ kind: 'move', units: ids(units), x: wx, y: wy, queue: q }); marker(wx, wy, '#3c3'); if (!q) setMode('normal'); return; }
@@ -181,7 +184,7 @@ const Input = (() => {
       const now = performance.now();
       if (ent instanceof Unit && ent.owner === 1 && now - lastClickT < 350 && lastClickType === ent.type) {
         const [x0, y0] = Render.toWorld(0, 0), [x1, y1] = Render.toWorld(Render.w, Render.h);
-        select(G.units.filter(u => !u.dead && u.owner === 1 && u.type === ent.type && u.x >= x0 && u.x <= x1 && u.y >= y0 && u.y <= y1), add);
+        select(G.units.filter(u => !u.dead && !u.inside && u.owner === 1 && u.type === ent.type && u.x >= x0 && u.x <= x1 && u.y >= y0 && u.y <= y1), add);
       } else if (ent) {
         if (add && ent.owner === 1 && ent instanceof Unit && G.selection.includes(ent)) { G.selection = G.selection.filter(s => s !== ent); UI.refresh(); }
         else select([ent], add);
@@ -232,7 +235,7 @@ const Input = (() => {
     if (k === ' ') { e.preventDefault(); Game.togglePause(); UI.refreshSpeed(); return; }
     if (k === ',') { Game.setSpeed(G.speed <= 1 ? 0 : G.speed === 2 ? 1 : 2); UI.refreshSpeed(); return; }
     if (k === '.') { Game.setSpeed(G.speed === 0 ? 1 : G.speed === 1 ? 2 : 4); UI.refreshSpeed(); return; }
-    if (k === 'escape') { if (state.mode !== 'normal') setMode('normal'); else select([], false); return; }
+    if (k === 'escape') { if (state.mode !== 'normal') { setMode('normal'); leaveBuild(); } else if (UI.tab === 'build') leaveBuild(true); else select([], false); return; }
     if (k.startsWith('arrow')) { state.keys.add(k); return; }
     if (PAN_KEYS[k] && !e.ctrlKey && !e.metaKey) { state.keys.add(PAN_KEYS[k]); return; }
     if (UI.tab === 'build' && BUILD_KEYS[k] && !e.ctrlKey) { setMode('build', BUILD_KEYS[k]); return; }   // Kaan, 0.5a: B first, then the letter
@@ -269,11 +272,13 @@ const Input = (() => {
     }
     if ((e.ctrlKey || e.metaKey) && k === 'a') {
       e.preventDefault(); const [x0, y0] = Render.toWorld(0, 0), [x1, y1] = Render.toWorld(Render.w, Render.h);
-      select(G.units.filter(u => !u.dead && u.owner === 1 && u.work == null && u.x >= x0 && u.x <= x1 && u.y >= y0 && u.y <= y1), false); return;
+      select(G.units.filter(u => !u.dead && !u.inside && u.owner === 1 && u.work == null && u.x >= x0 && u.x <= x1 && u.y >= y0 && u.y <= y1), false); return;
     }
-    if (k >= '1' && k <= '9') {
-      if (e.ctrlKey || e.metaKey) { e.preventDefault(); setSquad(+k, units); }
-      else selectSquad(+k, e.shiftKey);
+    const dg = /^Digit([1-9])$/.exec(e.code || '');   // the key's position, so Shift+2 and AZERTY keyboards work
+    if (dg) {
+      const n = +dg[1];
+      if (e.ctrlKey || e.metaKey) { e.preventDefault(); setSquad(n, units); }
+      else selectSquad(n, e.shiftKey);
     }
   }
 

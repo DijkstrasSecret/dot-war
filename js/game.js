@@ -158,7 +158,7 @@ const Game = (() => {
   function addBuilding(type, owner, x, y, built) {
     const b = new Building(type, owner, x, y, built);
     const hm = G.players[owner].bhp[type] || 1; if (hm !== 1) { b.maxHp *= hm; b.hp *= hm; }   // Reinforced Concrete
-    if (b.def.harvest === 'deposit') { const d = Terrain.depositNear(x, y, 60); b.depositType = d ? d.type : null; }
+    if (b.def.harvest === 'deposit') { const d = Terrain.depositNear(x, y, 50); b.depositType = d ? d.type : null; }   // same reach as canPlace
     G.buildings.push(b); G.buildingById.set(b.id, b); Terrain.setBlocked(x, y, b.w, b.h, true); Path.invalidate(); G.planT = 1e9;
     return b;
   }
@@ -384,9 +384,9 @@ const Game = (() => {
     if (!p.unlocked.has(type) || b.queue.length >= 8) return false;
     if (!p.noSupply && supplyUsed(b.owner) + (bp.supply || 1) > supplyCap(b.owner)) { if (b.owner === 1) toast('Not enough supply: build a Depot'); return false; }
     if (!canAfford(p, bp.cost)) { if (b.owner === 1) toast('Not enough resources'); return false; }
-    pay(p, bp.cost); b.queue.push({ type, t: 0, total: prodTime(b, type) }); return true;
+    pay(p, bp.cost); b.queue.push({ type, t: 0, total: prodTime(b, type), cost: { ...bp.cost } }); return true;   // the price paid, for a fair refund
   }
-  function cancelQueue(b, i) { const q = b.queue[i]; if (!q) return; pay(G.players[b.owner], G.players[b.owner].blueprints[q.type].cost, -1); b.queue.splice(i, 1); }
+  function cancelQueue(b, i) { const q = b.queue[i]; if (!q) return; pay(G.players[b.owner], q.cost || G.players[b.owner].blueprints[q.type].cost, -1); b.queue.splice(i, 1); }   // refunds what was paid, not today's price
   function spawnFrom(b, type) {
     const cls = Data.MOVE_CLASSES[Data.UNITS[type].cls];
     let x = b.x + (R() - 0.5) * b.w * 0.6, y = b.y + b.h / 2 + 10;
@@ -705,7 +705,9 @@ const Game = (() => {
   // Barricades and wire make routes through them dearer, so units path around when they can.
   function applyRoute(sg, on) {
     const T = LINES[sg.type];
-    if (sg.type === 'barricade') for (const k of sg.route) Terrain.setBlockVeh(k, on);   // DD B: barricades block vehicles
+    // DD B: barricades block vehicles. Neighbouring segments share end cells, so removing one keeps a
+    // cell blocked while another standing barricade still covers it.
+    if (sg.type === 'barricade') for (const k of sg.route) Terrain.setBlockVeh(k, on || (G.segGrid.get(k) || []).some(o => o !== sg && o.done && !o.dead && o.type === 'barricade' && o.route.includes(k)));
     if (T.slowOwn >= 1) return false;
     for (const k of sg.route) {
       let m = 1;
@@ -1178,7 +1180,7 @@ const Game = (() => {
     const retreating = !!(u.order && u.order.retreat);
     u.cooldown -= dt; u.nadeT -= dt; u.stress = Math.max(0, u.stress - stressDecay(u) * (retreating ? C.retreatDecayMult : 1) * dt);   // DD Q9, Q10, E, H1
     if (u.stress > VET.xp.underFireStress) { u.fireT += dt; if (u.fireT >= VET.xp.underFireEvery) { u.fireT -= VET.xp.underFireEvery; addXp(u, 1); } }
-    if (u.work != null && u.order && u.order.type === 'haul') { u.workT += dt; if (u.workT >= VET.xp.workEvery) { u.workT -= VET.xp.workEvery; addXp(u, 1); } }
+    if (u.work != null && u.def.labour && u.order && u.order.type === 'haul') { u.workT += dt; if (u.workT >= VET.xp.workEvery) { u.workT -= VET.xp.workEvery; addXp(u, 1); } }   // DD H1: work XP is for Workers
     if (u.hp < u.stats.hp * 0.5 && !u.inside && !u.cargo) {   // wounded units leave blood behind (visual only)
       u.bleedT -= dt;
       if (u.bleedT <= 0) { u.bleedT = 0.6 + V() * 1.4; addDecal({ kind: 'blood', x: u.x + (V() - 0.5) * 6, y: u.y + (V() - 0.5) * 6, r: 1.1 + V() * 1.2, life: 25 }); }
@@ -1391,7 +1393,8 @@ const Game = (() => {
     G.orders.push(Object.assign({ tick: G.tick }, c));
     const picked = (c.units || []).map(entById).filter(u => u instanceof Unit && !u.dead);
     const us = c.kind === 'squadSet' ? picked : expandSquads(picked);
-    const b = c.building != null ? entById(c.building) : null, q = !!c.queue, pid = c.player || 1;
+    const pid = c.player || 1, b0 = c.building != null ? entById(c.building) : null, q = !!c.queue;
+    const b = b0 && b0.owner === pid ? b0 : null;   // only your own buildings (and Trucks) take commands
     switch (c.kind) {
       case 'move': orderMove(us, c.x, c.y, c.mode || 'move', q, false, { facing: c.facing, width: c.width }); return true;
       case 'squadSet': return setSquad(c.squad, us);
@@ -1404,7 +1407,7 @@ const Game = (() => {
       case 'retreat': orderRetreat(us, q); return true;
       case 'work': return b ? orderWork(us, b, q) : 0;
       case 'garrison': return b ? orderGarrison(us, b, q) : 0;
-      case 'enqueue': return !!b && enqueue(b, c.type);
+      case 'enqueue': return !!b && b instanceof Building && b.built && !!b.def.produces && b.def.produces.includes(c.type) && enqueue(b, c.type);
       case 'cancel': if (b) cancelQueue(b, c.index); return true;
       case 'research': return startResearch(pid, c.research);
       case 'build': return placeBuilding(c.type, pid, c.x, c.y);

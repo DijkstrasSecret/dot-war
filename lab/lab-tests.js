@@ -29,6 +29,7 @@ const LabTests = (() => {
   // squadA / squadB: that side fights as one squadron (DD E: cohesion, shared targets, halting on contact).
   function duel({ typeA, nA, typeB, nB, ground = 'flat', seed = 1, maxTime = 180, keepAliveB = false, squadA = false, squadB = false }) {
     Game.init(seed); G.difficulty = 'normal';
+    for (const pid of [1, 2]) G.players[pid].res.sulfur = 1000;   // same ammunition both sides (side A once had none, so its mortars never fired)
     buildArena(ground);
     const place = (type, owner, n, x) => {
       const out = [];
@@ -212,22 +213,28 @@ const LabTests = (() => {
   }
   // How hard the enemy commander pushes an idle player: the player's starting army stays home and
   // fights only what comes to it. Logs every minute; stops when the player's HQ falls.
-  function aiPressure({ seed = 1, difficulty = 'normal', minutes = 30 } = {}) {
+  // Runs in slices like aiMatch: call step(n) until it returns the result.
+  function aiPressureRun({ seed = 1, difficulty = 'normal', minutes = 30 } = {}) {
     Sim.newMatch({ map: 'highland', difficulty, seed });
-    const hq = G.buildings.find(b => b.owner === 1 && b.type === 'hq'); const log = []; let firstContact = null, raids = 0;
+    const hq = G.buildings.find(b => b.owner === 1 && b.type === 'hq'); const log = []; let firstContact = null, t = 0;
     const ticks = Math.round(minutes * 60 / STEP);
-    for (let t = 0; t <= ticks && !G.over; t++) {
-      if (firstContact == null && G.units.some(u => u.owner === 2 && !u.dead && Util.dist(u.x, u.y, hq.x, hq.y) < 500)) firstContact = G.time / 60;
-      if (t % 1800 === 0) log.push({ min: G.time / 60, aiArmy: G.units.filter(u => u.owner === 2 && !u.dead && !u.def.labour).length, playerUnits: G.units.filter(u => u.owner === 1 && !u.dead).length, hqHp: hq.dead ? 0 : Math.round(hq.hp), kills: G.stats[1].kills, lost: G.stats[1].lost });
-      if (t < ticks) Game.update(STEP);
-    }
-    raids = AI.sides[2] ? AI.sides[2].raids : 0;
-    return { seed, difficulty, firstContactMin: firstContact, hqFellMin: G.over && G.winner === 2 ? G.time / 60 : null, raids, log };
+    return {
+      step(n) {
+        for (let i = 0; i < n; i++, t++) {
+          if (firstContact == null && G.units.some(u => u.owner === 2 && !u.dead && Util.dist(u.x, u.y, hq.x, hq.y) < 500)) firstContact = G.time / 60;
+          if (t % 1800 === 0) log.push({ min: G.time / 60, aiArmy: G.units.filter(u => u.owner === 2 && !u.dead && !u.def.labour).length, playerUnits: G.units.filter(u => u.owner === 1 && !u.dead).length, hqHp: hq.dead ? 0 : Math.round(hq.hp), kills: G.stats[1].kills, lost: G.stats[1].lost });
+          if (t >= ticks || G.over) return { seed, difficulty, firstContactMin: firstContact, hqFellMin: G.over && G.winner === 2 ? G.time / 60 : null, raids: AI.sides[2] ? AI.sides[2].raids : 0, log };
+          Game.update(STEP);
+        }
+        return null;
+      },
+    };
   }
+  function aiPressure(opts) { const r = aiPressureRun(opts); let res = null; while (!(res = r.step(3000))); return res; }
   function metaSnapshot({ runs = 30 } = {}) {
     return { build: 'see PATCH_NOTES.md', duels: metaDuels(runs), terrain: metaTerrain(Math.max(runs, 50)), forts: metaForts(runs), economy: metaEconomy(),
       ai: ['easy', 'normal', 'hard'].map(d => aiPressure({ seed: 1, difficulty: d, minutes: 30 })) };
   }
 
-  return { buildArena, duel, duels, fort, forts, economy, aiMatch, metaDuels, metaTerrain, metaForts, metaEconomy, aiPressure, metaSnapshot };
+  return { buildArena, duel, duels, fort, forts, economy, aiMatch, metaDuels, metaTerrain, metaForts, metaEconomy, aiPressure, aiPressureRun, metaSnapshot };
 })();

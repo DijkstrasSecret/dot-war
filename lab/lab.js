@@ -138,7 +138,9 @@
     await tick();
     head(['Enemy pressure on a player who stays home', 'First contact', 'HQ fell', 'Raids by 30 min', 'AI army at 30 min']);
     for (const d of ['easy', 'normal', 'hard']) {
-      const r = LabTests.aiPressure({ seed: 1, difficulty: d, minutes: 30 }), bd = base && base.ai.find(x => x.difficulty === d), last = r.log[r.log.length - 1], bl = bd && bd.log[bd.log.length - 1];
+      const run = LabTests.aiPressureRun({ seed: 1, difficulty: d, minutes: 30 }); let r = null;
+      while (!(r = run.step(900))) await pause();
+      const bd = base && base.ai.find(x => x.difficulty === d), last = r.log[r.log.length - 1], bl = bd && bd.log[bd.log.length - 1];
       row([d, delta(r.firstContactMin, bd && bd.firstContactMin, 1, ' min'), r.hqFellMin == null ? 'no' + (bd ? ' <span class="pending">(base ' + (bd.hqFellMin == null ? 'no' : fmt(bd.hqFellMin) + ' min') + ')</span>' : '') : fmt(r.hqFellMin) + ' min', delta(r.raids, bd && bd.raids, 0), delta(last.aiArmy, bl && bl.aiArmy, 0)]);
       await tick();
     }
@@ -165,5 +167,8 @@
     results.aiMatchLength = decided.length ? decided.reduce((s, r) => s + r.minutes, 0) / decided.length : null; drawTargets();
   };
 
+  // Only one test at a time: they share the one simulation state, so a second run would corrupt the first.
+  const buttons = ['runDuel', 'runGates', 'runFort', 'runEco', 'runMeta', 'runAi'].map($).filter(Boolean);
+  for (const b of buttons) { const fn = b.onclick; b.onclick = async () => { if (buttons.some(x => x.disabled)) return; buttons.forEach(x => { x.disabled = true; }); try { await fn(); } finally { buttons.forEach(x => { x.disabled = false; }); } }; }
   drawTargets();
 })();
