@@ -7,6 +7,7 @@ const Render = (() => {
   let canvas, ctx, mini, mctx, miniTerrain = null, miniT = 0;
   const cam = { x: 0, y: 0, zoom: 1.4 };
   let w = 0, h = 0;
+  let spectator = false;   // Fight Theatre: draw both sides fully, no fog
 
   function init() {
     canvas = document.getElementById('game'); ctx = canvas.getContext('2d');
@@ -28,8 +29,8 @@ const Render = (() => {
     cam.x = wx - sx / cam.zoom; cam.y = wy - sy / cam.zoom; clampCam();
   }
 
-  function unitVisible(u) { return !u.inside && (u.owner === 1 || (Fog.visible(1, u.x, u.y) && Game.detected(u, 1))); }   // camouflaged infantry in forest stay hidden unless spotted up close
-  function buildingVisible(b) { return b.owner === 1 || b.seen || Fog.visible(1, b.x, b.y); }
+  function unitVisible(u) { return !u.inside && (spectator || u.owner === 1 || (Fog.visible(1, u.x, u.y) && Game.detected(u, 1))); }   // camouflaged infantry in forest stay hidden unless spotted up close
+  function buildingVisible(b) { return spectator || b.owner === 1 || b.seen || Fog.visible(1, b.x, b.y); }
 
   function drawUnit(u, selected) {
     const col = Data.PLAYER_COLORS[u.owner]; const s = u.size;
@@ -247,7 +248,7 @@ const Render = (() => {
     const sel = new Set(G.selection);
     drawDecals();
     drawSupplyLines();
-    for (const sg of G.segs) if (sg.owner === 1 || sg.seen) drawSeg(sg);
+    for (const sg of G.segs) if (sg.owner === 1 || sg.seen || spectator) drawSeg(sg);
     for (const b of G.buildings) if (!b.dead && buildingVisible(b)) drawBuilding(b, sel.has(b));
     for (const b of G.buildings) if (!b.dead && b.rally && sel.has(b)) { ctx.strokeStyle = '#fff'; ctx.lineWidth = 1; ctx.setLineDash([3, 3]); ctx.beginPath(); ctx.moveTo(b.x, b.y); ctx.lineTo(b.rally.x, b.rally.y); ctx.stroke(); ctx.setLineDash([]); ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(b.rally.x, b.rally.y, 3, 0, Math.PI * 2); ctx.fill(); }
     for (const e of G.selection) if (!e.dead && (e instanceof Unit ? unitVisible(e) : buildingVisible(e))) drawSelectionRing(e);
@@ -256,10 +257,10 @@ const Render = (() => {
       if (t && !t.dead && t.hp < t.stats.hp && u.owner === 1 && dist(u.x, u.y, t.x, t.y) <= u.def.heal.range) { ctx.strokeStyle = 'rgba(90,214,90,0.7)'; ctx.lineWidth = 1.2; ctx.setLineDash([2, 2]); ctx.beginPath(); ctx.moveTo(u.x, u.y); ctx.lineTo(t.x, t.y); ctx.stroke(); ctx.setLineDash([]); }
       drawUnit(u, sel.has(u));
     }
-    for (const p of G.projectiles) if (Fog.visible(1, p.x + (p.tx - p.x) * p.t / p.dur, p.y + (p.ty - p.y) * p.t / p.dur)) drawProjectile(p);
+    for (const p of G.projectiles) if (spectator || Fog.visible(1, p.x + (p.tx - p.x) * p.t / p.dur, p.y + (p.ty - p.y) * p.t / p.dur)) drawProjectile(p);
     for (const e of G.effects) drawEffect(e);
     // Signals: fading markers where enemies were last seen (0.5a); smoke clouds on top of everything below.
-    const ls = G.lastSeen && G.lastSeen[1];
+    const ls = !spectator && G.lastSeen && G.lastSeen[1];
     if (ls) for (const r of ls.values()) {
       if (G.time - r.t < 0.6) continue;   // still in view
       ctx.globalAlpha = 0.55 * (1 - (G.time - r.t) / 30); ctx.strokeStyle = Data.PLAYER_COLORS[r.owner]; ctx.lineWidth = 1.2; ctx.setLineDash([2, 2]);
@@ -271,7 +272,7 @@ const Render = (() => {
       for (let i = 0; i < 7; i++) { const ang = i * 0.9 + c.t * 0.15, rr = c.r * (i ? 0.55 : 0); ctx.globalAlpha = 0.5 * a; ctx.fillStyle = i % 2 ? '#c9c9c4' : '#b5b5ae'; ctx.beginPath(); ctx.arc(c.x + Math.cos(ang) * rr, c.y + Math.sin(ang) * rr, c.r * (i ? 0.55 : 0.8), 0, Math.PI * 2); ctx.fill(); }
       ctx.globalAlpha = 1;
     }
-    ctx.globalAlpha = 0.4; ctx.imageSmoothingEnabled = true; ctx.drawImage(Fog.canvas, 0, 0, Terrain.W, Terrain.H, 0, 0, mw, mh); ctx.globalAlpha = 1;
+    if (!spectator) { ctx.globalAlpha = 0.4; ctx.imageSmoothingEnabled = true; ctx.drawImage(Fog.canvas, 0, 0, Terrain.W, Terrain.H, 0, 0, mw, mh); ctx.globalAlpha = 1; }
     // build ghost
     const st = Input.state;
     if (st.mode === 'build' && st.buildType) {
@@ -338,5 +339,5 @@ const Render = (() => {
     mctx.strokeStyle = '#fff'; mctx.lineWidth = 1; mctx.strokeRect(cam.x * sx, cam.y * sy, w / cam.zoom * sx, h / cam.zoom * sy);
   }
 
-  return { init, draw, cam, toWorld, toScreen, clampCam, centerOn, zoomAt, get w() { return w; }, get h() { return h; } };
+  return { init, draw, cam, toWorld, toScreen, clampCam, centerOn, zoomAt, resize, get w() { return w; }, get h() { return h; }, get spectator() { return spectator; }, set spectator(v) { spectator = !!v; } };
 })();
