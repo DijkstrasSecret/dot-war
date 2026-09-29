@@ -233,7 +233,7 @@ const Data = {
     xp: { kill: 10, damagePer: 10, suppress: 5, suppressCooldown: 30, underFireEvery: 10, underFireStress: 0.3, workEvery: 60 },
   },
 
-  START: { units: ['rifle', 'rifle', 'rifle', 'rifle', 'rifle', 'rifle', 'worker', 'worker', 'worker', 'worker'] },   // DD Q15
+  START: { units: ['rifle', 'rifle', 'rifle', 'rifle', 'rifle', 'rifle', 'worker', 'worker', 'worker', 'worker'], res: { wood: 400, metal: 20 } },   // DD Q15; metal 60 -> 20 (Kaan, 0.5a.1)
 
   // Combat constants (formulas in game.js). DD Q8, Q9, Q10, Q11, I.
   COMBAT: {
@@ -252,5 +252,5 @@ const Data = {
   },
   // DD I: every bonus and penalty multiplies, then these caps apply (Util.stack).
   CAPS: { hit: { max: 0.95 }, stressTaken: { min: 0.25 }, speed: { min: 0.2 }, vision: { min: 0.35 } },
-  ECONOMY: { soldierLabour: 0.5 },                      // DD Q4: a soldier at a camp counts as half a Worker
+  ECONOMY: { soldierLabour: 0.5, pace: 0.7 },   // Kaan, 0.5a.1: a slower game. Every harvest rate and the AI's passive income x0.7                      // DD Q4: a soldier at a camp counts as half a Worker
 };

@@ -910,7 +910,7 @@ and Kaan accepted all of them. They are data or one-line rules, easy to change.
 | Mortar uphill (I) | "half the height range bonus" | Only the bonus is halved; shooting uphill costs a mortar the same as a rifle. |
 | Workers in towers | not covered | Units without a weapon cannot garrison a tower; the slot is for firing from. |
 | Pre-placed garrisons (G7) | "Musketeers in map garrisons become Riflemen" | Done. Garrisons are placed, not trained, so they can still hold Machine Gunners and Mortars from minute one. |
-| Economy target | "first Tier II research affordable" | Until the tech tree exists (0.5) the lab measures when a Heavy Machine Gun's cost is on hand, since section F lists it as Tier II. |
+| Economy target (superseded by 0.5a.1) | "first Tier II research affordable" | Until the tech tree exists (0.5) the lab measures when a Heavy Machine Gun's cost is on hand, since section F lists it as Tier II. |
 
 Balance Lab results when 0.2.1 was finished (100 seeded runs each):
 
@@ -1063,6 +1063,14 @@ metre thrown** from its aim point (8 m at the full 25 m), times (1 + the thrower
 (3 seeds, the standard opening). The cheapest Tier II item, the Heavy Machine Gun, costs 90 metal,
 and the start plus one Mine covers that within a minute. The Tier II costs in section F are the
 old ones, so the tech tree alone doesn't move this. Not retuned; Kaan to decide.
+
+### Patch 0.5a.1: a slower game (Kaan, 29 September 2026)
+
+| Topic | Decision |
+| --- | --- |
+| Slower economy | Every harvest rate (camps, mines, tappers, refineries) and the AI's passive income ×**0.7** (`Data.ECONOMY.pace`). The player starts with **20 metal** instead of 60 (400 wood unchanged). |
+| Tier II target | "First Tier II research affordable" lowered from 6–10 min to **1–3 min**. Measured after the change: **1.5 min** (green). At 20 minutes the standard opening has about 3000 wood and 1560 metal, against 4200 and 2270 before. |
+| Not changed | Research, unit and building costs; the AI's starting stock. |
 
 ---
 

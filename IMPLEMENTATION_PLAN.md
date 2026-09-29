@@ -225,8 +225,8 @@ Built in two parts (Kaan): **0.5a** tech tree, buildings and supply (done); **0.
 - [x] Cold War kit trigger (R&D Lab + 2 Tier III items, proposed) [K].
 
 **Done when**
-- [ ] Balance Lab economy timeline: first Tier II research affordable at 6–10 game min.
-      **Red after 0.5a: 0.9 min** (the Tier II costs are cheap); waiting on Kaan.
+- [x] Balance Lab economy timeline: first Tier II research affordable. Kaan (0.5a.1): economy ×0.7,
+      20 starting metal, target 1–3 min; measured 1.5 min.
 - [ ] `GAME_DESIGN.md` updated.
 
 ---

@@ -39,7 +39,7 @@ const Game = (() => {
     G.decals = [];   // blood, splats and corpses left on the ground
     G.segs = []; G.segById = new Map(); G.segGrid = new Map(); G.segNext = 1; G.lineNext = 1; G.healT = 0;   // line defences, healing (0.4)
     G.smokes = []; G.smokeVer = 0; G.lastSeen = {}; G.seenT = 0;   // smoke clouds, Signals markers (0.5a)
-    G.players = { 0: newPlayer(0, {}), 1: newPlayer(1, { wood: 400, metal: 60 }), 2: newPlayer(2, { wood: 3000, metal: 1500, sulfur: 600 }) };
+    G.players = { 0: newPlayer(0, {}), 1: newPlayer(1, Data.START.res), 2: newPlayer(2, { wood: 3000, metal: 1500, sulfur: 600 }) };
     for (const t of Object.keys(Data.UNITS)) G.players[0].unlocked.add(t);   // neutral guards; the AI unlocks over time (DD G7)
   }
   function toast(msg) { G.toasts.push({ msg, t: 3.5 }); if (G.toasts.length > 4) G.toasts.shift(); }
@@ -400,7 +400,7 @@ const Game = (() => {
       }
       if (b.queue.length) { const q = b.queue[0]; q.t += dt; if (q.t >= q.total) { b.queue.shift(); spawnFrom(b, q.type); } }
       if (b.def.harvest) {
-        const rate = (b.def.rate + activeWorkers(b) * b.def.perWorker) * p.harvestMult;
+        const rate = (b.def.rate + activeWorkers(b) * b.def.perWorker) * p.harvestMult * Data.ECONOMY.pace;
         const key = b.def.harvest === 'wood' ? 'wood' : b.depositType;
         if (key) p.res[key] += rate * dt;
       }
@@ -408,7 +408,7 @@ const Game = (() => {
       if (b.owner === 1 || Fog.visible(1, b.x, b.y)) b.seen = true;
     }
   }
-  function harvestRate(b) { const p = G.players[b.owner]; return (b.def.rate + activeWorkers(b) * b.def.perWorker) * p.harvestMult; }
+  function harvestRate(b) { const p = G.players[b.owner]; return (b.def.rate + activeWorkers(b) * b.def.perWorker) * p.harvestMult * Data.ECONOMY.pace; }
 
   // ---- combat helpers ----
   // Height difference shooter minus target; u.hBonus is the height of a tower the unit stands in.
