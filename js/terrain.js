@@ -69,6 +69,10 @@ const Terrain = (() => {
     roads = out; rasterizeRoads();
   }
 
+  // Built roads and bridges (patch 0.5a): add or remove one polyline and redraw around it.
+  function roadDirty(poly) { let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity; for (const q of poly) { x0 = Math.min(x0, q[0]); y0 = Math.min(y0, q[1]); x1 = Math.max(x1, q[0]); y1 = Math.max(y1, q[1]); } markDirty(cellI(x0) - 3, cellJ(y0) - 3, cellI(x1) + 4, cellJ(y1) + 4); }
+  function addRoad(poly) { roads.push(poly); rasterizeRoads(); roadDirty(poly); return poly; }
+  function removeRoad(poly) { const i = roads.indexOf(poly); if (i < 0) return; roads.splice(i, 1); rasterizeRoads(); roadDirty(poly); }
   const idx = (i, j) => j * W + i;
   const inb = (i, j) => i >= 0 && j >= 0 && i < W && j < H;
   const cellI = x => clamp(Math.floor(x / CELL), 0, W - 1);
@@ -410,7 +414,7 @@ const Terrain = (() => {
     CELL, T_OPEN, T_FOREST, T_WATER, T_SWAMP, COL, LOS_TOLERANCE,
     create, toJSON, fromJSON,
     get W() { return W; }, get H() { return H; }, get height() { return height; }, get type() { return type; }, get road() { return road; }, get slope() { return slope; },
-    get deposits() { return deposits; }, get roads() { return roads; }, get cache() { return cache; }, rasterizeRoads, eraseRoads,
+    get deposits() { return deposits; }, get roads() { return roads; }, get cache() { return cache; }, rasterizeRoads, eraseRoads, addRoad, removeRoad,
     idx, inb, cellI, cellJ, cellIdxAt, cx, cy, hAt, gradAt, typeAt, roadAt, slopeAt,
     cellPassable, terrainFactor, slopeFactor, moveFactor, edgeCost, passableAt, straightPassable, setBlocked, setPathMult, get blocked() { return blocked; },
     los, coverAt, ridgeCover, forestCellsNear, depositNear, areaOk,

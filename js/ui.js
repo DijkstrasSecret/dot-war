@@ -49,6 +49,8 @@ const UI = (() => {
       d.appendChild(Icons.makeCanvas(r, 32, Data.RES_COLORS[r]));
       const s = el('span'); d.appendChild(s); resBox.appendChild(d); resEls[r] = s;
     }
+    const sup = el('div', 'res'); sup.title = 'Supply: units and queued units against your cap (30, +10 per Depot)';
+    sup.appendChild(Icons.makeCanvas('depot', 32, '#d8d2b8')); const ss = el('span'); sup.appendChild(ss); resBox.appendChild(sup); resEls.supply = ss;
     document.querySelectorAll('#tabs button').forEach(b => { b.onclick = () => { tab = b.dataset.tab; refresh(); }; });
     speedBtns = [...document.querySelectorAll('#speedbox button')];
     speedBtns.forEach(b => { b.onclick = () => { Game.setSpeed(+b.dataset.speed); refreshSpeed(); }; });
@@ -72,6 +74,7 @@ const UI = (() => {
   function update(dt) {
     const p = G.players[1];
     for (const r of Data.RES) { const v = Math.floor(p.res[r]); resEls[r].textContent = v; resEls[r].className = v < 20 ? 'low' : ''; }
+    const su = Game.supplyUsed(1), sc = Game.supplyCap(1); resEls.supply.textContent = su + '/' + sc; resEls.supply.className = su >= sc ? 'low' : '';
     clockEl.textContent = Util.fmtTime(G.time) + (G.speed === 0 ? '  ⏸' : '');
     refreshT -= dt;
     if (refreshT > 0) { if (tick) tick(); return; }
@@ -141,9 +144,9 @@ const UI = (() => {
   }
   function signature() {
     const p = G.players[1];
-    let s = tab + '|' + Input.state.mode + '|' + (Input.state.buildType || Input.state.lineType || '') + '|' + [...p.unlocked].join(',') + '|' + [...p.done].join(',') + '|' + (p.research ? p.research.id : '') + '|';
+    let s = tab + '|' + Input.state.mode + '|' + (Input.state.buildType || Input.state.lineType || '') + '|' + [...p.unlocked].join(',') + '|' + [...p.done].join(',') + '|' + Object.entries(p.research).map(([k, j]) => k + j.id).join(',') + '|' + G.buildings.filter(b => b.owner === 1 && b.built).length + '|';
     if (tab === 'sel') s += Object.values(G.squads).map(q => q.id + q.move + q.spacing + q.contact + q.members.length).join('') + '|' + G.selection.map(e => e.id + ':' + (e.dead ? 'd' : '') + (e instanceof Building ? e.queue.map(q => q.type).join('.') + ':' + e.built + ':' + e.workers.length + ':' + e.level + ':' + e.garrison.join('.') + ':' + !!e.upgrading : (e.work || '') + ':' + (e.order ? e.order.type : '') + ':' + (e.flee > 0) + ':' + e.suppressed + ':' + e.rank + ':' + e.squad)).join(',');
-    if (tab === 'build') s += Data.BUILD_LIST.map(t => Game.canAfford(p, Data.BUILDINGS[t].cost)).join(',');
+    if (tab === 'build') s += Data.BUILD_LIST.map(t => Game.canAfford(p, Game.costOf(1, t)) + Util.costStr(Game.costOf(1, t))).join(',');
     if (tab === 'research') s += Data.RESEARCH_ORDER.map(r => Game.researchState(p, r)).join(',');
     if (tab === 'sel') { const b = G.selection[0]; if (b instanceof Building && b.def.produces) s += '|' + b.def.produces.map(t => p.unlocked.has(t) && Game.canAfford(p, p.blueprints[t].cost)).join(','); }
     return s;
@@ -164,8 +167,11 @@ const UI = (() => {
       ['Retreat', 'G', () => Game.command({ kind: 'retreat', units: ids }), false, 'Pull back a short way towards your headquarters. No suppression slowdown, stress drains twice as fast.'],
       ['Stop', 'X', () => Game.command({ kind: 'stop', units: ids }), false, 'Cancel all orders (also releases workers).'],
       ['Enter', 'E', () => Input.setMode('work'), mode === 'work', 'Then click a Lumber Camp or Mine to work there, or a Scout Tower, Bunker or the HQ to garrison it.'],
-      ['Trench', 'Y', () => Input.setMode('build', 'trench'), mode === 'line', 'Hold the left button and drag to draw a line; the selected soldiers dig it. Each 10 m is paid when digging on it starts.'],
+      ['Trench', 'B Y', () => Input.setMode('build', 'trench'), mode === 'line', 'Hold the left button and drag to draw a line; the selected soldiers dig it. Each 10 m is paid when digging on it starts.'],
     ];
+    const pl = G.players[1];
+    if (pl.done.has('smoke') && units.some(u => u.stats.weapon && u.stats.weapon.indirect)) items.push(['Smoke', 'M', () => Input.setMode('smoke'), mode === 'smoke', 'Mortars fire one smoke round: a cloud that blocks sight for 15 s.']);
+    if (pl.done.has('demolition') && units.some(u => u.stats.weapon)) items.push(['Demolish', 'C', () => Input.setMode('demolish'), mode === 'demolish', 'The nearest soldier blows up a barricade, wire or bridge segment: 3 s to set, 1 sulfur.']);
     if (units.some(u => u.def.labour)) items.push(['Fill', 'K', () => Input.setMode('fill'), mode === 'fill', 'Workers fill in one of your trenches, as slowly as it was dug.']);
     if (units.some(u => Game.canThrow(u))) items.push(['Grenade', 'V', () => Input.setMode('grenade'), mode === 'grenade', 'Riflemen walk within 25 m, stand still 1 s and throw a grenade (1 sulfur, 20 s cooldown). Friendly fire is on.']);
     for (const [label, key, fn, on, tip] of items) {
@@ -223,7 +229,7 @@ const UI = (() => {
       const h = Terrain.hAt(u.x, u.y).toFixed(0);
       let s = 'Elevation ' + h + ' m. ';
       if (u.flee > 0) s += 'Panicking! '; else if (u.suppressed) s += u.def.obeysWhenSuppressed ? 'Suppressed: slowed, keeps its orders. ' : 'Suppressed: cannot pick targets. ';
-      if (u.work != null) s += 'Working. '; else if (u.order) s += (u.order.retreat ? 'Retreating' : ({ move: 'Moving', attackmove: 'Attack-moving', attack: 'Attacking target', bombard: 'Bombarding', hold: 'Holding position', work: 'Going to work', garrison: 'Going to garrison', dig: u.order.fill ? 'Filling a trench' : 'Digging', grenade: 'Going to throw a grenade' })[u.order.type]) + '. '; else s += 'Idle. ';
+      if (u.work != null) s += 'Working. '; else if (u.order) s += (u.order.retreat ? 'Retreating' : ({ move: 'Moving', attackmove: 'Attack-moving', attack: 'Attacking target', bombard: u.order.smoke ? 'Firing smoke' : 'Bombarding', demolish: 'Setting a demolition charge', hold: 'Holding position', work: 'Going to work', garrison: 'Going to garrison', dig: u.order.fill ? 'Filling a trench' : 'Digging', grenade: 'Going to throw a grenade' })[u.order.type]) + '. '; else s += 'Idle. ';
       if (u.def.heal && u.patient && !u.patient.dead && u.patient.hp < u.patient.stats.hp) s += 'Treating a wounded ' + u.patient.def.name + '. ';
       if (Game.canThrow(u)) s += u.nadeT > 0 ? 'Grenade in ' + Math.ceil(u.nadeT) + ' s. ' : 'Grenade ready. ';
       if (u.target) s += 'Firing at ' + (u.target.def.name) + '.';
@@ -306,14 +312,14 @@ const UI = (() => {
     }
     if (own && b.built && b.def.harvest) {
       content.appendChild(el('h3', null, 'Harvesting'));
-      content.appendChild(el('div', 'small', 'Select Workers and right click this building to assign up to ' + b.def.maxWorkers + '. Each Worker adds ' + b.def.perWorker + '/s; a soldier adds half that.'));
+      content.appendChild(el('div', 'small', 'Select Workers and right click this building to assign up to ' + Game.maxWorkers(b) + '. Each Worker adds ' + b.def.perWorker + '/s; a soldier adds half that.'));
       const row = el('div', 'row'); row.appendChild(btn('Release workers', () => { Game.command({ kind: 'stop', units: b.workers.slice() }); refresh(); })); content.appendChild(row);
     }
     tick = () => {
       hp.fill.style.width = (b.hp / b.maxHp * 100) + '%';
       if (prog) prog.fill.style.width = (b.progress * 100) + '%';
       let s = '';
-      if (b.def.harvest && b.built) s += 'Rate ' + Game.harvestRate(b).toFixed(1) + ' ' + (b.def.harvest === 'wood' ? 'wood' : b.depositType || '?') + '/s, labour ' + Game.activeWorkers(b) + ', slots ' + b.workers.length + '/' + b.def.maxWorkers + '. ';
+      if (b.def.harvest && b.built) s += 'Rate ' + Game.harvestRate(b).toFixed(1) + ' ' + (b.def.harvest === 'wood' ? 'wood' : b.depositType || '?') + '/s, labour ' + Game.activeWorkers(b) + ', slots ' + b.workers.length + '/' + Game.maxWorkers(b) + '. ';
       if (b.queue.length) s += 'Training ' + Data.UNITS[b.queue[0].type].name + ' (' + Math.ceil(b.queue[0].total - b.queue[0].t) + ' s).';
       status.textContent = s;
       if (qrow) b.queue.forEach((q, i) => { const qe = qrow.children[i]; if (qe) qe.prog.style.width = (q.t / q.total * 100) + '%'; });
@@ -321,34 +327,51 @@ const UI = (() => {
   }
   function buildBuild() {
     const p = G.players[1];
-    content.appendChild(el('div', 'small', 'Press B for this tab. Pick a building (or press its key), then click on visible, fairly flat ground. Shift-click places several. Right click cancels.'));
+    content.appendChild(el('div', 'small', 'While this tab is open the letters below pick a building (B, then the letter). Click on visible, fairly flat ground. Shift-click places several. Right click cancels.'));
     const locked = d => Game.hasTech(p, d) ? '' : ' — needs ' + Data.RESEARCH[d.requires].name + ' research';
     for (const t of Data.BUILD_LIST) {
       const d = Data.BUILDINGS[t];
-      content.appendChild(card({ icon: d.icon, name: '[' + Data.BUILD_HOTKEYS[t] + '] ' + d.name, cost: Util.costStr(d.cost) + ' · ' + d.buildTime + ' s', desc: d.desc + locked(d), disabled: !Game.canAfford(p, d.cost) || !Game.hasTech(p, d), active: Input.state.mode === 'build' && Input.state.buildType === t, onclick: () => { if (Input.state.mode === 'build' && Input.state.buildType === t) Input.setMode('normal'); else Input.setMode('build', t); } }));
+      const cost = Game.costOf(1, t);
+      content.appendChild(card({ icon: d.icon, name: '[' + Data.BUILD_HOTKEYS[t] + '] ' + d.name, cost: Util.costStr(cost) + ' · ' + d.buildTime + ' s', desc: d.desc + locked(d), disabled: !Game.canAfford(p, cost) || !Game.hasTech(p, d), active: Input.state.mode === 'build' && Input.state.buildType === t, onclick: () => { if (Input.state.mode === 'build' && Input.state.buildType === t) Input.setMode('normal'); else Input.setMode('build', t); } }));
     }
     // DD B, J: line defences, drawn by dragging; the selected soldiers dig, or idle Workers within 300 m.
     content.appendChild(el('h3', null, 'Line defences'));
-    content.appendChild(el('div', 'small', 'Pick one, then hold the left button and drag. The selected soldiers dig it; with none selected, idle Workers within ' + Data.DIG.idleWorkerRange + ' m do. ' + Data.DIG.time + ' s per 10 m for a soldier, Workers ' + Data.DIG.workerMult + '× faster. Each 10 m is paid when digging on it starts.'));
+    content.appendChild(el('div', 'small', 'Pick one, then hold the left button and drag. The selected soldiers dig it; with none selected, idle Workers within ' + Data.DIG.idleWorkerRange + ' m do. Defences: ' + Data.DIG.time + ' s per 10 m for a soldier, Workers ' + Data.DIG.workerMult + '× faster. Roads and bridges are built by Workers only. Each 10 m is paid when work on it starts.'));
     for (const t of Data.LINE_LIST) {
       const d = Data.LINES[t];
       content.appendChild(card({ icon: d.icon, name: '[' + Data.BUILD_HOTKEYS[t] + '] ' + d.name, cost: Util.costStr(d.cost) + ' per 10 m', desc: d.desc + locked(d), disabled: !Game.hasTech(p, d), active: Input.state.mode === 'line' && Input.state.lineType === t, onclick: () => { if (Input.state.mode === 'line' && Input.state.lineType === t) Input.setMode('normal'); else Input.setMode('build', t); } }));
     }
   }
+  // N: the research overview (DD F, G16). Slots at the top, then the five branches by tier. Tier I
+  // runs at the HQ, Tiers II and III at the branch building; Tier III also needs an R&D Lab.
   function buildResearch() {
-    const p = G.players[1];
-    content.appendChild(el('div', 'small', 'Research unlocks new blueprints and improves existing ones. Stat upgrades apply to newly trained units only; unlocks (grenades, buildings, faster digging) apply at once. One project at a time.'));
-    let activeBar = null;
-    for (const id of Data.RESEARCH_ORDER) {
-      const r = Data.RESEARCH[id]; const s = Game.researchState(p, id);
-      const label = { done: 'Done', active: 'In progress', locked: 'Requires ' + r.req.map(q => Data.RESEARCH[q].name).join(', '), busy: 'Lab busy', poor: 'Not enough resources', ready: 'Click to research' }[s];
-      let extra = null;
-      if (s === 'active') { extra = bar('#5a78c8'); activeBar = extra; }
-      const icon = r.unlock ? Data.UNITS[r.unlock].icon : r.icon || 'flask';
-      content.appendChild(card({ icon, iconBg: s === 'done' ? '#2f6b3a' : '#2a2a2e', shape: r.unlock ? Data.UNITS[r.unlock].shape : null, name: r.name, cost: Util.costStr(r.cost) + ' · ' + r.time + ' s', desc: r.desc + ' — ' + label, disabled: s !== 'ready', extra, onclick: () => { Game.command({ kind: 'research', research: id }); refresh(); } }));
+    const p = G.players[1], bars = [];
+    const where = id => Data.BUILDINGS[Game.slotOf(id)].name;
+    const slots = el('div', 'rslots');
+    for (const slot of ['hq', ...Data.BRANCH_ORDER.map(b => Data.BRANCHES[b].building)]) {
+      const job = p.research[slot], d = el('div', 'rslot' + (job ? ' on' : '') + (Game.owns(1, slot) ? '' : ' off'));
+      d.title = Data.BUILDINGS[slot].name + (Game.owns(1, slot) ? '' : ' (not built)');
+      d.appendChild(el('span', 'rsname', Data.BUILDINGS[slot].name)); d.appendChild(el('span', 'rsjob', job ? Data.RESEARCH[job.id].name : Game.owns(1, slot) ? 'idle' : '—'));
+      if (job) { const bb = bar('#5a78c8'); d.appendChild(bb); bars.push([bb, job]); }
+      slots.appendChild(d);
     }
-    tick = () => { if (activeBar && p.research) activeBar.fill.style.width = (p.research.t / p.research.total * 100) + '%'; };
+    content.appendChild(slots);
+    content.appendChild(el('div', 'small', 'One project per building type at a time. B = stats for newly trained units, G = a rule that applies at once, U = unlock. Tier III needs an R&D Lab.'));
+    for (const br of Data.BRANCH_ORDER) {
+      const B = Data.BRANCHES[br];
+      content.appendChild(el('h3', null, B.name + ' · ' + Data.BUILDINGS[B.building].name));
+      for (const id of Data.RESEARCH_ORDER) {
+        const r = Data.RESEARCH[id]; if (r.branch !== br) continue;
+        const s = Game.researchState(p, id);
+        const label = { done: 'Done', active: 'In progress', locked: Game.researchLock(p, id), busy: 'The ' + where(id) + ' is busy', poor: 'Not enough resources', ready: 'Click to research' }[s];
+        let extra = null;
+        if (s === 'active') { extra = bar('#5a78c8'); bars.push([extra, p.research[Game.slotOf(id)]]); }
+        const icon = r.unlock ? Data.UNITS[r.unlock].icon : r.icon || 'flask';
+        content.appendChild(card({ icon, iconBg: s === 'done' ? '#2f6b3a' : '#2a2a2e', shape: r.unlock ? Data.UNITS[r.unlock].shape : null, name: ['I', 'II', 'III'][r.tier - 1] + ' · ' + r.name + ' (' + r.tag + ')', cost: Util.costStr(r.cost) + ' · ' + r.time + ' s · ' + where(id), desc: r.desc + ' — ' + label, disabled: s !== 'ready', extra, onclick: () => { Game.command({ kind: 'research', research: id }); refresh(); } }));
+      }
+    }
+    tick = () => { for (const [bb, job] of bars) bb.fill.style.width = (job.t / job.total * 100) + '%'; };
   }
 
-  return { init, update, refresh, refreshSpeed, refreshMusic, toggleHelp, showTab, el, btn, card };
+  return { get tab() { return tab; }, init, update, refresh, refreshSpeed, refreshMusic, toggleHelp, showTab, el, btn, card };
 })();

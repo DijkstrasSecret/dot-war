@@ -128,6 +128,15 @@ const Icons = (() => {
     barricade(ctx) { line(ctx, -0.9, 0.7, 0.9, -0.3, 0.2); line(ctx, -0.9, -0.3, 0.9, 0.7, 0.2); line(ctx, -0.95, 0.2, 0.95, 0.2, 0.16); },
     wire(ctx) { ctx.lineWidth = 0.1; ctx.beginPath(); for (let i = 0; i < 7; i++) { const x = -0.9 + i * 0.3; ctx[i ? 'lineTo' : 'moveTo'](x, i % 2 ? 0.35 : -0.35); } ctx.stroke();
       for (let i = 0; i < 4; i++) { const x = -0.9 + i * 0.6; line(ctx, x - 0.12, -0.5, x + 0.12, -0.2, 0.08); line(ctx, x + 0.12, -0.5, x - 0.12, -0.2, 0.08); } line(ctx, -0.95, 0.6, 0.95, 0.6, 0.08); },
+    // patch 0.5a
+    road(ctx) { ctx.lineWidth = 0.14; ctx.beginPath(); ctx.moveTo(-0.45, 0.95); ctx.lineTo(-0.15, -0.95); ctx.moveTo(0.45, 0.95); ctx.lineTo(0.15, -0.95); ctx.stroke(); for (let i = 0; i < 3; i++) line(ctx, 0, 0.7 - i * 0.6, 0, 0.45 - i * 0.6, 0.12); },
+    bridge(ctx) { ctx.lineWidth = 0.14; ctx.beginPath(); ctx.arc(0, 0.9, 0.9, Math.PI, 0); ctx.stroke(); line(ctx, -0.95, -0.05, 0.95, -0.05, 0.16); for (const x of [-0.5, 0, 0.5]) line(ctx, x, -0.05, x, 0.9 - Math.sqrt(Math.max(0, 0.81 - x * x)), 0.08); },
+    charge(ctx) { ctx.fillRect(-0.6, -0.2, 1.2, 0.8); ctx.lineWidth = 0.1; ctx.beginPath(); ctx.moveTo(0.3, -0.2); ctx.quadraticCurveTo(0.5, -0.8, 0.9, -0.7); ctx.stroke(); circ(ctx, 0.9, -0.75, 0.12, true); },
+    smoke(ctx) { for (const [x, y, r] of [[-0.4, 0.3, 0.45], [0.35, 0.25, 0.5], [0, -0.3, 0.5]]) circ(ctx, x, y, r, true); },
+    signal(ctx) { line(ctx, 0, 0.95, 0, -0.2, 0.14); ctx.lineWidth = 0.12; for (const r of [0.35, 0.65]) { ctx.beginPath(); ctx.arc(0, -0.3, r, -Math.PI * 0.8, -Math.PI * 0.2); ctx.stroke(); } },
+    depot(ctx) { poly(ctx, [-0.95, -0.2, 0, -0.9, 0.95, -0.2], true); ctx.fillRect(-0.75, -0.2, 1.5, 1.05); ctx.save(); ctx.globalCompositeOperation = 'destination-out'; ctx.fillRect(-0.3, 0.25, 0.6, 0.6); ctx.restore(); },
+    workshop(ctx) { ctx.lineWidth = 0.18; circ(ctx, 0, 0, 0.45, false); for (let i = 0; i < 8; i++) { const a = i * Math.PI / 4; line(ctx, Math.cos(a) * 0.55, Math.sin(a) * 0.55, Math.cos(a) * 0.85, Math.sin(a) * 0.85, 0.22); } },
+    refinery(ctx) { ctx.fillRect(-0.8, -0.1, 0.6, 1.0); ctx.fillRect(0.1, -0.6, 0.35, 1.5); ctx.fillRect(0.55, 0.2, 0.35, 0.7); circ(ctx, 0.28, -0.85, 0.15, true); },
     grenade(ctx) { circ(ctx, 0, 0.2, 0.62, true); ctx.fillRect(-0.22, -0.72, 0.44, 0.35); line(ctx, 0.2, -0.6, 0.6, -0.85, 0.12); },
   };
 

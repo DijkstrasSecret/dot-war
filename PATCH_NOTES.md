@@ -5,6 +5,39 @@ each change live in `DESIGN_DECISIONS.md`.
 
 ---
 
+## 0.5a: Tech tree, new buildings and supply (29 September 2026)
+
+**Tech tree.** Research now has five branches with three tiers: Infantry doctrine, Fire support,
+Engineering, Logistics, Command & medical.
+- Tier I is researched at the HQ; Tiers II and III at the branch building (Barracks, Ordnance
+  Works, Workshop, Depot, Field Hospital); Tier III also needs an R&D Lab.
+- Each building type researches one thing at a time, so up to six projects can run at once.
+- N opens the research overview: what every building is researching, then each branch by tier.
+- New research: Assault Drill (better aim on the move), Squad Cohesion, Camouflage Uniforms,
+  Storm Troops (faster grenades), Smoke Shells, Forward Observers, Road Building, Reinforced
+  Concrete, Bridging, Demolition Charges, Deep Shafts, Supply Organisation, Refinery, Triage,
+  Signals, Intelligence.
+- Heavy Machine Gun, Marksman Rifle, Improved Powder and HE Shells now need their branch building.
+
+**New buildings.** Workshop (Engineering research), Depot (+10 supply, a little oil, Logistics
+research; each extra Depot costs 25% more), R&D Lab (unlocks Tier III), Rubber Tapper (on rubber
+trees), Refinery (on oil seeps).
+
+**Supply.** Every unit takes supply (a Mortar Crew 2). You start with room for 30; each Depot adds
+10. The top bar shows used and total.
+
+**New abilities from research:**
+- **Roads and bridges:** Workers build them with the line tool, so bridges can cross rivers.
+- **Smoke:** M with mortars selected lays a smoke screen that blocks sight for 15 s.
+- **Demolition:** C with soldiers selected blows up a barricade, wire or a bridge.
+- **Camouflage:** camouflaged soldiers in forest are only spotted up close.
+- **Signals:** fading markers show where enemies were last seen.
+- **Intelligence:** warns you when an enemy raid sets out.
+- Two Tier III items plus an R&D Lab switch new soldiers to Cold War uniforms.
+
+**Controls.** Building keys now work only while the Build tab is open: press B, then the letter
+(B then L for a Lumber Camp).
+
 ## 0.4.2: Grenades a little off (29 September 2026)
 
 - Grenades no longer land exactly on target: up to about 8 m off at full reach, more when the

@@ -24,7 +24,8 @@ const Game = (() => {
   function newPlayer(id, res) {
     const r = {}; for (const k of Data.RES) r[k] = res[k] || 0;
     // DD Q1: Rifling is researched from the start, so Riflemen and Workers are open to everyone.
-    return { id, res: r, blueprints: JSON.parse(JSON.stringify(Data.UNITS)), unlocked: new Set(['rifle', 'worker']), done: new Set(), research: null, harvestMult: 1, digMult: 1,
+    return { id, res: r, blueprints: JSON.parse(JSON.stringify(Data.UNITS)), unlocked: new Set(['rifle', 'worker']), done: new Set(), research: {}, harvestMult: 1, digMult: 1,
+      rules: {}, bhp: {}, noSupply: false,   // research slots by building type; global rules and building HP set by research (0.5a)
       faction: null, kitEra: 'ww2' };   // DD K: cosmetic only; set by Main, read by UI portraits
   }
   // A new match. The same seed and the same logged commands give the same match, tick for tick.
@@ -37,6 +38,7 @@ const Game = (() => {
     G.buildingById = new Map(); G.sandbox = false; G.difficulty = G.difficulty || 'hard';
     G.decals = [];   // blood, splats and corpses left on the ground
     G.segs = []; G.segById = new Map(); G.segGrid = new Map(); G.segNext = 1; G.lineNext = 1; G.healT = 0;   // line defences, healing (0.4)
+    G.smokes = []; G.smokeVer = 0; G.lastSeen = {}; G.seenT = 0;   // smoke clouds, Signals markers (0.5a)
     G.players = { 0: newPlayer(0, {}), 1: newPlayer(1, { wood: 400, metal: 60 }), 2: newPlayer(2, { wood: 3000, metal: 1500, sulfur: 600 }) };
     for (const t of Object.keys(Data.UNITS)) G.players[0].unlocked.add(t);   // neutral guards; the AI unlocks over time (DD G7)
   }
@@ -48,25 +50,39 @@ const Game = (() => {
   function togglePause() { setSpeed(G.speed === 0 ? (G.lastSpeed || 1) : 0); }
 
   // ---- blueprints, costs, research ----
-  function statsFor(owner, type) { const bp = G.players[owner].blueprints[type]; return { hp: bp.hp, speed: bp.speed, vision: bp.vision, weapon: bp.weapon ? { ...bp.weapon } : null }; }
+  function statsFor(owner, type) { const bp = G.players[owner].blueprints[type]; return { hp: bp.hp, speed: bp.speed, vision: bp.vision, weapon: bp.weapon ? { ...bp.weapon } : null, camo: bp.camo || 0, nadeCooldown: bp.nadeCooldown || 0 }; }
+  // A rule a Global research changed (DD F 'G' items), or its default.
+  const rule = (owner, k, def) => { const p = G.players[owner]; return p && p.rules[k] != null ? p.rules[k] : def; };
   // DD I: the HQ trains Riflemen at 0.7x and Workers at full speed; prodMult maps unit type to a multiplier.
   function prodMult(b, type) { const m = b.def.prodMult; return (m && m[type]) || 1; }
   function prodTime(b, type) { return G.players[b.owner].blueprints[type].time / prodMult(b, type); }
   function canAfford(p, cost) { for (const k in cost) if ((p.res[k] || 0) < cost[k]) return false; return true; }
   function pay(p, cost, mult = 1) { for (const k in cost) p.res[k] -= cost[k] * mult; }
+  // ---- tech tree (DD F): one slot per building type; Tier I at the HQ, II and III at the branch
+  // building, III only while the player owns an R&D Lab. A slot pauses while you own none of its buildings.
+  const owns = (pid, type) => G.buildings.some(b => b.owner === pid && b.type === type && !b.dead && b.built);
+  function slotOf(rid) { const r = Data.RESEARCH[rid]; return r.tier === 1 ? 'hq' : Data.BRANCHES[r.branch].building; }
+  function researchLock(p, rid) {
+    const r = Data.RESEARCH[rid], slot = slotOf(rid);
+    const miss = r.req.filter(q => !p.done.has(q));
+    if (miss.length) return 'Requires ' + miss.map(q => Data.RESEARCH[q].name).join(', ');
+    if (!owns(p.id, slot)) return 'Needs a ' + Data.BUILDINGS[slot].name;
+    if (r.tier === 3 && !owns(p.id, 'lab')) return 'Tier III: needs an R&D Lab';
+    return '';
+  }
   function researchState(p, rid) {
-    const r = Data.RESEARCH[rid];
+    const r = Data.RESEARCH[rid], slot = slotOf(rid), job = p.research[slot];
     if (p.done.has(rid)) return 'done';
-    if (p.research && p.research.id === rid) return 'active';
-    if (!r.req.every(q => p.done.has(q))) return 'locked';
-    if (p.research) return 'busy';
+    if (job && job.id === rid) return 'active';
+    if (researchLock(p, rid)) return 'locked';
+    if (job) return 'busy';
     if (!canAfford(p, r.cost)) return 'poor';
     return 'ready';
   }
   function startResearch(pid, rid) {
-    const p = G.players[pid]; const s = researchState(p, rid);
-    if (s !== 'ready') { if (s === 'poor') toast('Not enough resources'); else if (s === 'busy') toast('Research already in progress'); return false; }
-    pay(p, Data.RESEARCH[rid].cost); p.research = { id: rid, t: 0, total: Data.RESEARCH[rid].time }; return true;
+    const p = G.players[pid]; if (!Data.RESEARCH[rid]) return false; const s = researchState(p, rid);
+    if (s !== 'ready') { if (pid === 1) { if (s === 'poor') toast('Not enough resources'); else if (s === 'busy') toast('The ' + Data.BUILDINGS[slotOf(rid)].name + ' is already researching'); else if (s === 'locked') toast(researchLock(p, rid)); } return false; }
+    pay(p, Data.RESEARCH[rid].cost); p.research[slotOf(rid)] = { id: rid, t: 0, total: Data.RESEARCH[rid].time }; return true;
   }
   function applyResearch(p, rid) {
     const r = Data.RESEARCH[rid]; p.done.add(rid);
@@ -74,13 +90,43 @@ const Game = (() => {
     for (const e of r.effects || []) {
       if (e.harvest) { p.harvestMult *= e.harvest; continue; }
       if (e.dig) { p.digMult *= e.dig; continue; }   // Entrenching Tools: every digger, existing ones too
+      if (e.rule) { p.rules[e.rule] = e.set; continue; }   // DD F 'G': a rule, for units already in the field too
+      if (e.buildingHp) {   // Reinforced Concrete: existing buildings included
+        for (const t of e.buildingHp) p.bhp[t] = (p.bhp[t] || 1) * e.mult;
+        for (const b of G.buildings) if (b.owner === p.id && !b.dead && e.buildingHp.includes(b.type)) { b.maxHp *= e.mult; b.hp *= e.mult; }
+        continue;
+      }
       for (const [t, bp] of Object.entries(p.blueprints)) {
-        const match = e.units === 'all' || (e.units === 'firearms' && bp.weapon && !bp.weapon.indirect) || (Array.isArray(e.units) && e.units.includes(t));
+        const match = e.units === 'all' || (e.units === 'infantry' && bp.cls === 'infantry') || (e.units === 'firearms' && bp.weapon && !bp.weapon.indirect) || (Array.isArray(e.units) && e.units.includes(t));
         if (!match) continue;
+        if (e.set != null) { bp[e.stat] = e.set; continue; }
         if (bp.weapon && e.stat in bp.weapon) bp.weapon[e.stat] *= e.mult; else if (e.stat in bp && e.stat !== 'weapon') bp[e.stat] *= e.mult;
       }
     }
+    checkKit(p);
   }
+  // DD K: Cold War kit for newly trained soldiers once the player owns an R&D Lab and has 2 Tier III items.
+  function checkKit(p) {
+    if (p.kitEra !== 'ww2' || !owns(p.id, 'lab')) return;
+    if ([...p.done].filter(id => Data.RESEARCH[id] && Data.RESEARCH[id].tier === 3).length < Data.KIT.coldTier3) return;
+    p.kitEra = 'cold'; if (p.id === 1) toast('New kit: soldiers trained from now on wear Cold War uniforms');
+  }
+  // ---- supply (DD Q18, G14) ----
+  function supplyCap(pid) { const p = G.players[pid]; let n = 0; for (const b of G.buildings) if (b.owner === pid && !b.dead && b.built && b.def.supply) n++; return Data.SUPPLY.start + n * rule(pid, 'perDepot', Data.SUPPLY.perDepot); }
+  function supplyUsed(pid) {
+    let n = 0; const p = G.players[pid];
+    for (const u of G.units) if (u.owner === pid && !u.dead) n += u.def.supply || 1;
+    for (const b of G.buildings) if (b.owner === pid && !b.dead) for (const q of b.queue) n += p.blueprints[q.type].supply || 1;
+    return n;
+  }
+  // DD G14: each extra Depot costs 25% more than the last (buildings with costGrow).
+  function costOf(pid, type) {
+    const def = Data.BUILDINGS[type]; if (!def.costGrow) return def.cost;
+    let n = 0; for (const b of G.buildings) if (b.owner === pid && !b.dead && b.type === type) n++;
+    const c = {}; for (const k in def.cost) c[k] = Math.round(def.cost[k] * Math.pow(def.costGrow, n)); return c;
+  }
+  // Workers a harvest building takes: Deep Shafts lets Mines take 6.
+  const maxWorkers = b => b.type === 'mine' ? rule(b.owner, 'mineWorkers', b.def.maxWorkers) : b.def.maxWorkers;
 
   // ---- spawning ----
   function spawnUnit(type, owner, x, y) {
@@ -91,6 +137,7 @@ const Game = (() => {
   }
   function addBuilding(type, owner, x, y, built) {
     const b = new Building(type, owner, x, y, built);
+    const hm = G.players[owner].bhp[type] || 1; if (hm !== 1) { b.maxHp *= hm; b.hp *= hm; }   // Reinforced Concrete
     if (b.def.harvest === 'deposit') { const d = Terrain.depositNear(x, y, 60); b.depositType = d ? d.type : null; }
     G.buildings.push(b); G.buildingById.set(b.id, b); Terrain.setBlocked(x, y, b.w, b.h, true); Path.invalidate();
     return b;
@@ -145,7 +192,7 @@ const Game = (() => {
     if (def.needs === 'forest' && Terrain.forestCellsNear(x, y, 70) < 8) return false;
     if (def.needs === 'deposit') {
       const d = Terrain.depositNear(x, y, 50);
-      if (!d || !['metal', 'sulfur'].includes(d.type)) return false;
+      if (!d || !(def.deposits || ['metal', 'sulfur']).includes(d.type)) return false;
       for (const b of G.buildings) if (!b.dead && b.def.needs === 'deposit' && Terrain.depositNear(b.x, b.y, 50) === d) return false;
     } else if (Terrain.depositNear(x, y, 40)) return false;
     if (owner === 1 && !Fog.visible(1, x, y)) return false;
@@ -157,8 +204,9 @@ const Game = (() => {
     const p = G.players[owner], def = Data.BUILDINGS[type];
     if (!hasTech(p, def)) { if (owner === 1) toast('Research ' + Data.RESEARCH[def.requires].name + ' first'); return null; }
     if (!canPlace(type, owner, x, y)) { toast('Cannot build there'); return null; }
-    if (!canAfford(p, def.cost)) { toast('Not enough resources'); return null; }
-    pay(p, def.cost); return addBuilding(type, owner, x, y, false);
+    const cost = costOf(owner, type);
+    if (!canAfford(p, cost)) { toast('Not enough resources'); return null; }
+    pay(p, cost); return addBuilding(type, owner, x, y, false);
   }
 
   // ---- orders ----
@@ -189,7 +237,7 @@ const Game = (() => {
         break;
       }
       case 'bombard':
-        if (u.stats.weapon && u.stats.weapon.indirect) u.order = { type: 'bombard', x: o.x, y: o.y };
+        if (u.stats.weapon && u.stats.weapon.indirect) u.order = { type: 'bombard', x: o.x, y: o.y, smoke: !!o.smoke };
         else applyOrder(u, { kind: 'attackmove', x: o.x, y: o.y, arrive: 20 });
         break;
       case 'hold': u.order = { type: 'hold', x: u.x, y: u.y, until: o.until || 0 }; break;
@@ -202,9 +250,9 @@ const Game = (() => {
       }
       case 'work': {
         const b = o.building;
-        if (!b || b.dead || !b.built || u.def.cls !== 'infantry' || b.workers.length >= b.def.maxWorkers) { if (u.owner === 1 && b && !b.dead) toast(b.def.name + ' is full'); break; }
+        if (!b || b.dead || !b.built || u.def.cls !== 'infantry' || b.workers.length >= maxWorkers(b)) { if (u.owner === 1 && b && !b.dead) toast(b.def.name + ' is full'); break; }
         b.workers.push(u.id); u.work = b.id;
-        const slot = b.workers.length - 1; const ang = slot / b.def.maxWorkers * Math.PI * 2 + 0.6;
+        const slot = b.workers.length - 1; const ang = slot / maxWorkers(b) * Math.PI * 2 + 0.6;
         const px = b.x + Math.cos(ang) * (b.w / 2 + 12), py = b.y + Math.sin(ang) * (b.h / 2 + 12);
         const f = Path.getField(px, py, u.def.cls, G.time); if (!f) { releaseWork(u); break; }
         u.order = { type: 'work', x: f.tx, y: f.ty, offx: 0, offy: 0, arrive: 6, phase: 0 }; u.field = f;
@@ -213,6 +261,10 @@ const Game = (() => {
       case 'dig':   // dig (or, Workers only, fill) the segments of one drawn line, nearest first
         if (u.def.cls !== 'infantry' || (o.fill && !u.def.labour)) break;
         u.order = { type: 'dig', line: o.line, fill: !!o.fill, seg: null, fseg: null };
+        break;
+      case 'demolish':
+        if (u.def.cls !== 'infantry' || !u.stats.weapon || !G.players[u.owner].done.has('demolition') || !o.seg || !LINES[o.seg.type].demolish) break;
+        u.order = { type: 'demolish', seg: o.seg, t: 0, fseg: null };
         break;
       case 'grenade':
         if (!canThrow(u)) break;
@@ -254,8 +306,8 @@ const Game = (() => {
   function orderStop(units) { for (const u of units) { u.queue = []; releaseWork(u); u.windup = null; u.order = null; u.field = null; u.forced = null; u.micro = null; } }
   function orderHold(units, queue = false) { for (const u of units) issue(u, { kind: 'hold' }, queue); }
   function orderDig(units, line, fill, queue = false) {
-    let n = 0;
-    for (const u of units) { if (u.dead || u.inside || u.def.cls !== 'infantry' || (fill && !u.def.labour)) continue; issue(u, { kind: 'dig', line, fill }, queue); n++; }
+    let n = 0; const sg0 = G.segs.find(o => o.line === line), wo = sg0 && LINES[sg0.type].workersOnly;
+    for (const u of units) { if (u.dead || u.inside || u.def.cls !== 'infantry' || ((fill || wo) && !u.def.labour)) continue; issue(u, { kind: 'dig', line, fill }, queue); n++; }
     return n;
   }
   function orderGrenade(units, x, y, target, queue = false) {
@@ -297,6 +349,7 @@ const Game = (() => {
   function enqueue(b, type) {
     const p = G.players[b.owner]; const bp = p.blueprints[type];
     if (!p.unlocked.has(type) || b.queue.length >= 8) return false;
+    if (!p.noSupply && supplyUsed(b.owner) + (bp.supply || 1) > supplyCap(b.owner)) { if (b.owner === 1) toast('Not enough supply: build a Depot'); return false; }
     if (!canAfford(p, bp.cost)) { if (b.owner === 1) toast('Not enough resources'); return false; }
     pay(p, bp.cost); b.queue.push({ type, t: 0, total: prodTime(b, type) }); return true;
   }
@@ -315,9 +368,10 @@ const Game = (() => {
 
   // ---- per-frame systems ----
   function updateResearch(dt) {
-    for (const p of Object.values(G.players)) {
-      if (!p.research) continue; p.research.t += dt;
-      if (p.research.t >= p.research.total) { applyResearch(p, p.research.id); if (p.id === 1) toast('Research complete: ' + Data.RESEARCH[p.research.id].name); p.research = null; }
+    for (const p of Object.values(G.players)) for (const slot of Object.keys(p.research)) {
+      const job = p.research[slot]; if (!owns(p.id, slot)) continue;   // paused while no building of this type stands
+      job.t += dt;
+      if (job.t >= job.total) { delete p.research[slot]; applyResearch(p, job.id); if (p.id === 1) toast('Research complete: ' + Data.RESEARCH[job.id].name); }
     }
   }
   // Labour at a camp: a Worker counts 1, a soldier half (DD Q4). Only those standing near the camp count.
@@ -331,7 +385,7 @@ const Game = (() => {
       if (b.dead) continue;
       if (!b.built) {
         b.progress = Math.min(1, b.progress + dt / b.def.buildTime); b.hp = Math.min(b.maxHp, b.hp + b.maxHp * 0.9 * dt / b.def.buildTime);
-        if (b.built) { b.hp = b.maxHp; if (b.owner === 1) toast(b.def.name + ' complete'); }
+        if (b.built) { b.hp = b.maxHp; if (b.owner === 1) toast(b.def.name + ' complete'); if (b.type === 'lab') checkKit(G.players[b.owner]); }
         continue;
       }
       const p = G.players[b.owner];
@@ -339,7 +393,7 @@ const Game = (() => {
         b.upgrading.t += dt;
         if (b.upgrading.t >= b.upgrading.total) {
           b.upgrading = null; b.level++; const lv = b.levelDef;
-          b.hp += lv.hp - b.maxHp; b.maxHp = lv.hp;
+          const lvHp = lv.hp * (p.bhp[b.type] || 1); b.hp += lvHp - b.maxHp; b.maxHp = lvHp;
           for (const id of b.garrison) { const u = G.unitById.get(id); if (u) u.hBonus = lv.height; }
           if (b.owner === 1) toast(b.def.name + ' upgraded to level ' + b.level);
         }
@@ -350,6 +404,7 @@ const Game = (() => {
         const key = b.def.harvest === 'wood' ? 'wood' : b.depositType;
         if (key) p.res[key] += rate * dt;
       }
+      if (b.def.trickle) for (const k in b.def.trickle) p.res[k] += b.def.trickle[k] * dt;   // DD G2: a Depot's oil trickle
       if (b.owner === 1 || Fog.visible(1, b.x, b.y)) b.seen = true;
     }
   }
@@ -382,8 +437,29 @@ const Game = (() => {
     const ls = u.inside ? null : lineAt(u.x, u.y);
     u.stress = Math.min(1, u.stress + amt * Util.stack('stressTaken', u.def.stressTaken || 1, Math.pow(VET.perRank.stressTaken, u.rank), ls ? LINES[ls.type].stress : 1));   // DD H1: -10% per rank
   }
+  // Camouflage Uniforms (DD F): infantry with camo standing in forest are spotted only by an enemy unit
+  // or building within camo x its vision range. Cached per tick and side.
+  function detected(e, owner) {
+    if (!(e instanceof Unit) || !e.stats.camo || Terrain.typeAt(e.x, e.y) !== Terrain.T_FOREST) return true;
+    if (!e._det || e._det.tick !== G.tick) e._det = { tick: G.tick };
+    if (e._det[owner] != null) return e._det[owner];
+    let ok = false;
+    for (const o of G.units) if (!o.dead && o.owner === owner && dist(o.x, o.y, e.x, e.y) <= o.stats.vision * e.stats.camo) { ok = true; break; }
+    if (!ok) for (const b of G.buildings) if (!b.dead && b.owner === owner && dist(b.x, b.y, e.x, e.y) <= Fog.buildingVision(b).range * e.stats.camo) { ok = true; break; }
+    return (e._det[owner] = ok);
+  }
+  // Smoke Shells: a cloud blocks any sight line that passes through it.
+  function smokeBlocks(x0, y0, x1, y1) {
+    for (const c of G.smokes) {
+      const dx = x1 - x0, dy = y1 - y0, t = clamp(((c.x - x0) * dx + (c.y - y0) * dy) / (dx * dx + dy * dy || 1), 0, 1);
+      if (dist(c.x, c.y, x0 + dx * t, y0 + dy * t) < c.r) return true;
+    }
+    return false;
+  }
   function canSee(u, e) {
+    if (e instanceof Unit && !detected(e, u.owner)) return false;
     if (u.stats.weapon && u.stats.weapon.indirect && u.owner !== 0) return Fog.visible(u.owner, e.x, e.y);
+    if (G.smokes.length && smokeBlocks(u.x, u.y, e.x, e.y)) return false;
     return Terrain.los(u.x, u.y, e.x, e.y, 2.2 + u.hBonus, e instanceof Building ? 6 : 1.8);
   }
   function inRange(u, e) {
@@ -450,7 +526,7 @@ const Game = (() => {
     // DD B: trenches and barricades cover the target; a Bunker's occupants shoot x1.1 (DD I).
     const ls = e instanceof Unit ? lineAt(e.x, e.y) : null, gb = u.inside ? G.buildingById.get(u.inside) : null;
     const p = Util.stack('hit', w.acc, 1 - 0.55 * Math.pow(Math.min(1, d / range), 2), Terrain.coverAt(e.x, e.y), 1 - 0.5 * u.stress,
-      u.wasMoving ? C.movingAcc : 1, hitMult(u, e.x, e.y), e instanceof Building ? 2.5 : 1, Math.pow(VET.perRank.acc, u.rank),
+      u.wasMoving ? rule(u.owner, 'movingAcc', C.movingAcc) : 1, hitMult(u, e.x, e.y), e instanceof Building ? 2.5 : 1, Math.pow(VET.perRank.acc, u.rank),
       ls ? LINES[ls.type].hit : 1, (gb && gb.slots && gb.slots.acc) || 1);
     const hit = R() < p;
     if (!hit && ls && ls.type === 'barricade') damageSeg(ls, w.dmg * DIG.smallArms);   // DD G12: small arms chip barricades
@@ -467,13 +543,16 @@ const Game = (() => {
   function fireShell(u, tx, ty) {
     const w = u.stats.weapon; const d = dist(u.x, u.y, tx, ty);
     const spotted = u.owner === 0 ? true : Fog.visible(u.owner, tx, ty);
-    const scatter = (12 + (1 - w.acc) * 40 + (spotted ? 0 : 70)) * (0.6 + 0.4 * d / w.range) * (1 + u.stress * 0.5);
+    const scatter = (12 + (1 - w.acc) * 40 + (spotted ? 0 : 70)) * (0.6 + 0.4 * d / w.range) * (1 + u.stress * 0.5) * (spotted ? rule(u.owner, 'spotScatter', 1) : 1);   // Forward Observers
     const ang = R() * Math.PI * 2, off = R() * scatter;
     const lx = tx + Math.cos(ang) * off, ly = ty + Math.sin(ang) * off;
-    G.projectiles.push(new Projectile({ kind: 'shell', x: u.x, y: u.y, tx: lx, ty: ly, dur: 0.9 + d / w.pspeed, arc: 25 + d * 0.12, dmg: w.dmg * dmgMult(u, lx, ly), splash: w.splash, dtype: w.dtype, shooter: u, owner: u.owner }));
+    const smoke = !!(u.order && u.order.smoke);
+    G.projectiles.push(new Projectile({ kind: 'shell', smoke, x: u.x, y: u.y, tx: lx, ty: ly, dur: 0.9 + d / w.pspeed, arc: 25 + d * 0.12, dmg: w.dmg * dmgMult(u, lx, ly), splash: w.splash, dtype: w.dtype, shooter: u, owner: u.owner }));
+    if (smoke) nextOrder(u);   // a smoke order fires one round
   }
   function explode(pr) {
     const { tx: x, ty: y, splash, dmg, dtype, shooter } = pr;
+    if (pr.smoke) { G.smokes.push({ x, y, r: Data.SMOKE.radius, t: 0, dur: Data.SMOKE.time }); G.smokeVer++; return; }   // Smoke Shells: no damage
     G.effects.push({ kind: 'explosion', x, y, r: splash, t: 0, dur: 0.6 });
     for (const e of G.units) {
       if (e.dead || e.inside) continue; const d = dist(e.x, e.y, x, y); if (d > splash) continue;
@@ -573,7 +652,9 @@ const Game = (() => {
     const line = G.lineNext++, out = [], T = LINES[type];
     for (let i = 1; i < res.length; i++) {
       const [x0, y0] = res[i - 1], [x1, y1] = res[i], x = (x0 + x1) / 2, y = (y0 + y1) / 2;
-      if (![[x0, y0], [x, y], [x1, y1]].every(q => Terrain.passableAt(q[0], q[1], INF))) continue;
+      const okAt = q => Terrain.passableAt(q[0], q[1], INF) || (T.overWater && Terrain.typeAt(q[0], q[1]) === Terrain.T_WATER);
+      if (![[x0, y0], [x, y], [x1, y1]].every(okAt)) continue;
+      if (T.overWater && ![[x0, y0], [x, y], [x1, y1]].some(q => Terrain.typeAt(q[0], q[1]) === Terrain.T_WATER && !Terrain.roadAt(q[0], q[1]))) continue;   // a bridge must cross water
       if (segNear(x, y, false, line)) continue;
       const sg = { id: G.segNext++, line, type, owner, x0, y0, x1, y1, x, y, progress: 0, paid: false, done: false, hp: 0, maxHp: T.hp || 0, dead: false, seen: owner === 1 };
       sg.cells = segCells(sg, [-LINE_HALF, 0, LINE_HALF], LINE_HALF); sg.route = segCells(sg, [0], 0);
@@ -597,14 +678,23 @@ const Game = (() => {
     for (const k of sg.cells) { const a = G.segGrid.get(k); if (a) { const i = a.indexOf(sg); if (i >= 0) a.splice(i, 1); if (!a.length) G.segGrid.delete(k); } }
     G.segs = G.segs.filter(o => o !== sg); G.segById.delete(sg.id);
     if (sg.done && applyRoute(sg, false)) Path.invalidate();
+    if (sg.road) {   // a blown bridge or road: soldiers left standing on water climb out to the nearest bank
+      Terrain.removeRoad(sg.road); sg.road = null; Path.invalidate();
+      for (const u of G.units) if (!u.dead && !u.inside && segDist(sg, u.x, u.y) < 20 && !Terrain.passableAt(u.x, u.y, u.cls)) { const q = Path.nearestPassable(Terrain.cellI(u.x), Terrain.cellJ(u.y), u.cls); if (q) { u.x = Terrain.cx(q[0]); u.y = Terrain.cy(q[1]); } }
+    }
   }
   // DD: paths are recalculated once per finished line, not per segment.
   function lineCheck(line, type, owner) {
     if (G.segs.some(o => o.line === line && !o.done)) return;
-    if (LINES[type].slowOwn < 1) Path.invalidate();
+    if (LINES[type].slowOwn < 1 || LINES[type].becomesRoad) Path.invalidate();
     if (owner === 1 && G.segs.some(o => o.line === line)) toast(LINES[type].name + ' finished');
   }
-  function finishSeg(sg) { sg.done = true; sg.progress = 1; sg.hp = sg.maxHp; applyRoute(sg, true); lineCheck(sg.line, sg.type, sg.owner); }
+  function finishSeg(sg) {
+    sg.done = true; sg.progress = 1; sg.hp = sg.maxHp; applyRoute(sg, true);
+    const T = LINES[sg.type];
+    if (T.becomesRoad) { sg.road = Terrain.addRoad([[sg.x0, sg.y0], [sg.x1, sg.y1]]); if (T.overWater) Path.invalidate(); }   // each bridge span opens the way to the next
+    lineCheck(sg.line, sg.type, sg.owner);
+  }
   function damageSeg(sg, dmg) {
     if (!sg.done || !sg.maxHp || sg.dead || dmg <= 0) return;
     sg.hp -= dmg;
@@ -618,7 +708,7 @@ const Game = (() => {
       pay(p, T.cost); sg.paid = true;
     }
     // DD B: 15 s per 10 m for a soldier, Workers 1.5x and +10% per rank (DD H1); Entrenching Tools x1.3.
-    const rate = (u.def.labour ? DIG.workerMult * Math.pow(VET.perRank.work, u.rank) : 1) * p.digMult / DIG.time;
+    const rate = (u.def.labour ? DIG.workerMult * Math.pow(VET.perRank.work, u.rank) : 1) * p.digMult / (T.time || DIG.time);
     u.facing = Math.atan2(sg.y - u.y, sg.x - u.x); u.digT = G.time;
     const before = sg.progress; sg.progress = clamp(sg.progress + (fill ? -rate : rate) * dt, 0, 1);
     if (u.def.labour) addXp(u, Math.abs(sg.progress - before) * DIG.xpPerSegment);   // DD H1: 1 XP per 10 m dug
@@ -644,12 +734,12 @@ const Game = (() => {
   function planDig(pid, type, pts, units, queue) {
     const p = G.players[pid], T = LINES[type]; if (!T || !Array.isArray(pts) || pts.length < 2) return 0;
     if (!hasTech(p, T)) { if (pid === 1) toast('Research ' + Data.RESEARCH[T.requires].name + ' first'); return 0; }
-    let diggers = units.filter(u => u.owner === pid && u.def.cls === 'infantry' && !u.inside);
+    let diggers = units.filter(u => u.owner === pid && u.def.cls === 'infantry' && !u.inside && (!T.workersOnly || u.def.labour));
     if (!diggers.length) {
       const [mx, my] = pts[Math.floor(pts.length / 2)];
       diggers = G.units.filter(u => !u.dead && u.owner === pid && u.def.labour && !u.inside && u.work == null && !u.order && dist(u.x, u.y, mx, my) <= DIG.idleWorkerRange);
     }
-    if (!diggers.length) { if (pid === 1) toast('Select soldiers to dig, or have idle Workers within ' + DIG.idleWorkerRange + ' m'); return 0; }
+    if (!diggers.length) { if (pid === 1) toast(T.workersOnly ? T.name + 's are built by Workers: select some, or have idle ones within ' + DIG.idleWorkerRange + ' m' : 'Select soldiers to dig, or have idle Workers within ' + DIG.idleWorkerRange + ' m'); return 0; }
     const segs = planLine(pid, type, pts);
     if (!segs.length) { if (pid === 1) toast('Cannot dig there'); return 0; }
     return orderDig(diggers, segs[0].line, false, queue);
@@ -659,7 +749,7 @@ const Game = (() => {
   const canThrow = u => !!(u.def.grenade && G.players[u.owner] && G.players[u.owner].done.has('grenades'));
   function throwGrenade(u, tx, ty) {
     if (u.owner !== 0) { const p = G.players[u.owner]; if (!canAfford(p, NADE.ammo)) { if (u.owner === 1 && G.time - (u.noAmmoT || -99) > 15) { u.noAmmoT = G.time; toast('No sulfur for grenades'); } return false; } pay(p, NADE.ammo); }
-    u.nadeT = NADE.cooldown; u.facing = Math.atan2(ty - u.y, tx - u.x);
+    u.nadeT = u.stats.nadeCooldown || NADE.cooldown;   // Storm Troops: 12 s for Riflemen trained after it u.facing = Math.atan2(ty - u.y, tx - u.x);
     // Kaan, 0.4.2: never quite on target, and now and then a throw goes wide.
     const ang = R() * Math.PI * 2, bad = R() < NADE.badChance;
     const off = R() * (NADE.scatter + NADE.scatterPerM * dist(u.x, u.y, tx, ty)) * (1 + u.stress) + (bad ? NADE.badMin + R() * (NADE.badMax - NADE.badMin) : 0);
@@ -703,6 +793,29 @@ const Game = (() => {
     }
     return best;
   }
+  // Smoke clouds fade; Signals keeps where enemies were last seen (drawn as fading markers, 30 s).
+  function updateSmokes(dt) {
+    if (!G.smokes.length) return;
+    for (const c of G.smokes) c.t += dt;
+    const n = G.smokes.length; G.smokes = G.smokes.filter(c => c.t < c.dur); if (G.smokes.length !== n) G.smokeVer++;
+  }
+  function updateSignals(dt) {
+    G.seenT += dt; if (G.seenT < 0.5) return; G.seenT = 0;
+    for (const p of Object.values(G.players)) {
+      if (!p.done.has('signals') || p.noSupply || p.id === 0) continue;
+      const m = G.lastSeen[p.id] || (G.lastSeen[p.id] = new Map());
+      for (const e of G.units) if (!e.dead && !e.inside && e.owner !== p.id && e.owner !== 0 && Fog.visible(p.id, e.x, e.y) && detected(e, p.id)) m.set(e.id, { x: e.x, y: e.y, t: G.time, shape: e.def.shape, owner: e.owner, size: e.size });
+      for (const [id, r] of m) { const e = G.unitById.get(id); if (!e || e.dead || G.time - r.t > 30) m.delete(id); }
+    }
+  }
+  // Intelligence (DD F): a warning when an enemy raid leaves its base. Called by the AI.
+  function raidLaunched(pid, units) {
+    for (const p of Object.values(G.players)) {
+      if (p.id === pid || p.id !== 1 || !p.done.has('intelligence') || !units.length) continue;
+      let x = 0, y = 0; for (const u of units) { x += u.x; y += u.y; } x /= units.length; y /= units.length;
+      toast('Intelligence: an enemy raid of ' + units.length + ' is leaving their base'); G.effects.push({ kind: 'ping', x, y, t: 0, dur: 6 });
+    }
+  }
   function updateHealing(dt) {
     G.healT += dt; if (G.healT < Data.HEAL.tick) return; const step = G.healT; G.healT = 0;
     for (const b of G.buildings) {
@@ -714,7 +827,8 @@ const Game = (() => {
       let t = m.patient;
       if (!t || t.dead || t.hp >= t.stats.hp || dist(t.x, t.y, m.x, m.y) > h.range) t = m.patient = findPatient(m, h.range);
       if (!t) continue;
-      const amt = Math.min(t.stats.hp - t.hp, h.rate * Math.pow(VET.perRank.work, m.rank) * step);   // DD H1: +10% per rank
+      const tri = t.hp < t.stats.hp * 0.5 ? rule(m.owner, 'triage', 1) : 1;   // Triage: twice as fast under 50%
+      const amt = Math.min(t.stats.hp - t.hp, h.rate * tri * Math.pow(VET.perRank.work, m.rank) * step);   // DD H1: +10% per rank
       t.hp += amt; addXp(m, amt / Data.HEAL.medicXpPer);   // DD H1: 1 XP per 20 HP healed
     }
   }
@@ -771,7 +885,7 @@ const Game = (() => {
     let near = false, lead = false;
     for (const m of membersOf(s)) {
       if (m === u) continue; const d = dist(m.x, m.y, u.x, u.y);
-      if (d < SQ.cohesionRadius) near = true;
+      if (d < rule(u.owner, 'cohesionRadius', SQ.cohesionRadius)) near = true;
       if (m.id === s.leader && d < SQ.leaderRadius) lead = true;
     }
     return (near ? SQ.cohesionDecay : C.stressDecay) * (lead ? SQ.leaderAura : 1);
@@ -945,12 +1059,27 @@ const Game = (() => {
             for (const c of G.segs) if (c.line === o.line && (o.fill ? c.done : !c.done)) { const d = dist(u.x, u.y, c.x, c.y); if (d < bd) { bd = d; sg = c; } }
             o.seg = sg; if (!sg) { nextOrder(u); break; }
           }
-          if (dist(u.x, u.y, sg.x, sg.y) > 16) {
+          if (segDist(sg, u.x, u.y) > 16) {
             if (o.fseg !== sg) { o.fseg = sg; u.field = Path.getField(sg.x, sg.y, u.def.cls, G.time); if (!u.field) { nextOrder(u); break; } }
             if (followField(u, dt, spd)) moveToward(u, sg.x, sg.y, dt, spd);
             break;
           }
           digSeg(u, sg, o.fill, dt);
+          break;
+        }
+        case 'demolish': {   // Demolition Charges: walk up, set the charge for 3 s, blow the segment
+          const sg = o.seg;
+          if (!sg || sg.dead) { nextOrder(u); break; }
+          if (segDist(sg, u.x, u.y) > Data.DEMOLITION.reach) {
+            if (!u.field || o.fseg !== sg) { o.fseg = sg; u.field = Path.getField(sg.x, sg.y, u.def.cls, G.time); if (!u.field) { nextOrder(u); break; } }
+            if (followField(u, dt, spd)) moveToward(u, sg.x, sg.y, dt, spd);
+            break;
+          }
+          u.facing = Math.atan2(sg.y - u.y, sg.x - u.x); u.digT = G.time; o.t += dt;
+          if (o.t < Data.DEMOLITION.time) break;
+          const p = G.players[u.owner];
+          if (!canAfford(p, Data.DEMOLITION.cost)) { if (u.owner === 1) toast('No sulfur for a demolition charge'); nextOrder(u); break; }
+          pay(p, Data.DEMOLITION.cost); G.effects.push({ kind: 'explosion', x: sg.x, y: sg.y, r: 14, t: 0, dur: 0.6 }); removeSeg(sg); nextOrder(u);
           break;
         }
         case 'grenade': {   // walk into reach, throw once the cooldown allows, then carry on
@@ -1058,6 +1187,17 @@ const Game = (() => {
         return orderDig(us, sg.line, c.kind === 'fill', q);
       }
       case 'grenade': { const t = c.target != null ? entById(c.target) : null; return orderGrenade(us, c.x, c.y, t && !t.dead ? t : null, q); }
+      case 'smoke': {   // Smoke Shells: mortars fire one smoke round at the point
+        if (!G.players[pid].done.has('smoke')) return 0; let n = 0;
+        for (const u of us) if (isIndirect(u)) { issue(u, { kind: 'bombard', x: c.x, y: c.y, smoke: true }, q); n++; }
+        return n;
+      }
+      case 'demolish': {
+        const sg = G.segById.get(c.seg); if (!sg || !LINES[sg.type].demolish || !G.players[pid].done.has('demolition')) return 0;
+        let best = null; for (const u of us) if (u.def.cls === 'infantry' && u.stats.weapon && !u.inside && (!best || dist(u.x, u.y, sg.x, sg.y) < dist(best.x, best.y, sg.x, sg.y))) best = u;
+        if (best) issue(best, { kind: 'demolish', seg: sg }, q);   // one sapper, the nearest, is enough
+        return best ? 1 : 0;
+      }
     }
     return false;
   }
@@ -1066,7 +1206,7 @@ const Game = (() => {
     G.tick++;
     G.time += dt;
     updateResearch(dt); updateBuildings(dt);
-    updateSquads(); updateLines(); updateHealing(dt);
+    updateSquads(); updateLines(); updateHealing(dt); updateSmokes(dt); updateSignals(dt);
     for (const u of G.units) if (!u.dead) updateUnit(u, dt);
     separate();
     updateProjectiles(dt); updateEffects(dt);
@@ -1082,6 +1222,7 @@ const Game = (() => {
     canAfford, researchState, startResearch, statsFor, prodTime,
     spawnUnit, addBuilding, canPlace, placeBuilding,
     orderMove, orderAttack, orderBombard, orderStop, orderHold, orderWork, orderRetreat, orderGarrison,
+    researchLock, slotOf, owns, supplyCap, supplyUsed, costOf, maxWorkers, detected, raidLaunched, smokeBlocks,
     canEnter, unloadBuilding, upgradeTower, slotCount, hasTech, canThrow, lineAt, segNear, orderDig, orderGrenade,
     enqueue, cancelQueue, harvestRate, activeWorkers, effRange,
     squadCentre, membersOf, setSquad,

@@ -1034,6 +1034,36 @@ metre thrown** from its aim point (8 m at the full 25 m), times (1 + the thrower
 | 10 grenadiers v full Bunker (5 inside) | 100% | 98% |
 | 12 grenadiers v full Bunker (5 inside) | not run | 100% |
 
+### Patch 0.5 plan (Kaan, 29 September 2026)
+
+| Topic | Decision |
+| --- | --- |
+| Split | 0.5 is built in two parts. **0.5a:** tech tree, new buildings (Workshop, Depot, R&D Lab, Rubber Tapper, Refinery), supply cap. **0.5b:** Truck, fuel, boarding, repair, retrofit, truck upgrade tracks, Motorisation. |
+| Road Building | Roads are drawn with the line tool (B then E) and built by **Workers only**: **20 wood per 10 m, 10 s per 10 m** (proposed). A finished segment becomes road. |
+| Bridging | Bridges are drawn the same way (B then V), **Workers only, over water**: **40 wood + 20 metal per 10 m, 20 s per 10 m** (proposed). A bridge is a road across water. |
+| Demolition Charges | A soldier walks to a barricade, wire or bridge segment, spends **3 s** setting a charge (**1 sulfur**) and destroys it (C, proposed). Trenches stay. |
+| Hotkeys | Building and line keys work **only while the Build tab is open** (press B, then the letter). That frees the letters for unit orders at other times. New in the Build tab: K Workshop, G Depot, R R&D Lab, Z Rubber Tapper, F Refinery, E Road, V Bridge. New unit orders: **M** smoke shells (mortars), **C** demolition charge. WASD pans everywhere. |
+
+### Built in patch 0.5a (notes for Kaan)
+
+| Topic | What 0.5a does |
+| --- | --- |
+| Research moved | Heavy Machine Gun, Marksman Rifle, Improved Powder and HE Shells are Tier II now, so they need a Barracks or an Ordnance Works; they were on the HQ list before. |
+| Paused research | A project pauses while you own none of its building type (for example your only Barracks is destroyed) and continues when one stands again. |
+| Supply | Counted when a unit is queued, so a full queue can't overshoot the cap. The scripted AI ignores supply and keeps its own unit cap (DD Q23). |
+| Camouflage | "Seen at −30% vision range" is built as: a camouflaged soldier in forest is spotted (drawn, targeted, clickable) only by an enemy unit or building within 70% of its vision range. |
+| Smoke | One smoke round per M order, using the mortar's normal ammo (2 sulfur). The cloud is 35 m across in radius (proposed) and blocks both line of sight and fog-of-war vision. |
+| Demolition | Only armed soldiers set charges, and one order sends the nearest soldier. You can also blow up your own barricades, wire and bridges. |
+| Roads | A finished road or bridge segment becomes a normal map road (red line). Trenches can't be dug across a road you built. |
+| Research slot count | Six slots show (HQ and the five branch buildings). The R&D Lab's own slot gets items in 0.5b (truck upgrades). |
+| Motorisation | Moved to 0.5b with the Truck, since it unlocks nothing until then. |
+| AI | The scripted AI doesn't research, build or use any of this. |
+
+**Red target: first Tier II research affordable.** Target 6–10 game minutes; measured **0.9 min**
+(3 seeds, the standard opening). The cheapest Tier II item, the Heavy Machine Gun, costs 90 metal,
+and the start plus one Mine covers that within a minute. The Tier II costs in section F are the
+old ones, so the tech tree alone doesn't move this. Not retuned; Kaan to decide.
+
 ---
 
 ## Still open

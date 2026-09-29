@@ -22,9 +22,10 @@ const AI = (() => {
     const c = f.cost[Terrain.cellIdxAt(mine.x, mine.y + mine.h / 2 + 12)];
     return Number.isFinite(c) ? c / Data.UNITS.rifle.speed : 0;
   }
+  // Commanded sides ignore the supply cap: the scripted AI keeps its own unit cap (DD Q23).
   function reset(pids = [2]) {
     sides = {};
-    for (const pid of pids) { const walk = walkTime(pid); sides[pid] = { thinkT: 0, walk, raidT: walk + params().buildUp, lastDefend: -99, raids: 0, seen: new Map() }; }
+    for (const pid of pids) { const walk = walkTime(pid); if (G.players[pid]) G.players[pid].noSupply = true; sides[pid] = { thinkT: 0, walk, raidT: walk + params().buildUp, lastDefend: -99, raids: 0, seen: new Map() }; }
   }
   // DD G7: the AI may train a unit only once its unlock time (per difficulty) has passed.
   function unlockDue(p, D) { for (const [t, at] of Object.entries(D.unlocks || {})) if (G.time >= at) p.unlocked.add(t); }
@@ -79,7 +80,7 @@ const AI = (() => {
       const allIn = mine.length >= X.allInRatio * Math.max(X.minEnemy, st.seen.size);
       const frac = allIn ? 1 : Math.min(X.raidFracMax, D.raidFrac + st.raids * X.raidGrow);
       const raiders = mine.filter(u => !u.raiding).slice(0, Math.max(3, Math.ceil(mine.length * frac)));
-      if (targetHq && raiders.length) { st.raids++; for (const u of raiders) u.raiding = true; Game.orderMove(raiders, targetHq.x, targetHq.y, 'attackmove'); }
+      if (targetHq && raiders.length) { st.raids++; for (const u of raiders) u.raiding = true; Game.orderMove(raiders, targetHq.x, targetHq.y, 'attackmove'); Game.raidLaunched(pid, raiders); }
     }
     for (const u of mine) if (u.raiding && !u.order && !u.target) { u.raiding = false; Game.orderMove([u], hq.x, hq.y + 70, 'move'); }
   }

@@ -6,6 +6,8 @@
 // Every order goes through Game.command, which logs it with its tick for replays.
 // Patch 0.4: line tools (Y trench, I barricade, J wire) are drawn by holding the left button and
 // dragging; K fills a trench (Workers), V throws a grenade (Riflemen, after the research).
+// Patch 0.5a (Kaan): building and line keys work only while the Build tab is open (B, then the
+// letter), which frees the letters for unit orders: M smoke shells (mortars), C demolition charge.
 // TODO(patch 0.3): load/unload keys for transports (reuse the work/garrison click flow).
 const Input = (() => {
   const { dist } = Util;
@@ -52,7 +54,7 @@ const Input = (() => {
   function entityAt(wx, wy) {
     let best = null, bestD = Infinity;
     for (const u of G.units) {
-      if (u.dead || u.inside) continue; if (u.owner !== 1 && !Fog.visible(1, u.x, u.y)) continue;
+      if (u.dead || u.inside) continue; if (u.owner !== 1 && (!Fog.visible(1, u.x, u.y) || !Game.detected(u, 1))) continue;
       const d = dist(u.x, u.y, wx, wy) - u.size; if (d < 5 && d < bestD) { best = u; bestD = d; }
     }
     if (best) return best;
@@ -68,7 +70,7 @@ const Input = (() => {
   }
   const trainable = b => b.def.produces.filter(t => G.players[1].unlocked.has(t));
   function setMode(m, buildType) {
-    if ((m === 'walk' || m === 'attack' || m === 'work' || m === 'fill' || m === 'grenade') && !selectedUnits().length) m = 'normal';
+    if (['walk', 'attack', 'work', 'fill', 'grenade', 'smoke', 'demolish'].includes(m) && !selectedUnits().length) m = 'normal';
     if (m === 'build' && Data.LINES[buildType]) { m = 'line'; }   // line tools share the build menu and keys
     state.mode = m; state.buildType = m === 'build' ? buildType : null; state.lineType = m === 'line' ? buildType : null; state.linePts = null; UI.refresh();
   }
@@ -101,6 +103,16 @@ const Input = (() => {
       const sg = ownSegAt(wx, wy, true);
       if (sg && sg.type === 'trench') { const n = cmd({ kind: 'fill', units: ids(units), seg: sg.id, queue: q }); Game.toast(n ? n + ' Workers filling the trench' : 'Only Workers can fill trenches'); marker(sg.x, sg.y, '#3c3'); if (!q) setMode('normal'); }
       else Game.toast('Click one of your trenches');
+      return;
+    }
+    if (state.mode === 'smoke') {
+      const n = cmd({ kind: 'smoke', units: ids(units), x: wx, y: wy, queue: q });
+      if (!n) Game.toast('Smoke needs Mortar Crews and the Smoke Shells research'); marker(wx, wy, '#aaa'); if (!q) setMode('normal'); return;
+    }
+    if (state.mode === 'demolish') {
+      const sg = Game.segNear(wx, wy, false);
+      if (sg && Data.LINES[sg.type].demolish) { const n = cmd({ kind: 'demolish', units: ids(units), seg: sg.id, queue: q }); Game.toast(n ? 'A sapper is going to blow the ' + Data.LINES[sg.type].name.toLowerCase() : 'Demolition needs a soldier and the Demolition Charges research'); marker(sg.x, sg.y, '#c33'); if (!q) setMode('normal'); }
+      else Game.toast('Click a barricade, barbed wire or a bridge');
       return;
     }
     if (state.mode === 'grenade') {
@@ -211,6 +223,7 @@ const Input = (() => {
     if (k === 'escape') { if (state.mode !== 'normal') setMode('normal'); else select([], false); return; }
     if (k.startsWith('arrow')) { state.keys.add(k); return; }
     if (PAN_KEYS[k] && !e.ctrlKey && !e.metaKey) { state.keys.add(PAN_KEYS[k]); return; }
+    if (UI.tab === 'build' && BUILD_KEYS[k] && !e.ctrlKey) { setMode('build', BUILD_KEYS[k]); return; }   // Kaan, 0.5a: B first, then the letter
     const units = selectedUnits(); const b = selectedBuilding(); const p = G.players[1];
     if (b && b.built && b.def.produces && TRAIN_KEYS.includes(k)) {
       const t = trainable(b)[state.trainPage * TRAIN_KEYS.length + TRAIN_KEYS.indexOf(k)];
@@ -227,10 +240,11 @@ const Input = (() => {
       if (k === 'e') { setMode('work'); return; }
       if (k === 'k' && units.some(u => u.def.labour)) { setMode('fill'); return; }
       if (k === 'v' && units.some(u => Game.canThrow(u))) { setMode('grenade'); return; }
+      if (k === 'm' && p.done.has('smoke') && units.some(u => u.stats.weapon && u.stats.weapon.indirect)) { setMode('smoke'); return; }
+      if (k === 'c' && p.done.has('demolition') && units.some(u => u.stats.weapon)) { setMode('demolish'); return; }
     }
     if (k === 'b') { UI.showTab('build'); return; }
     if (k === 'n') { UI.showTab('research'); return; }
-    if (BUILD_KEYS[k] && !e.ctrlKey) { setMode('build', BUILD_KEYS[k]); UI.showTab('build'); return; }
     if (k === 'h') { const hq = G.buildings.find(x => x.owner === 1 && x.type === 'hq' && !x.dead); if (hq) { select([hq], false); Render.centerOn(hq.x, hq.y); } return; }
     if (k === 'tab') {
       e.preventDefault();

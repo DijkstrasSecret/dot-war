@@ -27,6 +27,8 @@ const Fog = (() => {
   }
 
   // Cast rays from (x, y) with the eye `eyeH` metres above ground, marking visible cells within r.
+  let smokes = [];
+  function inSmoke(px, py) { for (const c of smokes) if ((px - c.x) * (px - c.x) + (py - c.y) * (py - c.y) < c.r * c.r) return true; return false; }
   function cast(v, x, y, r, eyeH = 2.2, out = null) {
     const CELL = Terrain.CELL;
     const step = CELL * 0.5, nsteps = Math.ceil(r / step);
@@ -49,6 +51,7 @@ const Fog = (() => {
         if ((ht + tol - h0) / d >= maxSlope) { if (out && !v[k]) out.push(k); v[k] = 1; }
         const sg = (ht - h0) / d; if (sg > maxSlope) maxSlope = sg;
         if (type[k] === T_FOREST) { forest++; if (forest * step > 36) break; }
+        if (smokes.length && inSmoke(px, py)) break;   // Smoke Shells: nothing seen in or beyond a cloud
       }
     }
   }
@@ -57,15 +60,15 @@ const Fog = (() => {
 
   function castCached(v, e, x, y, r, eye) {
     const c = castCache.get(e);
-    if (c && c.x === x && c.y === y && c.r === r && c.eye === eye) { const cells = c.cells; for (let i = 0; i < cells.length; i++) v[cells[i]] = 1; return; }
+    if (c && c.x === x && c.y === y && c.r === r && c.eye === eye && c.sv === G.smokeVer) { const cells = c.cells; for (let i = 0; i < cells.length; i++) v[cells[i]] = 1; return; }
     // Record into a fresh grid so the list holds every cell this caster sees, not only new ones.
     scratch.fill(0); const out = []; cast(scratch, x, y, r, eye, out);
     for (let i = 0; i < out.length; i++) v[out[i]] = 1;
-    castCache.set(e, { x, y, r, eye, cells: Int32Array.from(out) });
+    castCache.set(e, { x, y, r, eye, sv: G.smokeVer, cells: Int32Array.from(out) });
   }
   let scratch = null;
   function computeFor(owner) {
-    const v = vis[owner]; v.fill(0);
+    const v = vis[owner]; v.fill(0); smokes = G.smokes || [];
     if (!scratch || scratch.length !== W * H) scratch = new Uint8Array(W * H);
     for (const u of G.units) if (u.owner === owner && !u.dead && !u.inside) castCached(v, u, u.x, u.y, visionRadius(u.stats.vision, u.x, u.y), 2.2);
     for (const b of G.buildings) if (b.owner === owner && !b.dead) { const bv = buildingVision(b); castCached(v, b, b.x, b.y, visionRadius(bv.range, b.x, b.y, bv.eye) * (b.built ? 1 : 0.5), bv.eye); }
