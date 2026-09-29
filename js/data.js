@@ -38,7 +38,7 @@ const Data = {
     },
     hmg: {
       name: 'Machine Gunner', shape: 'circle', icon: 'hmg', cls: 'infantry', size: 6.5, role: 2,
-      hp: 80, armor: 'none', speed: 38, vision: 160, cost: { wood: 15, metal: 45 }, time: 14, supply: 1, requires: 'hmg',   // Kaan, 0.5c: dearer (was 10 / 35), supply stays 1 noMovingFire: true,   // DD Q11: cannot fire on the move
+      hp: 80, armor: 'none', speed: 38, vision: 160, cost: { wood: 15, metal: 45 }, time: 14, supply: 1, requires: 'hmg', noMovingFire: true,   // DD Q11: cannot fire on the move. Kaan, 0.5c: dearer (was 10 / 35), supply stays 1
       // Kaan, 0.5c: an MG's strength is suppression, not killing: damage 11 -> 6, and its suppression spreads
       // to soldiers within 50 m of the target at half strength (others' shots: 30 m, 20%).
       weapon: { dmg: 6, dtype: 'ballistic', range: 200, minRange: 0, acc: 0.4, reload: 0.18, pspeed: 900, indirect: false, splash: 0, suppress: 0.035, suppressArea: { r: 50, share: 0.5 } },
@@ -285,6 +285,7 @@ const Data = {
   VISION: { perSqrt: 0.04, max: 0.5, deadZone: 3 },
   // Kaan, 0.5b.2: idle soldiers shot from beyond their reach attack-move at the shooter (at most every `every` s).
   RETURN_FIRE: { every: 5, join: 60 },
+  ALERT: { every: 20, area: 400 },   // 0.5c: one "under attack" alert per 400 m area per 20 s of quiet
   CAPS: { hit: { max: 0.95 }, stressTaken: { min: 0.25 }, speed: { min: 0.2 }, vision: { min: 0.35 } },
   // Supply chains (Kaan, 0.5a.2, 0.5a.3): gatherers fill their own stock; assigned people carry loads
   // along the building's supply link (a Depot the player picked, or the HQ). Depots link to the HQ or

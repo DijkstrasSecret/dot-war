@@ -9,6 +9,7 @@
 // Patch 0.5a (Kaan): building and line keys work only while the Build tab is open (B, then the
 // letter), which frees the letters for unit orders: M smoke shells (mortars), C demolition charge.
 // Trucks (0.5b): right click or E on a Truck boards it, Q unloads.
+// 0.5c: I next idle Worker, O army overview, J jump to the latest alert.
 const Input = (() => {
   const { dist } = Util;
   const state = { mode: 'normal', buildType: null, box: null, mouse: { x: 0, y: 0, wx: 0, wy: 0, inside: false, moveT: 0 }, keys: new Set(), lastGroupT: 0, lastGroupK: '', trainPage: 0, lineType: null, linePts: null };
@@ -259,6 +260,10 @@ const Input = (() => {
       if (k === 'm' && p.done.has('smoke') && units.some(u => u.stats.weapon && u.stats.weapon.indirect)) { setMode('smoke'); return; }
       if (k === 'c' && p.done.has('demolition') && units.some(u => u.stats.weapon)) { setMode('demolish'); return; }
     }
+    // 0.5c (free keys): I next idle Worker, O army overview, J jump to the latest "under attack" alert.
+    if (k === 'i') { UI.nextIdleWorker(); return; }
+    if (k === 'o') { UI.showTab('army'); return; }
+    if (k === 'j') { if (G.alert) Render.centerOn(G.alert.x, G.alert.y); else Game.toast('No alerts yet'); return; }
     if (k === 'b') { UI.showTab('build'); return; }
     if (k === 'n') { UI.showTab('research'); return; }
     if (k === 'h') { const hq = G.buildings.find(x => x.owner === 1 && x.type === 'hq' && !x.dead); if (hq) { select([hq], false); Render.centerOn(hq.x, hq.y); } return; }

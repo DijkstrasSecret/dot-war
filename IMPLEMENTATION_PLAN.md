@@ -241,14 +241,15 @@ Built in two parts (Kaan): **0.5a** tech tree, buildings and supply (done); **0.
 
 ## Patch 0.5c: Balance and convenience (Kaan, 30 Sept, from the 0.5b.1 baseline)
 
-- [ ] Machine Gunner supply 1 → 2.
-- [ ] Forest cover only at the forest edge.
-- [ ] First raid by difficulty: walking time + 8 min (Easy), + 5 (Normal), + 3.5 (Hard).
-- [ ] Mortar minimum range 90 → 150 m.
-- [ ] Idle Worker button with a count, selects and centres the next idle Worker.
-- [ ] Army overview panel: units by type, idle / working / in Trucks / garrisoned; click to select.
-- [ ] Under-attack alerts: minimap ping, toast, a key to jump there.
-- [ ] Repeat production: right click a unit in a factory's list to train it on repeat.
+- [x] Machine Gunner: supply 2 tried and reverted (Kaan); instead dearer (15 wood, 45 metal), damage
+      6, suppression spreads 50 m at half strength.
+- [x] Forest cover only at the forest edge, cover 0.75 (Kaan's pick).
+- [x] First raid by difficulty: walking time + 8 min (Easy), + 5 (Normal), + 3.5 (Hard).
+- [x] Mortar minimum range 90 → 150 m; mortars step back from enemies inside it.
+- [x] Idle Worker button with a count (I), selects and centres the next idle Worker.
+- [x] Army overview tab (O): units by type, idle / working / in Trucks / inside / busy; click to select.
+- [x] Under-attack alerts: minimap ping, toast, J jumps there.
+- [x] Repeat production: right click a unit in a factory's list to train it on repeat.
 - [ ] Meta snapshot re-run and compared with the baseline.
 
 ## Patch 0.5d: A smarter enemy (Kaan, 30 Sept)
