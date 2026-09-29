@@ -39,6 +39,7 @@ const Game = (() => {
     G.segs = []; G.segById = new Map(); G.segGrid = new Map(); G.segNext = 1; G.lineNext = 1; G.healT = 0;   // line defences, healing (0.4)
     G.smokes = []; G.smokeVer = 0; G.lastSeen = {}; G.seenT = 0;   // smoke clouds, Signals markers (0.5a)
     G.planT = 1e9; G.cutT = 0;   // supply chains (0.5a.2): replan at once on the first tick
+    G.alert = null;   // 0.5c: the latest "under attack" place, for the J key
     G.players = { 0: newPlayer(0, {}), 1: newPlayer(1, Data.START.res), 2: newPlayer(2, { wood: 3000, metal: 1500, sulfur: 600 }) };
     for (const t of Object.keys(Data.UNITS)) G.players[0].unlocked.add(t);   // neutral guards; the AI unlocks over time (DD G7)
   }
@@ -381,11 +382,11 @@ const Game = (() => {
   }
 
   // ---- production ----
-  function enqueue(b, type) {
+  function enqueue(b, type, quiet) {
     const p = G.players[b.owner]; const bp = p.blueprints[type];
     if (!p.unlocked.has(type) || b.queue.length >= 8) return false;
-    if (!p.noSupply && supplyUsed(b.owner) + (bp.supply || 1) > supplyCap(b.owner)) { if (b.owner === 1) toast('Not enough supply: build a Depot'); return false; }
-    if (!canAfford(p, bp.cost)) { if (b.owner === 1) toast('Not enough resources'); return false; }
+    if (!p.noSupply && supplyUsed(b.owner) + (bp.supply || 1) > supplyCap(b.owner)) { if (b.owner === 1 && !quiet) toast('Not enough supply: build a Depot'); return false; }
+    if (!canAfford(p, bp.cost)) { if (b.owner === 1 && !quiet) toast('Not enough resources'); return false; }
     pay(p, bp.cost); b.queue.push({ type, t: 0, total: prodTime(b, type), cost: { ...bp.cost } }); return true;   // the price paid, for a fair refund
   }
   function cancelQueue(b, i) { const q = b.queue[i]; if (!q) return; pay(G.players[b.owner], q.cost || G.players[b.owner].blueprints[q.type].cost, -1); b.queue.splice(i, 1); }   // refunds what was paid, not today's price
@@ -438,6 +439,7 @@ const Game = (() => {
         }
       }
       if (b.queue.length) { const q = b.queue[0]; q.t += dt; if (q.t >= q.total) { b.queue.shift(); spawnFrom(b, q.type, q); } }
+      if (b.repeat && !b.queue.length) enqueue(b, b.repeat, true);   // 0.5c: repeat production waits quietly for money and supply
       if (b.def.harvest) {
         const rate = (b.def.rate + activeWorkers(b) * b.def.perWorker) * p.harvestMult * Data.ECONOMY.pace;
         const key = b.def.harvest === 'wood' ? 'wood' : b.depositType;
@@ -579,7 +581,9 @@ const Game = (() => {
     if (e instanceof Unit) {   // every shot at a unit stresses it, hit or miss
       const was = e.suppressed; addStress(e, w.suppress); e.lastHitBy = u; alertUnit(e); returnFire(e, u);
       if (!was && e.suppressed) suppressXp(u, e);
-      for (const o of G.units) if (o !== e && !o.dead && !o.inside && o.owner === e.owner && dist(o.x, o.y, e.x, e.y) < 30) addStress(o, w.suppress * 0.2);
+      // Neighbours feel part of it; a weapon with suppressArea (the MG, Kaan 0.5c) spreads more, wider.
+      const sa = w.suppressArea || { r: 30, share: 0.2 };
+      for (const o of G.units) if (o !== e && !o.dead && !o.inside && o.owner === e.owner && dist(o.x, o.y, e.x, e.y) < sa.r) addStress(o, w.suppress * sa.share);
     }
   }
   function fireShell(u, tx, ty) {
@@ -634,7 +638,17 @@ const Game = (() => {
   function applyDamage(e, dmg, by) {
     if (e.dead || dmg <= 0) return;
     if (by instanceof Unit && !by.dead && by.owner !== e.owner) addXp(by, Math.min(dmg, e.hp) / VET.xp.damagePer);   // DD H1
+    if (e.owner === 1 && by && by.owner && by.owner !== 1) underAttack(e);
     e.hp -= dmg; if (e.hp <= 0) kill(e, by);
+  }
+  // 0.5c: tell the human player when something of theirs is hit: a toast and a map ping, once per
+  // area until it has been quiet there for ALERT.every seconds. J jumps to the latest one.
+  function underAttack(e) {
+    const A = Data.ALERT, a = G.alert;
+    if (a && dist(a.x, a.y, e.x, e.y) < A.area && G.time - a.t < A.every) { a.t = G.time; return; }
+    G.alert = { x: e.x, y: e.y, t: G.time };
+    const what = e instanceof Building ? 'Your ' + e.def.name + ' is' : e.def.labour ? 'Your Workers are' : e.cargo ? 'Your Truck is' : 'Your soldiers are';
+    toast(what + ' under attack (J to look)'); G.effects.push({ kind: 'ping', x: e.x, y: e.y, t: 0, dur: 4, alert: true });
   }
   function kill(e, by) {
     e.dead = true; e.hp = 0;
@@ -1223,6 +1237,13 @@ const Game = (() => {
     } else if (u.stress >= C.panicAt && !u.def.neverPanics) { u.flee = 2.5 + R(); u.target = null; u.windup = null; return; }   // DD Q12: snipers never panic
     if (u.windup) { updateWindup(u, dt); return; }   // winding up a throw: no moving, no firing
     tryFire(u);
+    // Kaan, 0.5c: a mortar with an enemy inside its minimum range steps back to where it can fire
+    // (unless it is holding or bombarding a point).
+    if (isIndirect(u) && !(u.order && (u.order.type === 'hold' || u.order.type === 'bombard'))) {
+      let near = null, nd = u.stats.weapon.minRange;
+      for (const e of G.units) { if (e.dead || e.inside || e.owner === u.owner || e.owner === 0 && u.owner !== 0) continue; const d = dist(u.x, u.y, e.x, e.y); if (d < nd && canSee(u, e)) { near = e; nd = d; } }
+      if (near) { moveToward(u, u.x + (u.x - near.x), u.y + (u.y - near.y), dt, 1); return; }
+    }
     if (u.def.grenade && u.nadeT <= 0 && !u.windup && G.tick % 10 === u.id % 10 && canThrow(u) && !(u.order && u.order.type === 'grenade')) autoGrenade(u);
     // An idle Medic walks over to the nearest wounded soldier it can see (squadmates first).
     if (u.def.heal && !u.order && !u.micro && G.tick % 30 === u.id % 30 && !u.patient) {
@@ -1437,6 +1458,7 @@ const Game = (() => {
       }
       case 'enqueue': return !!b && b instanceof Building && b.built && !!b.def.produces && b.def.produces.includes(c.type) && enqueue(b, c.type);
       case 'cancel': if (b) cancelQueue(b, c.index); return true;
+      case 'repeat': if (!b || !b.def.produces || !b.def.produces.includes(c.type)) return false; b.repeat = b.repeat === c.type ? null : c.type; return true;   // 0.5c
       case 'research': return startResearch(pid, c.research);
       case 'build': return placeBuilding(c.type, pid, c.x, c.y);
       case 'rally': if (b) b.rally = { x: c.x, y: c.y, squad: c.squad || 0 }; return true;

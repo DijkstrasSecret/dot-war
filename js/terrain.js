@@ -177,7 +177,14 @@ const Terrain = (() => {
     }
     return true;
   }
-  function coverAt(x, y) { const t = type[cellIdxAt(x, y)]; return t === T_FOREST ? 0.55 : 1; }
+  // Kaan, 0.5c: forest gives cover only at its edge (a forest cell with open ground within FOREST_EDGE
+  // cells); deep inside, soldiers can't be seen from far anyway, and a forest is no longer a fortress.
+  const FOREST_EDGE = 2;
+  function forestEdge(i, j) {
+    for (let dj = -FOREST_EDGE; dj <= FOREST_EDGE; dj++) for (let di = -FOREST_EDGE; di <= FOREST_EDGE; di++) { const a = i + di, b = j + dj; if (inb(a, b) && type[b * W + a] !== T_FOREST) return true; }
+    return false;
+  }
+  function coverAt(x, y) { const i = cellI(x), j = cellJ(y); return type[j * W + i] === T_FOREST && forestEdge(i, j) ? 0.75 : 1; }   // Kaan, 0.5c: 0.55 -> 0.75
   // Is a unit at (ux,uy) sheltered from a blast at (bx,by) by a crest in between?
   function ridgeCover(bx, by, ux, uy) {
     const mx = (bx + ux) / 2, my = (by + uy) / 2;

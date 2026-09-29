@@ -1151,6 +1151,27 @@ Built in 0.5b (notes for Kaan):
 | Trees (0.7) | Trees drawn in forest cells, mainly for decoration; forest rules unchanged. |
 | Roads (0.7) | Roads a bit wider: drawn wider, and a slightly wider walkable road band. |
 
+### Ideas from the data (Kaan, 30 September 2026)
+
+All sixteen proposals were accepted. Grouped as: **0.5c** balance and convenience (MG supply 2, forest
+cover only at the edge, first raid by difficulty +8 / +5 / +3.5 min, mortar minimum range 150 m, idle
+Worker button, army overview, under-attack alerts, repeat production); **0.5d** a smarter enemy
+(garrison and dig in, retreat damaged units, research over time, raid supply lines); **0.7**
+objectives / victory points; **0.9** Officer / radio unit, unit stances, after-match report.
+
+### Patch 0.5c balance details (Kaan, 30 September 2026)
+
+| Topic | Decision |
+| --- | --- |
+| Machine Gunner | Supply 2 was tried and **reverted to 1**. Instead: cost **15 wood + 45 metal** (was 10 + 35), damage **6** (was 11), and its suppression spreads to soldiers within **50 m** of the target at **half** strength (other weapons: 30 m, 20%). Its power is pinning, not killing. Lab: 1 MG + 4 Riflemen beat 6 Riflemen 60% (5 Riflemen alone: 7%); the MG pin test is unchanged at 4.9 s. |
+| Forest | Cover only at the forest edge (open ground within 2 cells), and cover **0.75** (was 0.55). Lab: 5 v 5 with the defenders in forest, defenders win ~88% (was 100%); 7 attacking 5 win ~95%. |
+| Mortars | Minimum range 150 m; a mortar with an enemy inside that range steps back until it can fire (unless holding or bombarding). |
+| First raid | Build-up after the walking time: Easy 480 s, Normal 300 s, Hard 210 s (was 300 s everywhere). |
+| Idle Workers | A button in the top bar shows the count of Workers with nothing to do; it and the new free key **I** select the next one and centre the view. |
+| Army overview | A fourth panel tab, **Army** (free key **O**): one row per unit type with the total and how many are idle, working, in Trucks, inside a building or busy. Clicking a number selects those units (the ones outside). |
+| Under-attack alerts | When an enemy hits your unit or building: a toast and a red ping on the map and minimap. One alert per 400 m area until it has been quiet there for 20 s. Free key **J** centres the view on the latest one. |
+| Repeat production | Right click a unit card in a factory's Train list: the factory keeps that unit queued, training the next as soon as the queue is empty and you can pay and have supply (it waits silently otherwise). Right click again to stop. One repeat per factory. |
+
 ---
 
 ## Still open

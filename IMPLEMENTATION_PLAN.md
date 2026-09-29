@@ -239,6 +239,28 @@ Built in two parts (Kaan): **0.5a** tech tree, buildings and supply (done); **0.
 
 ---
 
+## Patch 0.5c: Balance and convenience (Kaan, 30 Sept, from the 0.5b.1 baseline)
+
+- [x] Machine Gunner: supply 2 tried and reverted (Kaan); instead dearer (15 wood, 45 metal), damage
+      6, suppression spreads 50 m at half strength.
+- [x] Forest cover only at the forest edge, cover 0.75 (Kaan's pick).
+- [x] First raid by difficulty: walking time + 8 min (Easy), + 5 (Normal), + 3.5 (Hard).
+- [x] Mortar minimum range 90 → 150 m; mortars step back from enemies inside it.
+- [x] Idle Worker button with a count (I), selects and centres the next idle Worker.
+- [x] Army overview tab (O): units by type, idle / working / in Trucks / inside / busy; click to select.
+- [x] Under-attack alerts: minimap ping, toast, J jumps there.
+- [x] Repeat production: right click a unit in a factory's list to train it on repeat.
+- [x] Meta snapshot re-run and compared with the baseline (`BALANCE_BASELINE.md`, "Patch 0.5c").
+
+## Patch 0.5d: A smarter enemy (Kaan, 30 Sept)
+
+- [ ] Garrisons its HQ and towers, digs trenches in front of its base when an army approaches.
+- [ ] Retreats units under 40% health or panicking to its HQ to heal.
+- [ ] Researches over time (Grenades, Fortification, Improved Powder and more, by game minute).
+- [ ] Raids the player's carriers and Depot lines with small groups.
+
+---
+
 ## Patch 0.6: Weather and night
 
 - [ ] Weather [H2]:
@@ -271,6 +293,8 @@ Built in two parts (Kaan): **0.5a** tech tree, buildings and supply (done); **0.
       across the map, usable as cover (they give cover like forest or barricades) and as scenery.
 - [ ] **Trees drawn in forest cells**, mainly for decoration (forest rules unchanged).
 - [ ] **Wider roads**, drawn wider and with a slightly wider walkable road band.
+- [ ] **Objectives / victory points** (Kaan, 30 Sept): hills and towns count as objectives; holding
+      more than the enemy for 10 minutes also wins.
 - [ ] AI raid logic [Q24]:
   1. [ ] Probe towers first.
   2. [ ] Move to the weakest outpost toward the HQ.
@@ -292,6 +316,14 @@ Built in two parts (Kaan): **0.5a** tech tree, buildings and supply (done); **0.
 - [ ] Balance Lab tests for the Field Gun and the armoured car.
 - ~~Blueprint designer~~: **dropped** (Kaan, 30 Sept: the game is complex enough). No chassis/weight
   system, no designer parts, no EMP or extras.
+
+---
+
+## Patch 0.9: Command and after-action (Kaan, 30 Sept)
+
+- [ ] Officer / radio unit: extends the leader aura; mortars may fire at anything it sees (mobile spotter).
+- [ ] Unit stances per squad: aggressive (chase), hold fire (ambush until fired on), defend.
+- [ ] After-match report: graphs of army size, resources and kills over time, from the replay log.
 
 ---
 

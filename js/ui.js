@@ -6,7 +6,7 @@
 // TODO(patch 0.8): unit tooltips on hover and an in-game tutorial overlay for Highland Pass.
 const UI = (() => {
   let tab = 'sel', content, clockEl, speedBtns, sig = '', tick = null, refreshT = 0;
-  let cmdBox, cmdSig = '', groupBar, groupSig = '', groupTick = null;
+  let cmdBox, cmdSig = '', groupBar, groupSig = '', groupTick = null, idleBtn, idleI = 0;
   const resEls = {};
 
   function el(tag, cls, text) { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
@@ -19,6 +19,7 @@ const UI = (() => {
     if (o.extra) info.appendChild(o.extra);
     c.appendChild(info);
     if (o.onclick && !o.disabled) c.onclick = o.onclick;
+    if (o.oncontext) c.oncontextmenu = e => { e.preventDefault(); o.oncontext(); };
     return c;
   }
   // ---- portraits and names (DD K) ----
@@ -58,6 +59,7 @@ const UI = (() => {
     document.getElementById('musicBtn').onclick = () => Music.toggle();
     refreshMusic();
     document.getElementById('helpBtn').onclick = () => toggleHelp();
+    idleBtn = document.getElementById('idleBtn'); idleBtn.onclick = () => nextIdleWorker();
     document.getElementById('help').onclick = () => toggleHelp(false);
     refresh();
   }
@@ -70,6 +72,19 @@ const UI = (() => {
     refreshSpeed();
   }
   function showTab(t) { tab = t; refresh(); }
+  // ---- 0.5c conveniences: idle Workers, the army overview ----
+  // What a unit of yours is doing, for the army overview. Workers at a camp count as working.
+  function unitState(u) {
+    if (u.inside) return G.unitById.has(u.inside) ? 'truck' : 'inside';
+    if (u.work != null) return 'work';
+    return !u.order && !u.queue.length ? 'idle' : 'busy';
+  }
+  const idleWorkers = () => G.units.filter(u => u.owner === 1 && !u.dead && u.def.labour && unitState(u) === 'idle');
+  // The I key and the top bar button: select the next idle Worker and centre the view on him.
+  function nextIdleWorker() {
+    const list = idleWorkers(); if (!list.length) { Game.toast('No idle Workers'); return; }
+    const u = list[idleI++ % list.length]; Input.select([u], false); Render.centerOn(u.x, u.y);
+  }
 
   function update(dt) {
     const p = G.players[1];
@@ -79,6 +94,7 @@ const UI = (() => {
     refreshT -= dt;
     if (refreshT > 0) { if (tick) tick(); return; }
     refreshT = 0.2;
+    const idle = idleWorkers().length; idleBtn.classList.toggle('hidden', !idle); idleBtn.textContent = 'Idle Workers: ' + idle;
     const s = signature();
     if (s !== sig) { sig = s; build(); }
     if (tick) tick();
@@ -150,13 +166,14 @@ const UI = (() => {
     if (tab === 'sel') s += Object.values(G.squads).map(q => q.id + q.move + q.spacing + q.contact + q.members.length).join('') + '|' + G.selection.map(e => e.id + ':' + (e.dead ? 'd' : '') + (e instanceof Building ? e.queue.map(q => q.type).join('.') + ':' + e.built + ':' + e.workers.length + ':' + e.level + ':' + e.garrison.join('.') + ':' + !!e.upgrading + ':' + e.link + ':' + (e.def.harvest ? Game.hiresFor(e) + '.' + Game.canAfford(p, p.blueprints.worker.cost) : '') + ':' + (e.def.levels && e.level < e.def.levels.length ? Game.canAfford(p, e.def.levels[e.level].cost) : '') : (e.work || '') + ':' + (e.order ? e.order.type : '') + ':' + (e.flee > 0) + ':' + e.suppressed + ':' + e.rank + ':' + e.squad + ':' + (e.cargo ? e.cargo.length + '.' + e.bpLevel : ''))).join(',');
     if (tab === 'build') s += Data.BUILD_LIST.map(t => Game.canAfford(p, Game.costOf(1, t)) + Util.costStr(Game.costOf(1, t))).join(',');
     if (tab === 'research') s += Data.RESEARCH_ORDER.map(r => Game.researchState(p, r)).join(',');
-    if (tab === 'sel') { const b = G.selection[0]; if (b instanceof Building && b.def.produces) s += '|' + b.def.produces.map(t => p.unlocked.has(t) && Game.canAfford(p, p.blueprints[t].cost)).join(','); }
+    if (tab === 'army') s += G.units.filter(u => u.owner === 1 && !u.dead).map(u => u.type + unitState(u)).sort().join(',');
+    if (tab === 'sel') { const b = G.selection[0]; if (b instanceof Building && b.def.produces) s += '|' + b.repeat + '|' + b.def.produces.map(t => p.unlocked.has(t) && Game.canAfford(p, p.blueprints[t].cost)).join(','); }
     return s;
   }
 
   function build() {
     content.innerHTML = ''; tick = null;
-    if (tab === 'sel') buildSel(); else if (tab === 'build') buildBuild(); else buildResearch();
+    if (tab === 'sel') buildSel(); else if (tab === 'build') buildBuild(); else if (tab === 'army') buildArmy(); else buildResearch();
   }
 
   // DD 9 key layout. Moving is the right click (or this button, then a left click).
@@ -309,9 +326,11 @@ const UI = (() => {
       const keys = Data.TRAIN_HOTKEYS, list = Input.trainable(b), page = Input.state.trainPage, pages = Math.ceil(list.length / keys.length);
       list.forEach((t, i) => {
         const bp = p.blueprints[t]; const onPage = Math.floor(i / keys.length) === page;
-        content.appendChild(card({ icon: bp.icon, iconBg: Data.PLAYER_COLORS[1], shape: bp.shape, name: (onPage ? '[' + keys[i % keys.length] + '] ' : '') + bp.name, cost: Util.costStr(bp.cost) + ' · ' + Math.round(Game.prodTime(b, t)) + ' s', desc: bp.desc, disabled: !Game.canAfford(p, bp.cost), onclick: () => { Game.command({ kind: 'enqueue', building: b.id, type: t }); refresh(); } }));
+        const rep = b.repeat === t;
+        const c = card({ icon: bp.icon, iconBg: Data.PLAYER_COLORS[1], shape: bp.shape, name: (onPage ? '[' + keys[i % keys.length] + '] ' : '') + bp.name + (rep ? ' ↻' : ''), cost: Util.costStr(bp.cost) + ' · ' + Math.round(Game.prodTime(b, t)) + ' s', desc: bp.desc, disabled: !Game.canAfford(p, bp.cost) && !rep, onclick: () => { Game.command({ kind: 'enqueue', building: b.id, type: t }); refresh(); }, oncontext: () => { Game.command({ kind: 'repeat', building: b.id, type: t }); refresh(); } });
+        if (rep) c.classList.add('repeat'); content.appendChild(c);
       });
-      content.appendChild(el('div', 'small', 'Queue (click to cancel). Right click the map to set a rally point. ' + (pages > 1 ? 'Tab shows the next four.' : 'Tab cycles factories.')));
+      content.appendChild(el('div', 'small', 'Queue (click to cancel). Right click a unit above to train it on repeat' + (b.repeat ? ' (↻ ' + Data.UNITS[b.repeat].name + ': right click it again to stop)' : '') + '. Right click the map to set a rally point. ' + (pages > 1 ? 'Tab shows the next four.' : 'Tab cycles factories.')));
       qrow = el('div', 'queue'); content.appendChild(qrow);
       b.queue.forEach((q, i) => {
         const d = Data.UNITS[q.type]; const qe = el('div', 'q'); qe.title = d.name;
@@ -394,6 +413,28 @@ const UI = (() => {
       content.appendChild(card({ icon: d.icon, name: '[' + Data.BUILD_HOTKEYS[t] + '] ' + d.name, cost: Util.costStr(d.cost) + ' per 10 m', desc: d.desc + locked(d), disabled: !Game.hasTech(p, d), active: Input.state.mode === 'line' && Input.state.lineType === t, onclick: () => { if (Input.state.mode === 'line' && Input.state.lineType === t) Input.setMode('normal'); else Input.setMode('build', t); } }));
     }
   }
+  // O: the army overview (0.5c). One row per unit type: total, then idle, working, in Trucks, inside
+  // a building and busy (moving, fighting, digging). Click a number to select those units.
+  function buildArmy() {
+    const mine = G.units.filter(u => u.owner === 1 && !u.dead);
+    const cols = [['all', 'All'], ['idle', 'Idle'], ['work', 'Work'], ['truck', 'Truck'], ['inside', 'Inside'], ['busy', 'Busy']];
+    content.appendChild(el('div', 'small', 'Your units by type and what they are doing. Click a number to select them (units in Trucks or buildings stay inside). O opens this tab, I picks the next idle Worker.'));
+    const g = el('div', 'army'); g.style.marginTop = '8px';
+    g.appendChild(el('span', 'hd')); for (const [, h] of cols) g.appendChild(el('span', 'hd', h));
+    for (const type of Object.keys(Data.UNITS)) {
+      const us = mine.filter(u => u.type === type); if (!us.length) continue;
+      const d = Data.UNITS[type], nm = el('span', 'nm');
+      nm.appendChild(Icons.makeCanvas(d.icon, 28, '#fff', Data.PLAYER_COLORS[1], d.shape)); nm.appendChild(el('span', null, d.name)); g.appendChild(nm);
+      for (const [k] of cols) {
+        const list = k === 'all' ? us : us.filter(u => unitState(u) === k), pick = list.filter(u => !u.inside);
+        const c = el('span', 'n ' + k + (pick.length ? ' go' : ''), list.length ? String(list.length) : '·');
+        if (pick.length) { c.title = 'Select ' + pick.length + ' (click twice to centre the view)'; c.onclick = () => { const again = G.selection.length === pick.length && pick.every(u => G.selection.includes(u)); Input.select(pick, false); showTab('army'); if (again) { let x = 0, y = 0; for (const u of pick) { x += u.x; y += u.y; } Render.centerOn(x / pick.length, y / pick.length); } }; }
+        g.appendChild(c);
+      }
+    }
+    content.appendChild(g);
+    const sq = Object.keys(G.squads).length; content.appendChild(el('div', 'small', mine.length + ' units, supply ' + Game.supplyUsed(1) + '/' + Game.supplyCap(1) + (sq ? ', ' + sq + ' squadron' + (sq > 1 ? 's' : '') : '') + '.'));
+  }
   // N: the research overview (DD F, G16). Slots at the top, then the five branches by tier. Tier I
   // runs at the HQ, Tiers II and III at the branch building; Tier III also needs an R&D Lab.
   function buildResearch() {
@@ -425,5 +466,5 @@ const UI = (() => {
     tick = () => { for (const [bb, job] of bars) bb.fill.style.width = (job.t / job.total * 100) + '%'; };
   }
 
-  return { get tab() { return tab; }, init, update, refresh, refreshSpeed, refreshMusic, toggleHelp, showTab, el, btn, card };
+  return { get tab() { return tab; }, init, update, refresh, refreshSpeed, refreshMusic, toggleHelp, showTab, nextIdleWorker, el, btn, card };
 })();

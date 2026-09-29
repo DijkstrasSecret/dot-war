@@ -84,6 +84,31 @@ five minutes of build-up); what differs is its size. A player who does nothing l
 two minutes of siege, because the raid's Mortar Crews outrange idle Riflemen. So by minute 6 a
 player needs a real defence.
 
+## Patch 0.5c against this baseline
+
+The same snapshot after 0.5c (Machine Gunner damage 6 with wider suppression, forest edge cover 0.75,
+mortar minimum range 150 m, raid build-up by difficulty). The baseline above is kept until Kaan agrees
+to replace it. Everything not listed stayed the same, including all the lab targets (height 74%,
+squadron 62%, MG pin 4.9 s, first Tier II at 1.5 min).
+
+| Test | 0.5b.1 | 0.5c |
+| --- | --- | --- |
+| 6 Riflemen v 6 Machine Gunners | MG 100%, 8 s | MG 90%, 10% draw, 36 s |
+| 6 Machine Gunners v 6 Machine Gunners | 63 / 33, 25 s | **70% draw** (both pinned for 3 min), 149 s |
+| 6 Machine Gunners v 6 Snipers | MG 97% | MG 67% |
+| 6 Machine Gunners v 3 Mortar Crews | MG 100%, 4 s | MG 100%, 16 s |
+| 6 Riflemen v 3 Mortar Crews | Riflemen 33% | Riflemen 57% |
+| 3 Mortar Crews v 3 Mortar Crews | 53 / 47 | 37 / 60 (within chance) |
+| 5 v 5, B inside a forest | B 100% | B 86% |
+| 8 grenadiers v full Bunker (4 Riflemen + 1 MG) | attackers 13% | **attackers 70%** |
+| First enemy within 500 m of the HQ, Easy / Normal / Hard | 6.3 / 6.3 / 6.3 min | 9.4 / 6.3 / 4.8 min |
+| HQ destroyed, Easy / Normal / Hard | 8.5 / 8.1 / 7.5 min | 12.0 / 8.5 / 6.1 min |
+
+**What it says:** the Machine Gunner is no longer the best unit at everything; it wins by pinning,
+slowly. Two groups of only Machine Gunners pin each other and rarely finish the fight. A Bunker is
+much easier to take now, because its Machine Gunner no longer kills the attackers fast. Forests
+still favour the defender, but they can be taken. Raids now come early on Hard and late on Easy.
+
 ## Things to watch when 0.6 arrives
 
 - Night (vision ×0.5, firing reveals the shooter) should hurt Snipers and Mortars most: compare

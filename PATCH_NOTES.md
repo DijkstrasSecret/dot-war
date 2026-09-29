@@ -5,6 +5,28 @@ each change live in `DESIGN_DECISIONS.md`.
 
 ---
 
+## 0.5c: Balance and convenience (30 September 2026)
+
+- **Machine Gunners pin, they don't mow down:** damage 11 → 6, but their suppression now spreads to
+  everyone within 50 m of the target at half strength. They cost a bit more (15 wood, 45 metal) and
+  still take 1 supply. Alone they are weak; beside Riflemen they decide fights: 1 Machine Gunner and
+  4 Riflemen beat 6 Riflemen 60% of the time, where 5 Riflemen win only 7%.
+- **Forests give cover only at the edge:** soldiers at a forest's edge are 25% harder to hit (was
+  45% anywhere in the forest). Deep in the woods you are hidden, not protected. Defenders in a forest
+  now win about 88% of even fights instead of all of them.
+- **Mortars need more room:** minimum range 150 m (was 90). A mortar crew that sees an enemy inside
+  that range walks away until it can fire.
+- **The first enemy raid depends on difficulty:** about 8 minutes on Easy, 5 on Normal, 3.5 on Hard,
+  plus the walk.
+- **Idle Workers button** (top bar, or press **I**): shows how many Workers have nothing to do and
+  jumps to the next one.
+- **Army tab** (press **O**): every unit type with how many are idle, working, in Trucks, inside a
+  building or busy. Click a number to select them.
+- **Under-attack alerts:** a message and a red ping on the map and minimap when something of yours
+  is hit. Press **J** to look.
+- **Repeat production:** right click a unit in a factory's list and it keeps training that unit
+  whenever you can pay. Right click again to stop.
+
 ## 0.5b.3: Bigger truck loads, quick hiring, far sight from hills (30 September 2026)
 
 - **Trucks carry 120** per trip instead of 40.

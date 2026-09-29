@@ -17,6 +17,18 @@ button { font: inherit; }
 #resources .res { display: flex; align-items: center; gap: 5px; font-family: Consolas, "Cascadia Mono", "Courier New", monospace; font-size: 13px; }
 #resources .res canvas { width: 16px; height: 16px; }
 #resources .res .low { color: #f0a0a0; }
+#idleBtn { margin-left: 14px; background: #3a2f12; color: var(--brass2); border: 1px solid #6d5715; padding: 2px 8px; cursor: pointer; border-radius: 2px; font-size: 12px; }
+#idleBtn:hover { filter: brightness(1.2); }
+.card.repeat { outline: 1px solid var(--brass); }
+.card .rep { color: var(--brass2); font-weight: 600; }
+.army { display: grid; grid-template-columns: 1fr repeat(6, 38px); gap: 2px 4px; align-items: center; font-size: 12px; }
+.army .hd { color: var(--muted); font-size: 10px; text-transform: uppercase; text-align: center; }
+.army .nm { display: flex; align-items: center; gap: 6px; }
+.army .nm canvas { width: 22px; height: 22px; }
+.army .n { text-align: center; font-family: Consolas, "Cascadia Mono", monospace; color: var(--muted); }
+.army .n.go { color: var(--text); cursor: pointer; border-bottom: 1px dotted var(--line); }
+.army .n.go:hover { color: var(--brass2); }
+.army .n.idle.go { color: var(--brass2); }
 #clock { font-family: Consolas, "Cascadia Mono", monospace; color: var(--brass2); letter-spacing: 1px; margin-right: 4px; }
 #speedbox { display: flex; gap: 3px; }
 #speedbox button, #menuBtn, #helpBtn, #musicBtn, .btn { background: #1f2219; color: var(--text); border: 1px solid var(--line); border-top-color: var(--edge); padding: 3px 9px; cursor: pointer; border-radius: 2px; }

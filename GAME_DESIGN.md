@@ -54,7 +54,8 @@ Victory: destroy the enemy Headquarters. Defeat: lose yours. The sandbox map has
   height) to a point 1.8 m above the target. Ground may rise 2.5 m above the sight line before it
   blocks.
 - More than 36 units (three cells) of forest along the line blocks sight, so forests conceal.
-- Targets standing in forest are 45% harder to hit (cover factor 0.55).
+- Targets standing at a forest's edge (open ground within 2 cells) are 25% harder to hit (cover
+  factor 0.75, patch 0.5c). Deeper inside a forest gives no cover, only concealment.
 - Vision radius grows with height: `base * (1 + clamp(height / 300, 0, 1) * 0.9)`, so a unit at
   270 m sees almost 1.8x as far as one at sea level.
 - Fog of war shows the terrain always and hides enemy units outside vision. Recomputed four times
@@ -72,7 +73,7 @@ patch 0.4.
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | Worker | circle | 40 | 50 | 120 | 25 wood | 8 s | none |
 | Rifleman | circle | 70 | 52 | 160 | 12 wood, 10 metal | 10 s (14 s at the HQ) | none |
-| Machine Gunner | circle | 80 | 38 | 160 | 10 wood, 35 metal | 14 s | Heavy Machine Gun |
+| Machine Gunner | circle | 80 | 38 | 160 | 15 wood, 45 metal | 14 s | Heavy Machine Gun |
 | Sniper | circle | 55 | 48 | 230 | 10 wood, 25 metal | 14 s | Marksman Rifle |
 | Mortar Crew | square | 70 | 34 | 140 | 20 wood, 40 metal | 16 s | Mortar |
 | Medic | circle | 50 | 50 | 140 | 20 wood, 15 metal | 10 s | Field Medicine |
@@ -84,9 +85,9 @@ Weapons:
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | Worker | – | – | – | – | – | – | – | unarmed; a full worker at a camp or mine |
 | Rifleman | 20 | ballistic | 170 | 0 | 0.68 | 1.5 s | 0.08 | the standard unit |
-| Machine Gunner | 11 | ballistic | 200 | 0 | 0.40 | 0.18 s | 0.035 | pins enemies down; cannot fire while moving |
+| Machine Gunner | 6 | ballistic | 200 | 0 | 0.40 | 0.18 s | 0.035 | pins whole groups: its suppression reaches soldiers within 50 m of the target at half strength; cannot fire while moving |
 | Sniper | 65 | ballistic | 300 | 0 | 0.85 | 3.5 s | 0.25 | half stress, never panics, keeps target orders when suppressed |
-| Mortar Crew | 50 | explosive | 380 | 90 | 0.50 | 5 s | 0.35 | indirect, splash 32, costs 2 sulfur per shell, needs a spotter |
+| Mortar Crew | 50 | explosive | 380 | 150 | 0.50 | 5 s | 0.35 | indirect, splash 32, costs 2 sulfur per shell, needs a spotter; steps back from enemies inside 150 m |
 | Medic | – | – | – | – | – | – | – | unarmed; heals one soldier at a time, 4 HP/s within 40 m |
 | Grenade (Riflemen) | 45 | explosive | 25 | 0 | – | 20 s | – | after the Grenades research; splash 18, 1 sulfur each, 1 s wind-up standing still |
 
@@ -152,7 +153,7 @@ least x0.35 (`Util.stack`).
   in a trench and 0.7 behind a barricade (section 5); `bunker` is 1.1 for a shooter inside a Bunker.
 - **Damage** = `dmg * ARMOR_MULT[type][armor] * height`.
 - **Stress** (0 to 1) per unit: every shot fired at a unit adds the weapon's `suppress` value, hit
-  or miss; neighbours within 30 units get 20% of it; a nearby death adds 0.2; a shell adds up to
+  or miss; neighbours within 30 units get 20% of it (a Machine Gunner's: within 50 units, 50%); a nearby death adds 0.2; a shell adds up to
   0.4. Stress decays 0.06 per second, 0.12 while retreating. One Machine Gunner pins a Rifleman in
   about 4.5 s, three Riflemen pin one in about 6 s, a lone Rifleman never does.
   - Above 0.6 the unit is **suppressed**: 60% speed, 1.4x reload, ignores target orders and shoots
@@ -161,7 +162,8 @@ least x0.35 (`Util.stack`).
   - Snipers take half stress and never panic. They can be suppressed, but keep their target
     orders. Soldiers in a trench take half stress. Garrisoned units take no stress, except from a
     grenade that lands on a Bunker.
-- **Indirect fire** (mortar): shells arc over ridges, cannot fire inside the minimum range, the
+- **Indirect fire** (mortar): shells arc over ridges, cannot fire inside the minimum range (a crew
+  that sees an enemy inside it walks away until it can fire, unless on Defend or bombarding), the
   scatter grows when the target point is not seen by a friendly unit (the spotter rule), each shot
   consumes ammo (2 sulfur), splash damage falls off linearly to the edge, reverse slopes take only
   35% of it, and friendly fire is on.
@@ -341,33 +343,34 @@ army is twice the enemy soldiers it has seen in the last two minutes (at least 3
 everyone. It trains Workers only to carry from its mines (two per mine; they never fight). The AI
 does not build, research, expand, dig, throw grenades, train Medics or use towers.
 
-The first raid comes at the enemy's walking time to the player's HQ plus 300 s of build-up; each
+The first raid comes at the enemy's walking time to the player's HQ plus a build-up (Easy 480 s,
+Normal 300 s, Hard 210 s, patch 0.5c); each
 raid interval adds the walking time too. The walking time is measured over the real terrain for a
 Rifleman: about 42 s on Highland Pass, 47 s on Western Ridge, 44 s on Southern Reach.
 
 | Difficulty | Unit cap | Cap growth | First raid | Raid interval | Raid size | Start garrison | Income | MG / Sniper / Mortar from |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Easy | 8 | +1 | walk + 300 s | walk + 320 to 440 s | 40% of army | 6 | 0.6x | 10 / 15 / 18.75 min |
+| Easy | 8 | +1 | walk + 480 s | walk + 320 to 440 s | 40% of army | 6 | 0.6x | 10 / 15 / 18.75 min |
 | Normal | 11 | +2 | walk + 300 s | walk + 220 to 320 s | 50% | 9 | 0.8x | 8 / 12 / 15 min |
-| Hard | 14 | +2 | walk + 300 s | walk + 150 to 240 s | 55% | 12 | 1.0x | 6 / 9 / 11.25 min |
+| Hard | 14 | +2 | walk + 210 s | walk + 150 to 240 s | 55% | 12 | 1.0x | 6 / 9 / 11.25 min |
 
 Hard is the original tuning for size and income. Difficulty also picks how many of the map's listed
 garrison units spawn; the garrison is placed, not trained, so it can hold Machine Gunners and
 Mortars from the start. Neutral guards (creeps) hold deposits and hills in small groups of three to
 five and fight anyone who comes close.
 
-## 9. Controls (`DESIGN_DECISIONS.md` section 9, extended through 0.5b)
+## 9. Controls (`DESIGN_DECISIONS.md` section 9, extended through 0.5c)
 
 W A S D, arrow keys, screen edge or middle mouse pan the camera; the wheel zooms. Right click is the
 smart command: ground moves, an enemy attacks, your camp or mine puts the selection to work, your
 tower, Bunker or HQ garrisons it, your Truck is boarded, your unfinished line gets dug on; with a
 camp, mine, tapper, refinery or Depot selected, right click one of your Depots to set its supply
 link. F attack-move, R defend position, G retreat, X stop, E enter (camp, mine, tapper, refinery,
-tower, Bunker, HQ or Truck), Q exit (unload a tower, Bunker, HQ or Truck), T upgrade a tower, K fill a trench (Workers), V throw a grenade (Riflemen). With a factory selected Z X C V train, and Tab
+tower, Bunker, HQ or Truck), Q exit (unload a tower, Bunker, HQ or Truck), T upgrade a tower, K fill a trench (Workers), V throw a grenade (Riflemen). With a factory selected Z X C V train, right clicking a unit card trains it on repeat (patch 0.5c), and Tab
 flips to the next four when a factory has more (otherwise Tab cycles factories). B opens the Build tab (placing something or Esc goes back to your selection), and only while it is open a letter picks a building (L Lumber Camp, M Mine,
 Z Rubber Tapper, F Refinery, C Barracks, O Ordnance Works, K Workshop, G Depot, R R&D Lab, T Scout
 Tower, U Bunker, P Field Hospital) or a line (Y trench, I barricade, J barbed wire, E road, V
-bridge); M smoke and C demolition are unit orders (patch 0.5a), N research, H headquarters, Shift queues
+bridge); M smoke and C demolition are unit orders (patch 0.5a), N research, O army overview, I next idle Worker, J jump to the latest under-attack alert (patch 0.5c), H headquarters, Shift queues
 orders, Ctrl+1..9 squadrons (section 9a), right-drag sets a squadron's line, Space pauses, comma and period change
 speed, F1 help. New features take free keys; existing ones don't move without asking.
 
@@ -386,8 +389,10 @@ up at least 1.4 seconds so the fade completes even when the build is quick.
 
 In play the map fills the window and small translucent olive panels with brass edges float over
 it: resources top left, clock, speed and menu top right with the minimap below, the group bar top
-centre, the selection panel with its Build and Research tabs bottom left, and the command card
-bottom right. With several soldiers selected the panel shows one face each, with a class badge and
+centre, the selection panel with its Build, Research and Army tabs bottom left, and the command card
+bottom right. The top bar shows an "Idle Workers" button while any Worker has nothing to do. When
+something of yours is hit, a toast and a red ping on the map and minimap say so (once per 400 m
+area until it has been quiet there for 20 s). With several soldiers selected the panel shows one face each, with a class badge and
 a health bar; the group bar shows each group's number, a count per class and its health and stress.
 A soldier is in one group at a time. Headings use stencil lettering. Units are flat shapes with a
 white logo, player blue (#2458d6), enemy red (#c8302e), neutral grey. Yellow ring for suppressed,
