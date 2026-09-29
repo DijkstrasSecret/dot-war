@@ -418,8 +418,13 @@ Built and merged: 0.2a, 0.2b, 0.2.1, 0.3, 0.3.1, 0.4, 0.4.1, 0.4.2, 0.5a, 0.5a.1
 patch ..." notes in `DESIGN_DECISIONS.md`). `BALANCE_BASELINE.md` records the balance of 0.5b.1 for
 comparison.
 
-1. Patch 0.6: weather and night.
-2. Open questions: how long a Truck's tank should last (now about 36 game seconds of driving).
+To do, in order:
+1. **Bug (Kaan, in play): Trucks assigned to gatherers don't seem to work.** Reproduce in the browser
+   (right click a camp with a Truck selected) and fix.
+2. Sniper fix: return fire (agreed, see "Agreed for the next patches" in `DESIGN_DECISIONS.md`).
+3. Merge branch `patch-0.5b.2` (carriers keep their load when the camp dies) with the fixes above.
+4. Patch 0.6: weather and night, with the answers already agreed (sight rule, weather mix, searchlights).
+5. Open question: how long a Truck's tank should last (now about 36 game seconds of driving).
 
 ---
 
