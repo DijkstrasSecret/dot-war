@@ -1,8 +1,7 @@
 'use strict';
 // All static game data: resources, damage model, unit blueprints, buildings, research, difficulty, hotkeys.
 // Times are game seconds (the loop runs them at half real time at 1x). Speeds are world units per game second.
-// TODO(patch 0.3): truck / armoredcar blueprints (shape 'rect' / 'tri', cls 'vehicle', capacity, rubber and oil costs); refinery and rubber camp buildings.
-// TODO(patch 0.5): 'rpg', 'artillery' and 'emp' weapons; ap damage type is already in ARMOR_MULT.
+// TODO(patch 0.8): armoured car blueprint (shape 'tri'); 'rpg', 'artillery' and 'emp' weapons; ap damage type is already in ARMOR_MULT.
 const Data = {
   RES: ['wood', 'metal', 'rubber', 'oil', 'sulfur'],
   RES_COLORS: { wood: '#a86b32', metal: '#8fa2b5', rubber: '#555', oil: '#3a3a3a', sulfur: '#e0c020' },

@@ -8,7 +8,7 @@
 // dragging; K fills a trench (Workers), V throws a grenade (Riflemen, after the research).
 // Patch 0.5a (Kaan): building and line keys work only while the Build tab is open (B, then the
 // letter), which frees the letters for unit orders: M smoke shells (mortars), C demolition charge.
-// TODO(patch 0.3): load/unload keys for transports (reuse the work/garrison click flow).
+// Trucks (0.5b): right click or E on a Truck boards it, Q unloads.
 const Input = (() => {
   const { dist } = Util;
   const state = { mode: 'normal', buildType: null, box: null, mouse: { x: 0, y: 0, wx: 0, wy: 0, inside: false, moveT: 0 }, keys: new Set(), lastGroupT: 0, lastGroupK: '', trainPage: 0, lineType: null, linePts: null };
@@ -148,7 +148,7 @@ const Input = (() => {
       } else if (ent instanceof Unit && ent.owner === 1 && ent.cargo) {
         const n = cmd({ kind: 'board', units: ids(units.filter(u => u !== ent)), target: ent.id, queue: q }); if (n) Game.toast(n + ' boarding the Truck');
         marker(ent.x, ent.y, '#3c3'); if (!q) setMode('normal');
-      } else Game.toast('Click one of your Lumber Camps, Mines, Scout Towers, Bunkers or the HQ');
+      } else Game.toast('Click one of your camps, mines, tappers, refineries, towers, Bunkers, Trucks or the HQ');
       return;
     }
     dragStart = { x: state.mouse.x, y: state.mouse.y, shift: q };

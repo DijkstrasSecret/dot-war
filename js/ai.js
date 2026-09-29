@@ -9,7 +9,7 @@
 const AI = (() => {
   const { dist } = Util;
   const R = () => G.rng();   // the AI is part of the seeded simulation
-  const WEIGHTS = { rifle: 5, hmg: 2, sniper: 1, mortar: 1 };   // Workers are never trained: the AI has passive income
+  const WEIGHTS = { rifle: 5, hmg: 2, sniper: 1, mortar: 1 };   // factory picks; Workers are trained only as mine carriers (carriers())
   let sides = {};            // per commanded player: { thinkT, raidT, lastDefend, walk }
 
   function params() { return Data.DIFFICULTY[G.difficulty] || Data.DIFFICULTY.hard; }

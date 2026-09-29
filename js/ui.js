@@ -168,7 +168,7 @@ const UI = (() => {
       ['Defend', 'R', () => Game.command({ kind: 'hold', units: ids }), false, 'Hold this position and fire at anything in range.'],
       ['Retreat', 'G', () => Game.command({ kind: 'retreat', units: ids }), false, 'Pull back a short way towards your headquarters. No suppression slowdown, stress drains twice as fast.'],
       ['Stop', 'X', () => Game.command({ kind: 'stop', units: ids }), false, 'Cancel all orders (also releases workers).'],
-      ['Enter', 'E', () => Input.setMode('work'), mode === 'work', 'Then click a Lumber Camp or Mine to work there, or a Scout Tower, Bunker or the HQ to garrison it.'],
+      ['Enter', 'E', () => Input.setMode('work'), mode === 'work', 'Then click a camp, mine, tapper or refinery to work there, a Scout Tower, Bunker or the HQ to garrison it, or a Truck to board it.'],
       ['Trench', 'B Y', () => Input.setMode('build', 'trench'), mode === 'line', 'Hold the left button and drag to draw a line; the selected soldiers dig it. Each 10 m is paid when digging on it starts.'],
     ];
     const pl = G.players[1];

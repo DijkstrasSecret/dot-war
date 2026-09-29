@@ -65,17 +65,18 @@ portrait and name in the selection panel.
 | Action | Input |
 | --- | --- |
 | Select | Left click, drag a box, Shift adds, double click picks all of a type, Ctrl+A all on screen |
-| Smart command | Right click: ground moves, an enemy attacks, your camp or mine puts them to work, your tower garrisons it |
+| Smart command | Right click: ground moves, an enemy attacks, your camp/mine/tapper/refinery puts them to work, your tower, Bunker or HQ garrisons it, your Truck is boarded, your unfinished line is dug on; with a gatherer or Depot selected, right click a Depot to set its supply link |
 | Attack-move | F then click an enemy or a point; mortars bombard the point |
 | Defend position | R |
 | Retreat towards base | G (not slowed by suppression, sheds stress twice as fast) |
 | Stop | X |
-| Enter | E then click a Lumber Camp, Mine or Scout Tower |
+| Enter / exit | E then click a camp, mine, tapper, refinery, tower, Bunker, the HQ or a Truck; Q unloads a selected Truck |
+| Special orders | K fill a trench (Workers), V grenade (Riflemen), M smoke (mortars), C demolition charge (after their research) |
 | Queue orders | Hold Shift while giving commands |
-| Build | B opens the Build tab; L Lumber Camp, M Mine, C Barracks, O Ordnance Works, T Scout Tower |
-| Research | N opens the Research tab |
+| Build | B opens the Build tab; only then a letter picks: L Lumber Camp, M Mine, Z Rubber Tapper, F Refinery, C Barracks, O Ordnance Works, K Workshop, G Depot, R R&D Lab, T Scout Tower, U Bunker, P Field Hospital; lines (drag): Y trench, I barricade, J wire, E road, V bridge |
+| Research | N opens the research overview (one project per building type) |
 | Factory | Z X C V train the listed units (Tab shows the next four if there are more), right click sets the rally point, Tab cycles factories |
-| Tower | T upgrade, Q unload everyone, click a unit icon in the panel to unload just that one |
+| Tower, Bunker, HQ | T upgrade (towers), Q unload everyone, click a unit icon in the panel to unload just that one |
 | Squadrons | Ctrl+1..9 with 2–12 soldiers forms a squadron (one per soldier; with nothing selected it clears); 1..9 or the squadron bar selects, twice centres; right-drag sets the line's width and facing |
 | Camera | W A S D, arrow keys, screen edge, middle mouse drag, mouse wheel zoom, minimap click |
 | Time | Space pause, `,` slower, `.` faster |

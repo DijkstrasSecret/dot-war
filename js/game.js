@@ -1,8 +1,7 @@
 'use strict';
 // Core simulation: players, economy, production, research, orders, movement, combat, garrisons,
-// line defences, grenades and healing.
-// TODO(patch 0.3): vehicles use cls 'vehicle' (Data.MOVE_CLASSES); transport = reuse enterBuilding/unloadBuilding with a unit as the container.
-// TODO(patch 0.5b): trucks haul along the supply lines (workers carry loads since 0.5a.2).
+// line defences, grenades, healing, supply chains and trucks.
+// TODO(patch 0.8): the armoured car (a second vehicle, cls 'vehicle', shape 'tri') reuses the Truck's fuel and repair code.
 // Randomness (patch 0.2.1): everything that can change a match's outcome draws from G.rng, a seeded
 // Util.mulberry32 stream; looks-only randomness (decals, facing) draws from G.vrng. Player actions
 // arrive through Game.command and are logged with their tick in G.orders, ready for replays.
@@ -406,7 +405,7 @@ const Game = (() => {
     }
   }
   // Labour at a camp: a Worker counts 1, a soldier half (DD Q4). Since 0.5a.2 everyone assigned counts,
-  // wherever they are on the supply line (Kaan); the scripted AI has no carriers.
+  // wherever they are on the supply line (Kaan). A Truck (labour 0) only carries.
   function activeWorkers(b) {
     let n = 0;
     for (const id of b.workers) { const u = G.unitById.get(id); if (u && !u.dead && u.work === b.id) n += (u.def.labour != null ? u.def.labour : Data.ECONOMY.soldierLabour) * Math.pow(VET.perRank.work, u.def.labour ? u.rank : 0); }   // a Truck (labour 0) only carries
@@ -787,7 +786,7 @@ const Game = (() => {
   const canThrow = u => !!(u.def.grenade && G.players[u.owner] && G.players[u.owner].done.has('grenades'));
   function throwGrenade(u, tx, ty) {
     if (u.owner !== 0) { const p = G.players[u.owner]; if (!canAfford(p, NADE.ammo)) { if (u.owner === 1 && G.time - (u.noAmmoT || -99) > 15) { u.noAmmoT = G.time; toast('No sulfur for grenades'); } return false; } pay(p, NADE.ammo); }
-    u.nadeT = u.stats.nadeCooldown || NADE.cooldown;   // Storm Troops: 12 s for Riflemen trained after it u.facing = Math.atan2(ty - u.y, tx - u.x);
+    u.nadeT = u.stats.nadeCooldown || NADE.cooldown; u.facing = Math.atan2(ty - u.y, tx - u.x);   // Storm Troops: 12 s cooldown for Riflemen trained after it
     // Kaan, 0.4.2: never quite on target, and now and then a throw goes wide.
     const ang = R() * Math.PI * 2, bad = R() < NADE.badChance;
     const off = R() * (NADE.scatter + NADE.scatterPerM * dist(u.x, u.y, tx, ty)) * (1 + u.stress) + (bad ? NADE.badMin + R() * (NADE.badMax - NADE.badMin) : 0);

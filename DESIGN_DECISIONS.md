@@ -1102,11 +1102,19 @@ Built in 0.5b (notes for Kaan):
 
 | Topic | What 0.5b does |
 | --- | --- |
-| Fuel pace | With the design's numbers (60 tank, 1–1.5 fuel per 100 m, speed 110) a full tank lasts **about one game minute of driving**. Only Depots refuel (the HQ doesn't), so a hauling Truck should be linked to a Depot. Say if tanks should last longer. |
+| Fuel pace | With the design's numbers (60 tank, 1–1.5 fuel per 100 m, speed 110) a full tank lasts **about 36 game seconds of driving** (4 km off-road, 6 km on roads). Only Depots refuel (the HQ doesn't), so a hauling Truck should be linked to a Depot. Say if tanks should last longer. |
 | Truck loads | A Truck waits up to 20 s for a full 40 at the building, then takes what is there. A Mine with few Workers makes ~0.35 metal/s, so a Truck pays off on busy, far buildings. |
 | Wire and vehicles | Barbed wire doesn't slow vehicles (the design lists it for infantry only). |
 | Boots | Field Boots now name infantry explicitly, so Trucks aren't sped up by it. |
 | Squad ride | Riders are picked front rank first (Riflemen, then Machine Gunners and Snipers, Workers and Medics, Mortar Crews last); the Truck waits up to 10 s for them. |
+
+### Patch 0.5b.1 (Kaan, 29 September 2026)
+
+| Topic | Decision |
+| --- | --- |
+| Marching warning | A squadron whose Truck can't seat every member shows an orange **"!"** on its squadron bar tile, on the squad panel and beside its Truck on the map; the tooltip says how many will march on moves over 600 m. |
+| Meta snapshot | The Balance Lab gets a fixed battery of seeded tests (equal-supply duels, terrain and squads, fortifications, economy, enemy pressure on a player who stays home) with the 0.5b.1 results saved as the baseline in `lab/meta-baseline.js`, to compare 0.6 against. |
+| Audit | A full audit of code and docs after 0.5b; the fixes are listed in `PATCH_NOTES.md` under 0.5b.1. |
 
 ---
 
