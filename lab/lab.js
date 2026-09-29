@@ -62,7 +62,7 @@
       [`${nA} Riflemen attack 5 Riflemen in the open`, { setup: 'open', nA }],
       [`${nA} Riflemen attack 5 Riflemen in a trench`, { setup: 'trench', nA }],
       [`${nA} Riflemen with grenades attack 5 Riflemen in a trench`, { setup: 'trench', nA, grenades: true }],
-      [`${nBA} Riflemen with grenades assault a Bunker (4 Riflemen + 1 MG)`, { setup: 'bunker', nA: nBA }],
+      [`${nBA} Riflemen with grenades assault a full Bunker (5 inside: 4 Riflemen + 1 MG)`, { setup: 'bunker', nA: nBA }],
     ];
     const tb = $('fortOut'); tb.innerHTML = '<tr><th>Test</th><th>Runs</th><th>Attackers win</th><th>Defenders win</th><th>Draws</th><th>Avg time</th><th>Survivors att. / def.</th><th>Grenades</th></tr>';
     let done = 0;
