@@ -1264,18 +1264,21 @@ const Game = (() => {
         }
         case 'hold': if (o.until && G.time >= o.until) nextOrder(u); break;
         case 'haul': {   // Kaan, 0.5a.2: take a load from the building's stock, carry it to the drop-off, walk back
-          const b = G.buildingById.get(u.work);
-          if (!b || b.dead) { releaseWork(u); nextOrder(u); break; }
+          const b = G.buildingById.get(u.work != null ? u.work : o.from);
+          // Kaan, 0.5b.2: if the camp is destroyed, a carrier already holding a load still delivers it.
+          if ((!b || b.dead) && !(u.load && o.stage === 'haul')) { releaseWork(u); nextOrder(u); break; }
           if (o.stage === 'load') {
             if (dist(u.x, u.y, b.x, b.y) > b.size + 22) { const d = door(b); walkTo(u, o, d[0], d[1], dt, spd); break; }
             const k = b.def.harvest === 'wood' ? 'wood' : b.depositType, have = (k && b.stock[k]) || 0, cap = u.def.load || (u.def.labour ? LOG.load : LOG.soldierLoad);
             o.wait += dt;
-            if (have >= cap || (have >= 1 && o.wait > (u.def.load ? LOG.truckWait : LOG.loadWait))) { const n = Math.min(have, cap); b.stock[k] = have - n; u.load = { k, n }; o.stage = 'haul'; o.tk = -1; }
+            if (have >= cap || (have >= 1 && o.wait > (u.def.load ? LOG.truckWait : LOG.loadWait))) { const n = Math.min(have, cap); b.stock[k] = have - n; u.load = { k, n }; o.stage = 'haul'; o.tk = -1; o.from = b.id; o.drop = b.drop; }
           } else {
-            const d = G.buildingById.get(b.drop);
-            if (!d || d.dead) break;   // no drop-off yet: wait with the load
+            let d = G.buildingById.get(b && !b.dead ? b.drop : o.drop);
+            if (!d || d.dead) d = G.buildings.find(x => x.owner === u.owner && x.type === 'hq' && !x.dead);   // its drop-off is gone: take it home
+            if (!d) break;   // nowhere to go yet: wait with the load
             if (dist(u.x, u.y, d.x, d.y) > d.size + 22) { const p0 = door(d); walkTo(u, o, p0[0], p0[1], dt, spd); break; }
             deliver(d, u.load); u.load = null; o.stage = 'load'; o.wait = 0; o.tk = -1;
+            if (!b || b.dead) { releaseWork(u); nextOrder(u); }   // the camp is gone: job done
           }
           break;
         }

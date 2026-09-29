@@ -1116,6 +1116,12 @@ Built in 0.5b (notes for Kaan):
 | Meta snapshot | The Balance Lab gets a fixed battery of seeded tests (equal-supply duels, terrain and squads, fortifications, economy, enemy pressure on a player who stays home) with the 0.5b.1 results saved as the baseline in `lab/meta-baseline.js`, to compare 0.6 against. |
 | Audit | A full audit of code and docs after 0.5b; the fixes are listed in `PATCH_NOTES.md` under 0.5b.1. |
 
+### Patch 0.5b.2 (Kaan, 29 September 2026)
+
+| Topic | Decision |
+| --- | --- |
+| Carrier loads | If a camp, mine, tapper or refinery is destroyed while a carrier is holding a load, **the load lives on**: he delivers it to his drop-off (the HQ if that is gone too), then his job ends. |
+
 ---
 
 ## Still open

@@ -215,8 +215,8 @@ Its assigned Workers or soldiers carry loads of 10 (soldiers 5) along the fastes
 its **supply link**, shown as a thin dashed line, and walk back. The link is the HQ unless you pick
 one of your Depots (the "Pick supply link" button on the building, or right click a Depot with the
 building selected; patch 0.5a.3). Resources count
-only once dropped off, so a far camp needs more carriers. A destroyed building loses its stock; a
-killed or reassigned carrier loses his load. Each Depot has a bolder line along its own supply link:
+only once dropped off, so a far camp needs more carriers. A destroyed building loses its stock, but a
+carrier already holding a load still delivers it; a killed or reassigned carrier loses his load. Each Depot has a bolder line along its own supply link:
 the HQ, or another Depot you pick the same way, so webs are the ones you build (a loop is refused). Enemy soldiers within 20 m of a
 Depot's line cut it and every Depot beyond it: the line turns red and dashed, and goods dropped there
 wait until it is clear. The enemy commander's mines need carriers too: it keeps two Workers
