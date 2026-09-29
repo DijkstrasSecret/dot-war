@@ -107,16 +107,24 @@ const FightScenarios = (() => {
     const alive = list => list.filter(u => !u.dead).length;
     const held = () => bunker ? (!bunker.dead && alive(B)) : alive(B);
     const nearest = (u, list) => { let t = null, d = Infinity; for (const e of list) if (!e.dead && !e.inside) { const k = Util.dist(u.x, u.y, e.x, e.y); if (k < d) { d = k; t = e; } } return t; };
-    // Idle attackers are sent on again, as a player would: at the Bunker, or at the nearest enemy.
+    // A grenadier's next throw: at the Bunker, or at the nearest defender (walking on if the grenade isn't ready).
+    function orderNade(u) {
+      if (u.type !== 'rifle') return false;
+      if (bunker && !bunker.dead) { Game.orderGrenade([u], bunker.x, bunker.y, bunker); return true; }
+      const t = nearest(u, B); if (!t) return false;
+      if (Game.canThrow(u)) Game.orderGrenade([u], t.x, t.y, t); else Game.orderMove([u], t.x, t.y, 'attackmove');
+      return true;
+    }
+    // Idle attackers are sent on again, as a player would: grenadiers throw again, the rest attack-move at the nearest enemy.
     const reorder = (list, foes) => {
       for (const u of list) {
         if (u.dead || u.inside || u.order || u.flee > 0 || u.work != null) continue;
-        if (bunker && list === A && G.players[1].done.has('grenades') && u.type === 'rifle') { Game.orderGrenade([u], bunker.x, bunker.y, bunker); continue; }
-        const t = nearest(u, foes) || (bunker && list === A ? bunker : null); if (!t) continue;
-        if (list === A && s.grenadesA && Game.canThrow(u) && !(t instanceof Building)) Game.orderGrenade([u], t.x, t.y, t);
-        else Game.orderMove([u], t.x, t.y, 'attackmove');
+        if (list === A && s.grenadesA && orderNade(u)) continue;
+        const t = nearest(u, foes) || (bunker && !bunker.dead && list === A ? bunker : null); if (!t) continue;
+        Game.orderMove([u], t.x, t.y, 'attackmove');
       }
     };
+    if (s.grenadesA) for (const u of A) orderNade(u);   // grenadiers are sent to throw from the start, as the Balance Lab's fort test does
     const maxTicks = Math.round(s.maxTime / STEP);
     const run = {
       scenario: s, seed, A, B, bunker, result: null,

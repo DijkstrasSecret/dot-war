@@ -78,6 +78,8 @@ step-by-step instructions for anything he has to run or check.
   gives the same fingerprint every time for the same seed.
 - Balance Lab: open `http://127.0.0.1:8765/lab.html`, press "Run the target duels". The tests are
   in `lab/lab-tests.js` (no DOM), so they also run from the console or node.
+- Fight Theatre: `http://127.0.0.1:8765/theatre.html` replays the scenarios in `lab/fight-scenarios.js`
+  with both sides visible; pick a fight, a seed and a speed. `?match=1&diff=normal` follows an AI match.
 - Map connectivity: `Path.reachable(Path.getField(hq.x, hq.y + 60, 'infantry', 0), x, y)` for
   every deposit and the enemy HQ after touching `maps.js` or `terrain.js`.
 - Force a frame when the browser pane is hidden: `Render.draw(); UI.update(0.3);`. Screenshots of a

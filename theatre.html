@@ -22,12 +22,14 @@
   #banner { position: fixed; z-index: 7; left: 50%; top: 42%; transform: translate(-50%, -50%); padding: 14px 26px; background: rgba(15, 16, 12, 0.85); border: 1px solid var(--brass); border-radius: 4px; text-align: center; color: #fff; font: 600 26px "Bahnschrift", "Segoe UI", sans-serif; }
   #banner .d { font: 400 14px "Segoe UI", sans-serif; color: var(--text); margin-top: 6px; }
   #minimap { display: none; }
+  body.match #minimap { display: block; position: fixed; z-index: 6; right: 12px; bottom: 12px; width: 200px; height: 200px; border: 1px solid var(--brass); }
   body.rec #bar { display: none; }
 </style>
 </head>
 <body>
 <!-- Fight Theatre: watch the Balance Lab's set-piece fights with the real renderer, both sides visible.
-     URL: theatre.html?s=<scenario id>&seed=<n>&speed=<game seconds per second>&note=<text> -->
+     URL: theatre.html?s=<scenario id>&seed=<n>&speed=<game seconds per second>&note=<text>
+     A whole AI-versus-AI match on Highland Pass: theatre.html?match=<seed>&diff=normal -->
 <div id="main"><canvas id="game"></canvas></div>
 <canvas id="minimap" width="200" height="200"></canvas>
 <div id="cap"><div class="t"></div><div class="n"></div></div>
@@ -57,6 +59,7 @@
 <script src="js/input.js"></script>
 <script src="js/maps.js"></script>
 <script src="js/sim.js"></script>
+<script src="lab/lab-tests.js"></script>
 <script src="lab/fight-scenarios.js"></script>
 <script src="lab/theatre.js"></script>
 </body>

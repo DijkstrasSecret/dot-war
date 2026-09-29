@@ -8,9 +8,34 @@ const Theatre = (() => {
   let run = null, speed = +(q.get('speed') || 1), playing = true, acc = 0, last = 0, endT = 0, note = q.get('note') || '';
   const $ = id => document.getElementById(id);
 
+  // A whole AI-versus-AI match (LabTests.aiMatch) dressed as a run, so the same page plays it.
+  function matchRun(seed, diff) {
+    const m = LabTests.aiMatch({ seed, difficulty: diff, maxMinutes: +(q.get('mins') || 90) });
+    const army = pid => G.units.filter(u => u.owner === pid && !u.dead && !u.def.labour);
+    const hq = pid => G.buildings.find(b => b.owner === pid && b.type === 'hq');
+    const r = { scenario: { title: 'AI v AI · Highland Pass · ' + diff, group: 'Whole match, sped up', ground: 'map' }, match: true, result: null, A: [], B: [],
+      get aliveA() { return army(1).length; }, get aliveB() { return army(2).length; },
+      get labelA() { const h = hq(1); return 'army, HQ ' + (h && !h.dead ? Math.round(h.hp / h.maxHp * 100) + '%' : 'lost'); },
+      get labelB() { const h = hq(2); return 'army, HQ ' + (h && !h.dead ? Math.round(h.hp / h.maxHp * 100) + '%' : 'lost'); },
+      step(n) { if (r.result) return r.result; const res = m.step(n); if (res) r.result = { winner: res.winner, time: G.time, lostA: G.stats[1].lost, lostB: G.stats[2].lost, bunkerFell: false }; return r.result; },
+      // Follow the fighting: everyone with a target, else the units on the move, else the whole map.
+      bounds() {
+        let us = G.units.filter(u => !u.dead && !u.inside && u.target && !u.def.labour);
+        if (us.length < 2) us = G.units.filter(u => !u.dead && !u.inside && u.order && u.order.type === 'attackmove');
+        if (!us.length) { us = G.units.filter(u => !u.dead && !u.inside && !u.def.labour); let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity; for (const u of us) { x0 = Math.min(x0, u.x); y0 = Math.min(y0, u.y); x1 = Math.max(x1, u.x); y1 = Math.max(y1, u.y); } return us.length ? { x0, y0, x1, y1, wide: true } : null; }   // quiet: both armies
+        const cx = us.reduce((a, u) => a + u.x, 0) / us.length, cy = us.reduce((a, u) => a + u.y, 0) / us.length;
+        us = us.filter(u => Util.dist(u.x, u.y, cx, cy) < 450);   // the biggest cluster, roughly
+        let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+        for (const u of us) { x0 = Math.min(x0, u.x); y0 = Math.min(y0, u.y); x1 = Math.max(x1, u.x); y1 = Math.max(y1, u.y); }
+        return x0 === Infinity ? null : { x0, y0, x1, y1 };
+      },
+    };
+    return r;
+  }
   function load(id, seed) {
-    run = FightScenarios.start(id, seed); acc = 0; endT = 0;
-    Terrain.flushDirty(); drawGrid(); Render.resize();
+    run = q.get('match') ? matchRun(+q.get('match'), q.get('diff') || 'normal') : FightScenarios.start(id, seed); acc = 0; endT = 0;
+    if (run.match) document.body.classList.add('match');
+    Terrain.flushDirty(); if (!run.match) drawGrid(); Render.resize();
     const s = run.scenario;
     $('cap').querySelector('.t').textContent = s.title;
     $('cap').querySelector('.n').textContent = s.group + ' · seed ' + seed + (note ? ' · ' + note : '');
@@ -36,7 +61,7 @@ const Theatre = (() => {
   function frameCamera(snap) {
     const b = run.bounds(); if (!b) return;
     const pad = 90, bw = b.x1 - b.x0 + pad * 2, bh = b.y1 - b.y0 + pad * 2 + 120;
-    const z = Util.clamp(Math.min(Render.w / bw, Render.h / bh), 0.8, 2.6);
+    const z = Util.clamp(Math.min(Render.w / bw, Render.h / bh), run.match ? (b.wide ? 0.3 : 0.55) : 0.8, run.match ? 1.6 : 2.6);
     const cx = (b.x0 + b.x1) / 2, cy = (b.y0 + b.y1) / 2 - 20, cam = Render.cam;
     const k = snap ? 1 : 0.06;
     cam.zoom += (z - cam.zoom) * k;
@@ -46,13 +71,15 @@ const Theatre = (() => {
   function paint() {
     G.toasts.length = 0; G.effects = G.effects.filter(e => e.kind !== 'ping');   // the player's alerts mean nothing to a spectator
     Render.draw();
-    $('sideA').innerHTML = 'BLUE · ' + run.labelA + '<br><span class="small">standing</span><b>' + run.aliveA + ' / ' + run.A.length + '</b>';
-    $('sideB').innerHTML = run.labelB + ' · RED<br><b>' + run.aliveB + ' / ' + run.B.length + '</b><span class="small"> standing</span>';
+    const of = n => run.match ? '' : ' / ' + n;
+    $('sideA').innerHTML = 'BLUE · ' + run.labelA + '<br><span class="small">standing</span><b>' + run.aliveA + of(run.A.length) + '</b>';
+    $('sideB').innerHTML = run.labelB + ' · RED<br><b>' + run.aliveB + of(run.B.length) + '</b><span class="small"> standing</span>';
     $('clockT').textContent = Util.fmtTime(G.time);
     const r = run.result;
     if (r && $('banner').classList.contains('hidden')) {
       const who = r.winner === 1 ? 'Blue wins' : r.winner === 2 ? 'Red wins' : 'Draw';
-      $('banner').innerHTML = who + ' in ' + Math.round(r.time) + ' s<div class="d">Blue lost ' + r.lostA + ' of ' + run.A.length + ', red lost ' + r.lostB + ' of ' + run.B.length + (r.bunkerFell ? ', the Bunker fell' : '') + '</div>';
+      $('banner').innerHTML = run.match ? who + ' after ' + Util.fmtTime(r.time) + '<div class="d">Blue lost ' + r.lostA + ' units, red lost ' + r.lostB + '</div>'
+        : who + ' in ' + Math.round(r.time) + ' s<div class="d">Blue lost ' + r.lostA + ' of ' + run.A.length + ', red lost ' + r.lostB + ' of ' + run.B.length + (r.bunkerFell ? ', the Bunker fell' : '') + '</div>';
       $('banner').classList.remove('hidden');
     }
   }

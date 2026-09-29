@@ -28,6 +28,7 @@ no module system and no framework, so the game runs from `file://` as well as fr
 | `MapGen` | maps.js | builds terrain and entities from a spec; holds the four map specs |
 | `Sim` | sim.js | headless runner: `survey`/`routes`/`newMatch` build a match with no renderer, `run(ticks)`, `replay(opts, orders, ticks)`, `fingerprint()` |
 | `LabTests` | lab/lab-tests.js | Balance Lab tests (duels on a test arena, economy timeline, AI versus AI); no DOM, loaded only by `lab.html` |
+| `FightScenarios` | lab/fight-scenarios.js | Set-piece fights for the Fight Theatre and batch statistics; no DOM, loaded by `theatre.html` |
 | `Music` | audio.js | background music with a remembered on/off and volume |
 | `PaintingFx` | assets/paintings/painting-fx.js | draws a menu or loading painting on a canvas and animates its details; `pick`, `info`, `create(canvas).show/start/stop` |
 | `Loading` | loading.js | loading screen: `run(steps)` shows a random loading painting and drives the bar as each `{ label, run }` step executes between frames |
@@ -261,6 +262,14 @@ arena, an economy timeline and AI versus AI, with targets in `lab/balance-target
 in `lab/lab-tests.js` with no DOM. Outside a browser the simulation still needs a small
 `document.createElement` stub, because `Terrain.create` makes the terrain canvases; the fog picture
 is made only when the renderer asks for it. Skip `Terrain.flushDirty` there.
+
+The Fight Theatre (`theatre.html`) plays set-piece fights with the real renderer in spectator mode
+(`Render.spectator = true`: both sides drawn, no fog) and a camera that frames the fight. The
+scenarios live in `lab/fight-scenarios.js` (no DOM): `FightScenarios.batch(id, runs)` gives win rates
+plus a typical and an upset seed, and `theatre.html?s=<id>&seed=<n>` replays exactly that fight.
+`theatre.html?match=<seed>&diff=normal&mins=40` follows a whole AI-versus-AI match on Highland Pass.
+Videos are made outside the game (Playwright steps `Theatre.frame(1)` and screenshots each frame, one
+tick per frame at 30 fps, so one game second per video second); nothing in the game depends on that.
 
 Determinism check: the same seed and the same `G.orders` must give the same `Sim.fingerprint()`.
 Anything that reads `Math.random`, the wall clock, or state that survives between matches (a

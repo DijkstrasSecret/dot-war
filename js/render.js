@@ -331,7 +331,7 @@ const Render = (() => {
     const sx = S / mw, sy = S / mh;
     for (const b of G.buildings) if (!b.dead && buildingVisible(b)) { mctx.fillStyle = Data.PLAYER_COLORS[b.owner]; mctx.fillRect(b.x * sx - 3, b.y * sy - 3, 6, 6); }
     for (const u of G.units) if (!u.dead && unitVisible(u)) { mctx.fillStyle = Data.PLAYER_COLORS[u.owner]; mctx.fillRect(u.x * sx - 1.2, u.y * sy - 1.2, 2.4, 2.4); }
-    mctx.globalAlpha = 0.45; mctx.imageSmoothingEnabled = true; mctx.drawImage(Fog.canvas, 0, 0, Terrain.W, Terrain.H, 0, 0, S, S); mctx.globalAlpha = 1;
+    if (!spectator) { mctx.globalAlpha = 0.45; mctx.imageSmoothingEnabled = true; mctx.drawImage(Fog.canvas, 0, 0, Terrain.W, Terrain.H, 0, 0, S, S); mctx.globalAlpha = 1; }
     for (const e of G.effects) if (e.kind === 'ping') {   // raid warnings and "under attack" alerts (0.5c) pulse on the minimap too
       const f = (e.t * 1.5) % 1; mctx.globalAlpha = 1 - f; mctx.strokeStyle = '#ff5a3a'; mctx.lineWidth = 2; mctx.beginPath(); mctx.arc(e.x * sx, e.y * sy, 4 + f * 16, 0, Math.PI * 2); mctx.stroke();
     }
