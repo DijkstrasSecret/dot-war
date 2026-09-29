@@ -354,7 +354,7 @@ tower, Bunker or HQ garrisons it, your Truck is boarded, your unfinished line ge
 camp, mine, tapper, refinery or Depot selected, right click one of your Depots to set its supply
 link. F attack-move, R defend position, G retreat, X stop, E enter (camp, mine, tapper, refinery,
 tower, Bunker, HQ or Truck), Q exit (unload a tower, Bunker, HQ or Truck), T upgrade a tower, K fill a trench (Workers), V throw a grenade (Riflemen). With a factory selected Z X C V train, and Tab
-flips to the next four when a factory has more (otherwise Tab cycles factories). B opens the Build tab, and only while it is open a letter picks a building (L Lumber Camp, M Mine,
+flips to the next four when a factory has more (otherwise Tab cycles factories). B opens the Build tab (placing something or Esc goes back to your selection), and only while it is open a letter picks a building (L Lumber Camp, M Mine,
 Z Rubber Tapper, F Refinery, C Barracks, O Ordnance Works, K Workshop, G Depot, R R&D Lab, T Scout
 Tower, U Bunker, P Field Hospital) or a line (Y trench, I barricade, J barbed wire, E road, V
 bridge); M smoke and C demolition are unit orders (patch 0.5a), N research, H headquarters, Shift queues
