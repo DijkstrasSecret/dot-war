@@ -1,0 +1,86 @@
+[
+ {
+  "winner": 1,
+  "minutes": 36.281111111089075,
+  "kills": [
+   60,
+   33
+  ],
+  "difficulty": "easy",
+  "seed": 1,
+  "lost": [
+   34,
+   66
+  ]
+ },
+ {
+  "winner": 0,
+  "minutes": 39.99999999997458,
+  "kills": [
+   59,
+   28
+  ],
+  "difficulty": "easy",
+  "seed": 2,
+  "lost": [
+   29,
+   58
+  ]
+ },
+ {
+  "winner": 0,
+  "minutes": 39.99999999997458,
+  "kills": [
+   118,
+   100
+  ],
+  "difficulty": "normal",
+  "seed": 1,
+  "lost": [
+   106,
+   122
+  ]
+ },
+ {
+  "winner": 0,
+  "minutes": 39.99999999997458,
+  "kills": [
+   93,
+   107
+  ],
+  "difficulty": "normal",
+  "seed": 2,
+  "lost": [
+   105,
+   93
+  ]
+ },
+ {
+  "winner": 0,
+  "minutes": 39.99999999997458,
+  "kills": [
+   133,
+   120
+  ],
+  "difficulty": "hard",
+  "seed": 1,
+  "lost": [
+   119,
+   134
+  ]
+ },
+ {
+  "winner": 0,
+  "minutes": 39.99999999997458,
+  "kills": [
+   142,
+   118
+  ],
+  "difficulty": "hard",
+  "seed": 2,
+  "lost": [
+   111,
+   144
+  ]
+ }
+]

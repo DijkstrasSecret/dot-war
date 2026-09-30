@@ -58,7 +58,8 @@ Victory: destroy the enemy Headquarters. Defeat: lose yours. The sandbox map has
   factor 0.75, patch 0.5c). Deeper inside a forest gives no cover, only concealment.
 - Vision radius grows with height: `base * (1 + clamp(height / 300, 0, 1) * 0.9)`, so a unit at
   270 m sees almost 1.8x as far as one at sea level.
-- Fog of war shows the terrain always and hides enemy units outside vision. Recomputed four times
+- Fog of war shows the terrain always and hides enemy units outside vision. A soldier sees from the
+  centre of the 12 m cell he stands in (patch 0.5e, for speed); buildings see from their exact spot. Recomputed four times
   a game second; a unit or building that has not moved reuses its last result.
 
 - **Vision from height** (patch 0.5b.3): standing high adds up to +90% vision (at 300 m altitude); on top of that, each clear line of sight reaches farther where the ground drops below the eye, ×(1 + 0.04 √drop), at most +50%. Forest and ridges still stop it.
