@@ -1182,6 +1182,13 @@ objectives / victory points; **0.9** Officer / radio unit, unit stances, after-m
 | Research | On a timetable by game minute (Normal): Marksmanship Drill 6, Grenades 8, Entrenching Tools 9, Field Boots 10, Improved Powder 13, HE Shells 15, Squad Cohesion 18, Storm Troops 25. Easy takes 1.5× as long, Hard 0.75×. It pays nothing (like its unit unlocks) and needs no buildings. |
 | Supply raids | Every **240 s** on Normal (**150 s** on Hard; never on Easy), if its army has at least 8 soldiers and no enemy is near its HQ, it sends **3** Riflemen at the enemy supply target it saw most recently (a carrier, a camp, a mine or a Depot, remembered for 5 minutes). With nothing seen, they go and look at the next of the 5 deposits nearest its HQ, in turn. They come home when the target is gone. |
 
+### Patch 0.5e: faster simulation (Kaan, 30 September 2026)
+
+| Topic | Decision |
+| --- | --- |
+| Fog of war | A soldier sees from the **centre of the 12 m map cell** he stands in, and everyone in the same cell shares one sight calculation. About 4.7× faster simulation (fog was 75–85% of the work). It moves the edge of vision by a few metres, which changed one early test noticeably (Mortar Crews v Riflemen, 98% → 75% mortar wins), so the Balance Lab baseline is re-run and replaced with this patch (Kaan: "switch and re-baseline"). Buildings still see from their exact spot. |
+| Test tools | Fight tests and the Meta snapshot run on all CPU cores (`fight-tests/tools/batch.js`, `meta.js`). |
+
 ---
 
 ## Still open

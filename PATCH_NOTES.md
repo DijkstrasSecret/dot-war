@@ -5,6 +5,16 @@ each change live in `DESIGN_DECISIONS.md`.
 
 ---
 
+## 0.5e: Faster simulation (30 September 2026)
+
+- **The game simulates about 4.7× faster.** Fog of war was most of the work; soldiers now see from
+  the centre of the 12 m map cell they stand in, and soldiers in the same cell share one calculation.
+  Big fights and late matches should stay smooth at 4× speed.
+- Side effect: the edge of vision moves by a few metres. In testing only fights with Mortar Crews
+  changed; mortars are a bit less dominant at long range.
+- Testing got much faster too: the full set of recorded fight tests now takes 8 minutes instead of
+  about 3 hours. The Balance Lab baseline was re-measured on this build.
+
 ## 0.5d: A smarter enemy (30 September 2026)
 
 - **Wounded enemies fall back:** enemy soldiers under 40% health, or panicking, walk home to heal at
