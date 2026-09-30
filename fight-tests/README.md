@@ -10,6 +10,7 @@ Compare a new patch's folder with the previous one to see what a change did.
 
 | Patch | Date | Fights | Headline |
 | --- | --- | --- | --- |
+| [0.6](0.6/README.md) | 30 Sept 2026 | 47 fights × 40 runs (10 new at night and in weather), 6 AI matches, snapshot, 2 videos | Seeing becomes everything: MGs and Snipers need spotters; night stops mortars |
 | [0.5e](0.5e/README.md) | 30 Sept 2026 | 37 fights × 40 runs, 6 AI matches, Balance Lab snapshot (8 minutes in all) | Faster fog: 31 of 37 fights identical; mortars less dominant at range |
 | [0.5d](0.5d/README.md) | 30 Sept 2026 | enemy behaviour checks, 5 AI matches, 1 video | The enemy falls back to heal, garrisons, digs in, researches and raids supply lines |
 | [0.5c](0.5c/README.md) | 30 Sept 2026 | 37 fights × 40 runs, 8 sweeps, 6 AI matches | Mortar Crews dominate Riflemen in the open; standing still beats walking in; the MG rework works |

@@ -93,7 +93,22 @@ so a real defence is needed by minute 9 on Easy, 6 on Normal and under 5 on Hard
   mortar mirror swapped sides within chance) and Normal pressure (HQ falls at 9.3 min; 8.5 in 0.5c and 8.0 with
   0.5d on the exact fog). Everything else came out identical.
 
-## Things to watch when 0.6 arrives
+## Patch 0.6 against this baseline
+
+The Meta snapshot on 0.6 (daytime, clear weather) matches the baseline everywhere except three duels
+at 110 m: the Machine Gunner mirror (13/17/70 → 30/57/13, fewer stalemates now that they must see
+each other), Machine Gunners v Mortars (100% → 97%) and the mortar mirror (within chance). The bigger
+effects of "only shoot what you can see" show at longer range; see `fight-tests/0.6`.
+
+## What 0.6 did to the things we watched
+
+- Night hurt Mortars most, as expected (Riflemen beat them 100% at night), but not Snipers: they still
+  beat Riflemen 95% at night.
+- Fog did **not** pull the hill duel towards 50%: the hill still wins 98% (the defenders are close
+  enough to see anyway).
+- Rain lengthened fights a little (Riflemen mirror 27 → 32 s).
+
+## Things to watch when 0.6 arrives (written before 0.6)
 
 - Night (vision ×0.5, firing reveals the shooter) should hurt Snipers and Mortars most: compare
   sections 1 and 2.

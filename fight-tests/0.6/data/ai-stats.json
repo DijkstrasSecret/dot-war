@@ -3,84 +3,84 @@
   "winner": 0,
   "minutes": 39.99999999997458,
   "kills": [
-   60,
+   56,
+   20
+  ],
+  "difficulty": "easy",
+  "seed": 1,
+  "lost": [
+   22,
+   58
+  ]
+ },
+ {
+  "winner": 0,
+  "minutes": 39.99999999997458,
+  "kills": [
+   52,
    30
   ],
   "difficulty": "easy",
-  "seed": 1,
-  "lost": [
-   37,
-   68
-  ]
- },
- {
-  "winner": 0,
-  "minutes": 39.99999999997458,
-  "kills": [
-   41,
-   31
-  ],
-  "difficulty": "easy",
   "seed": 2,
   "lost": [
-   41,
-   46
+   45,
+   61
   ]
  },
  {
   "winner": 0,
   "minutes": 39.99999999997458,
   "kills": [
-   97,
-   124
+   107,
+   93
   ],
   "difficulty": "normal",
   "seed": 1,
   "lost": [
-   122,
-   104
+   88,
+   108
   ]
  },
  {
   "winner": 0,
   "minutes": 39.99999999997458,
   "kills": [
-   91,
-   77
+   112,
+   86
   ],
   "difficulty": "normal",
   "seed": 2,
   "lost": [
-   75,
-   91
+   83,
+   113
   ]
  },
  {
   "winner": 0,
   "minutes": 39.99999999997458,
   "kills": [
+   117,
+   130
+  ],
+  "difficulty": "hard",
+  "seed": 1,
+  "lost": [
    127,
-   145
-  ],
-  "difficulty": "hard",
-  "seed": 1,
-  "lost": [
-   143,
-   128
+   119
   ]
  },
  {
   "winner": 0,
   "minutes": 39.99999999997458,
   "kills": [
-   109,
-   156
+   141,
+   150
   ],
   "difficulty": "hard",
   "seed": 2,
   "lost": [
-   154,
-   110
+   145,
+   144
   ]
  }
 ]

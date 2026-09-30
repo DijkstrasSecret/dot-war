@@ -74,7 +74,8 @@ const Theatre = (() => {
     const of = n => run.match ? '' : ' / ' + n;
     $('sideA').innerHTML = 'BLUE · ' + run.labelA + '<br><span class="small">standing</span><b>' + run.aliveA + of(run.A.length) + '</b>';
     $('sideB').innerHTML = run.labelB + ' · RED<br><b>' + run.aliveB + of(run.B.length) + '</b><span class="small"> standing</span>';
-    $('clockT').textContent = Util.fmtTime(G.time);
+    const E = G.env, k = E && Data.WEATHER.kinds[E.weather];   // 0.6: weather and time of day
+    $('clockT').textContent = Util.fmtTime(G.time) + (k ? '  ' + k.icon + ' ' + k.name.toLowerCase() + (E.night ? ' · night' : E.dark > 0 ? ' · dusk' : '') : '');
     const r = run.result;
     if (r && $('banner').classList.contains('hidden')) {
       const who = r.winner === 1 ? 'Blue wins' : r.winner === 2 ? 'Red wins' : 'Draw';
