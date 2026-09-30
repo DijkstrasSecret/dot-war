@@ -88,7 +88,7 @@ const Game = (() => {
   // share it keeps in full night (Night Training: 0.75); everyone else keeps DAYNIGHT.vision.
   function envVision(e) {
     const keep = (e && e.stats && e.stats.nightVision) || Data.DAYNIGHT.vision;
-    return Util.stack('vision', WX().vision || 1, 1 - (1 - keep) * G.env.dark);
+    return Util.stack('vision', WX().vision || 1, 1 - (1 - keep) * Math.round(G.env.dark * 10) / 10);   // dusk and dawn in 10 steps, so sight casts can be reused
   }
   // Movement: rain and snow slow units off-road; Snow Gear and Mud Tyres cancel their penalty.
   function envSpeed(u) {
@@ -996,9 +996,10 @@ const Game = (() => {
     return true;
   }
   const dropField = b => { const d = door(b); return Path.getField(d[0], d[1], 'infantry', G.time); };
-  function routeOf(f, b) {   // the flow field's path from b's door, a point every three cells
-    if (!f) return null; const W = Terrain.W; const d = door(b); let k = Terrain.cellIdxAt(d[0], d[1]); const pts = [[b.x, b.y]];
-    for (let n = 0; n < 4000 && k >= 0; n++) { if (n % 3 === 0) pts.push([Terrain.cx(k % W), Terrain.cy((k - k % W) / W)]); k = f.next[k]; }
+  function routeOf(f, b) {   // the walking route from b's door to the field's destination, a point every three cells
+    if (!f) return null; const W = Terrain.W; const d = door(b); const pts = [[b.x, b.y]];
+    const r = Path.route(d[0], d[1], f.tx, f.ty, f.cls || 'infantry'); const cells = r ? r.cells : [];
+    for (let n = 0; n < cells.length && n < 12000; n += 3) pts.push([Terrain.cx(cells[n] % W), Terrain.cy((cells[n] - cells[n] % W) / W)]);
     pts.push([f.tx, f.ty]); return pts;
   }
   const chainPlayers = () => Object.values(G.players).filter(p => p.id !== 0);
@@ -1260,7 +1261,7 @@ const Game = (() => {
     // re-evaluate the steering point a few times a second, not every tick
     let p;
     if (u.steerP && u.steerField === u.field && u.steerT > 0) { u.steerT -= dt; p = u.steerP; }
-    else { p = Path.steer(u.x, u.y, u.field, u.cls, u.stuck > 1 ? 1 : 10); u.steerP = p; u.steerField = u.field; u.steerT = 0.1; }
+    else { p = Path.steer(u.x, u.y, u.field, u.cls, u.stuck > 1 ? 1 : 10, u); u.steerP = p; u.steerField = u.field; u.steerT = 0.1; }
     if (!p) return true;
     if (dist(u.x, u.y, p[0], p[1]) < 3) u.steerT = 0;
     if (moveToward(u, p[0], p[1], dt, spd) && u.stuck > 0) u.stuck = Math.max(0, u.stuck - 0.5);

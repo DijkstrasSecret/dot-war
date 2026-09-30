@@ -286,19 +286,34 @@ Built in two parts (Kaan): **0.5a** tech tree, buildings and supply (done); **0.
 
 ## Patch 0.7: Big maps, villages and AI
 
-- [ ] Map generator [Q3]:
-  - [ ] 12–14 km per side, 12 m cells, with a validation pass.
-  - [ ] More contested metal deposits; rubber trees and oil seeps placed.
-- [ ] Chunked simulation; incremental fog and line of sight [G10].
+Split into three steps (30 Sept): **0.7a** the engine and generator for 13 km maps, **0.7b** map
+detail and buff sites, **0.7c** the siege AI. Kaan's answers are in `DESIGN_DECISIONS.md`
+("Patch 0.7 plan answers"): no alternative win conditions (buff sites instead of victory points),
+generated maps only, Modern kit at an R&D Lab + 5 Tier III.
+
+**0.7a (engine and generator)**
+- [x] Map generator [Q3]: 13.2 km per side (1100 cells of 12 m), random per match, with a validation
+      pass (every deposit and the enemy HQ reachable; a road is laid if not).
+- [x] More contested metal deposits; rubber trees and oil seeps placed.
+- [x] Pathfinding for big maps: windowed flow fields, routes for long marches, faster search [G10].
+- [x] Terrain drawn in tiles; overview picture for the minimap; fog drawn for the visible part only.
+- [x] Wider roads (14 m).
+- [x] The hand-made maps leave the menu (kept for the Balance Lab).
+
+**0.7b (map detail and buff sites)**
+
 - [ ] Villages [J]: 3–5 hamlets and 1–2 central towns. Civilians get their own owner id, are
       never auto-targeted, and flee from fighting.
 - [ ] Neutral guards patrol routes that avoid bases, with a 150 m leash; they return and heal.
 - [ ] Map detail (Kaan, 30 Sept): random **abandoned buildings, ruins, walls, wrecks and similar props**
       across the map, usable as cover (they give cover like forest or barricades) and as scenery.
 - [ ] **Trees drawn in forest cells**, mainly for decoration (forest rules unchanged).
-- [ ] **Wider roads**, drawn wider and with a slightly wider walkable road band.
-- [ ] **Objectives / victory points** (Kaan, 30 Sept): hills and towns count as objectives; holding
-      more than the enemy for 10 minutes also wins.
+- [ ] **Buff sites** (Kaan, 30 Sept, replacing victory points): airdrop landing zones, train stations,
+      radio masts, fuel dumps, field hospital ruins, captured by standing there uncontested; citadels
+      (big neutral fortresses, taken by clearing their garrison).
+- [ ] Modern kit at an R&D Lab + 5 Tier III.
+
+**0.7c (siege AI)**
 - [ ] AI raid logic [Q24]:
   1. [ ] Probe towers first.
   2. [ ] Move to the weakest outpost toward the HQ.

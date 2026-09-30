@@ -23,9 +23,8 @@ const AI = (() => {
   function walkTime(pid) {
     const mine = hqOf(pid), theirs = hqOf(enemyOf(pid));
     if (!mine || !theirs) return 0;
-    const f = Path.getField(theirs.x, theirs.y + theirs.h / 2 + 12, 'infantry', 0); if (!f) return 0;
-    const c = f.cost[Terrain.cellIdxAt(mine.x, mine.y + mine.h / 2 + 12)];
-    return Number.isFinite(c) ? c / Data.UNITS.rifle.speed : 0;
+    const r = Path.route(mine.x, mine.y + mine.h / 2 + 12, theirs.x, theirs.y + theirs.h / 2 + 12, 'infantry');
+    return r ? r.cost / Data.UNITS.rifle.speed : 0;
   }
   // Commanded sides ignore the supply cap: the scripted AI keeps its own unit cap (DD Q23).
   function reset(pids = [2]) {
@@ -74,14 +73,11 @@ const AI = (() => {
   // Where a walk from (x, y) to this HQ passes `d` metres out, and the direction it is heading there,
   // following the same flow field the soldiers use (so the spot is always reachable ground).
   function approach(hq, x, y, d) {
-    const f = Path.getField(hq.x, hq.y + hq.h / 2 + 12, 'infantry', 0); if (!f) return null;
-    let k = Terrain.cellIdxAt(x, y); if (f.cost[k] === Infinity) return null;
-    let px = Terrain.cx(k % Terrain.W), py = Terrain.cy(Math.floor(k / Terrain.W));
-    for (let n = 0; n < 4000; n++) {
-      const nk = f.next[k]; if (nk < 0) return null;
-      const nx = Terrain.cx(nk % Terrain.W), ny = Terrain.cy(Math.floor(nk / Terrain.W));
-      if (dist(nx, ny, hq.x, hq.y) <= d) { const L = dist(px, py, nx, ny) || 1; return { x: nx, y: ny, ux: (nx - px) / L, uy: (ny - py) / L }; }
-      px = nx; py = ny; k = nk;
+    const r = Path.route(x, y, hq.x, hq.y + hq.h / 2 + 12, 'infantry'); if (!r) return null;
+    const W = Terrain.W, px = k => Terrain.cx(k % W), py = k => Terrain.cy((k - k % W) / W), c = r.cells;
+    for (let n = 1; n < c.length; n++) {
+      const nx = px(c[n]), ny = py(c[n]);
+      if (dist(nx, ny, hq.x, hq.y) <= d) { const ox = px(c[n - 1]), oy = py(c[n - 1]), L = dist(ox, oy, nx, ny) || 1; return { x: nx, y: ny, ux: (nx - ox) / L, uy: (ny - oy) / L }; }
     }
     return null;
   }
