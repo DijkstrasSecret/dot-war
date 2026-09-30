@@ -135,7 +135,7 @@ const MapGen = (() => {
   function thumbnail(spec, size) {
     buildTerrain(spec); Terrain.flushDirty();
     const c = document.createElement('canvas'); c.width = size; c.height = size; const ctx = c.getContext('2d');
-    ctx.imageSmoothingEnabled = true; ctx.drawImage(Terrain.cache, 0, 0, MAPW, MAPW, 0, 0, size, size);
+    const ov = Terrain.overview; ctx.imageSmoothingEnabled = true; ctx.drawImage(ov, 0, 0, ov.width, ov.height, 0, 0, size, size);
     const s = size / MAPW;
     ctx.fillStyle = Data.PLAYER_COLORS[1]; ctx.fillRect(spec.base[0] * s - 4, spec.base[1] * s - 4, 8, 8);
     if (spec.ai) { ctx.fillStyle = Data.PLAYER_COLORS[2]; ctx.fillRect(spec.ai.hq[0] * s - 4, spec.ai.hq[1] * s - 4, 8, 8); }

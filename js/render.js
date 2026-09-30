@@ -1,7 +1,6 @@
 'use strict';
 // Canvas renderer: terrain cache, decals, entities, projectiles, fog, selection, minimap.
 // TODO(patch 0.3): rectangle and triangle unit shapes in drawUnit and drawDecals (corpses) when vehicles arrive.
-// TODO(patch 0.7): tile Terrain.cache and the fog canvas for maps larger than about 4000 world units.
 const Render = (() => {
   const { clamp, dist } = Util;
   let canvas, ctx, mini, mctx, miniTerrain = null, miniT = 0;
@@ -244,7 +243,7 @@ const Render = (() => {
     const mw = Terrain.W * Terrain.CELL, mh = Terrain.H * Terrain.CELL;
     const vx0 = Math.max(0, Math.floor(cam.x)), vy0 = Math.max(0, Math.floor(cam.y));
     const vx1 = Math.min(mw, Math.ceil(cam.x + w / cam.zoom)), vy1 = Math.min(mh, Math.ceil(cam.y + h / cam.zoom));
-    if (vx1 > vx0 && vy1 > vy0) { ctx.imageSmoothingEnabled = cam.zoom < 1; ctx.drawImage(Terrain.cache, vx0, vy0, vx1 - vx0, vy1 - vy0, vx0, vy0, vx1 - vx0, vy1 - vy0); }
+    if (vx1 > vx0 && vy1 > vy0) { ctx.imageSmoothingEnabled = cam.zoom < 1; Terrain.drawView(ctx, vx0, vy0, vx1, vy1); }   // 0.7a: tiles drawn as they come into view
     const sel = new Set(G.selection);
     drawDecals();
     drawSupplyLines();
@@ -272,7 +271,10 @@ const Render = (() => {
       for (let i = 0; i < 7; i++) { const ang = i * 0.9 + c.t * 0.15, rr = c.r * (i ? 0.55 : 0); ctx.globalAlpha = 0.5 * a; ctx.fillStyle = i % 2 ? '#c9c9c4' : '#b5b5ae'; ctx.beginPath(); ctx.arc(c.x + Math.cos(ang) * rr, c.y + Math.sin(ang) * rr, c.r * (i ? 0.55 : 0.8), 0, Math.PI * 2); ctx.fill(); }
       ctx.globalAlpha = 1;
     }
-    if (!spectator) { ctx.globalAlpha = 0.4; ctx.imageSmoothingEnabled = true; ctx.drawImage(Fog.canvas, 0, 0, Terrain.W, Terrain.H, 0, 0, mw, mh); ctx.globalAlpha = 1; }
+    if (!spectator) {   // 0.7a: only the visible part of the fog picture
+      const C = Terrain.CELL, fi0 = Math.max(0, Math.floor(vx0 / C) - 1), fj0 = Math.max(0, Math.floor(vy0 / C) - 1), fi1 = Math.min(Terrain.W, Math.ceil(vx1 / C) + 1), fj1 = Math.min(Terrain.H, Math.ceil(vy1 / C) + 1);
+      if (fi1 > fi0 && fj1 > fj0) { ctx.globalAlpha = 0.4; ctx.imageSmoothingEnabled = true; ctx.drawImage(Fog.canvas, fi0, fj0, fi1 - fi0, fj1 - fj0, fi0 * C, fj0 * C, (fi1 - fi0) * C, (fj1 - fj0) * C); ctx.globalAlpha = 1; }
+    }
     // build ghost
     const st = Input.state;
     if (st.mode === 'build' && st.buildType) {
@@ -364,7 +366,7 @@ const Render = (() => {
     if (!miniTerrain || performance.now() - miniT > 2000) {
       miniT = performance.now();
       if (!miniTerrain) { miniTerrain = document.createElement('canvas'); miniTerrain.width = S; miniTerrain.height = S; }
-      const c = miniTerrain.getContext('2d'); c.imageSmoothingEnabled = true; c.drawImage(Terrain.cache, 0, 0, mw, mh, 0, 0, S, S);
+      const c = miniTerrain.getContext('2d'), ov = Terrain.overview; c.imageSmoothingEnabled = true; c.drawImage(ov, 0, 0, ov.width, ov.height, 0, 0, S, S);   // 0.7a: the overview picture
     }
     mctx.drawImage(miniTerrain, 0, 0);
     const sx = S / mw, sy = S / mh;

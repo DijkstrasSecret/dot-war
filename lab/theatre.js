@@ -35,7 +35,7 @@ const Theatre = (() => {
   function load(id, seed) {
     run = q.get('match') ? matchRun(+q.get('match'), q.get('diff') || 'normal') : FightScenarios.start(id, seed); acc = 0; endT = 0;
     if (run.match) document.body.classList.add('match');
-    Terrain.flushDirty(); if (!run.match) drawGrid(); Render.resize();
+    Terrain.onTileDrawn = null; Terrain.flushDirty(); if (!run.match) drawGrid(); Render.resize();
     const s = run.scenario;
     $('cap').querySelector('.t').textContent = s.title;
     $('cap').querySelector('.n').textContent = s.group + ' · seed ' + seed + (note ? ' · ' + note : '');
@@ -44,7 +44,10 @@ const Theatre = (() => {
   }
   // A faint 50 m grid on the ground, labelled every 100 m, so ranges can be read off the picture.
   function drawGrid() {
-    const c = Terrain.cache.getContext('2d'), mw = Terrain.W * Terrain.CELL, mh = Terrain.H * Terrain.CELL;
+    Terrain.onTileDrawn = c => gridOn(c);   // 0.7a: the ground is drawn in tiles; each one gets the grid
+  }
+  function gridOn(c) {
+    const mw = Terrain.W * Terrain.CELL, mh = Terrain.H * Terrain.CELL;
     c.save(); c.strokeStyle = 'rgba(80, 76, 60, 0.07)'; c.lineWidth = 1; c.fillStyle = 'rgba(80, 76, 60, 0.3)'; c.font = '9px Consolas, monospace';
     for (let x = 0; x <= mw; x += 50) { c.beginPath(); c.moveTo(x + 0.5, 0); c.lineTo(x + 0.5, mh); c.stroke(); }
     for (let y = 0; y <= mh; y += 50) { c.beginPath(); c.moveTo(0, y + 0.5); c.lineTo(mw, y + 0.5); c.stroke(); }

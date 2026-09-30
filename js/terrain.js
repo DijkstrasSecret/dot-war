@@ -1,7 +1,8 @@
 'use strict';
 // Heightmap terrain: sampling, slopes, passability, line of sight, and the topographic renderer.
 // TODO(patch 0.6): neutral village buildings as a terrain feature (enterable, cover) drawn as small black rectangles like the reference map.
-// TODO(patch 0.7): dirty-region rendering already exists; add tiling of the cache for maps beyond ~4000 world units.
+// Patch 0.7a: the map is drawn in tiles of TILE x TILE cells, only when they come into view, with at most
+// MAX_TILES kept (the whole map on small maps); a small overview picture serves the minimap and thumbnails.
 const Terrain = (() => {
   const { clamp, lerp } = Util;
   const CELL = 12;                 // world units per cell (1 world unit ~ 1 metre)
@@ -16,7 +17,8 @@ const Terrain = (() => {
   let height, type, road, slope, blocked, pathMult, blockVeh;   // blockVeh: barricades stop vehicles (0.5b)   // pathMult: extra route cost of barricades and wire (patch 0.4)
   let deposits = [];
   let roads = [];   // polylines [[x,y],...] in world units; `road` cell mask is rasterised from them
-  let cache, cctx;
+  const TILE = 64, MAX_TILES = 72;
+  let tiles = new Map(), tileT = 0, overview = null, overviewDirty = true;
   let dirty = null;
   let maskCanvas, maskCtx;
 
@@ -24,8 +26,8 @@ const Terrain = (() => {
     W = w; H = h;
     height = new Float32Array(w * h); type = new Uint8Array(w * h); road = new Uint8Array(w * h); slope = new Float32Array(w * h); blocked = new Uint8Array(w * h); pathMult = new Float64Array(w * h).fill(1); blockVeh = new Uint8Array(w * h);
     deposits = []; roads = [];
-    cache = document.createElement('canvas'); cache.width = w * CELL; cache.height = h * CELL; cctx = cache.getContext('2d');
-    maskCanvas = document.createElement('canvas'); maskCanvas.width = w; maskCanvas.height = h; maskCtx = maskCanvas.getContext('2d');
+    tiles = new Map(); overview = null; overviewDirty = true;
+    maskCanvas = document.createElement('canvas'); maskCanvas.width = TILE + 16; maskCanvas.height = TILE + 16; maskCtx = maskCanvas.getContext('2d');
     dirty = { x0: 0, y0: 0, x1: w, y1: h };
   }
   function toJSON() {
@@ -219,8 +221,51 @@ const Terrain = (() => {
     if (!dirty) return false;
     const r = dirty; dirty = null;
     recomputeDerived(r);
-    renderRegion(r.x0, r.y0, r.x1, r.y1);
+    // Tiles touching the region (plus the drawing margin) are redrawn when next seen.
+    const m = 4, ti0 = Math.floor(Math.max(0, r.x0 - m) / TILE), ti1 = Math.floor(Math.min(W - 1, r.x1 + m) / TILE), tj0 = Math.floor(Math.max(0, r.y0 - m) / TILE), tj1 = Math.floor(Math.min(H - 1, r.y1 + m) / TILE);
+    for (let tj = tj0; tj <= tj1; tj++) for (let ti = ti0; ti <= ti1; ti++) tiles.delete(ti + ',' + tj);
+    overviewDirty = true;
     return true;
+  }
+  // Draw the part of the map inside world rectangle (x0, y0)-(x1, y1) onto ctx (already in world coordinates).
+  function drawView(ctx, x0, y0, x1, y1) {
+    const TP = TILE * CELL;
+    const ti0 = Math.max(0, Math.floor(x0 / TP)), ti1 = Math.min(Math.ceil(W / TILE) - 1, Math.floor(x1 / TP));
+    const tj0 = Math.max(0, Math.floor(y0 / TP)), tj1 = Math.min(Math.ceil(H / TILE) - 1, Math.floor(y1 / TP));
+    for (let tj = tj0; tj <= tj1; tj++) for (let ti = ti0; ti <= ti1; ti++) {
+      const t = tile(ti, tj);
+      const sx = Math.max(x0, ti * TP), sy = Math.max(y0, tj * TP), ex = Math.min(x1, (ti + 1) * TP, W * CELL), ey = Math.min(y1, (tj + 1) * TP, H * CELL);
+      if (ex > sx && ey > sy) ctx.drawImage(t, sx - ti * TP, sy - tj * TP, ex - sx, ey - sy, sx, sy, ex - sx, ey - sy);
+    }
+  }
+  function tile(ti, tj) {
+    const key = ti + ',' + tj; let t = tiles.get(key);
+    if (t) { t.used = ++tileT; return t; }
+    t = document.createElement('canvas'); t.width = TILE * CELL; t.height = TILE * CELL; t.used = ++tileT;
+    const c = t.getContext('2d'); c.translate(-ti * TILE * CELL, -tj * TILE * CELL);
+    renderRegion(c, ti * TILE, tj * TILE, Math.min(W, (ti + 1) * TILE), Math.min(H, (tj + 1) * TILE));
+    if (api.onTileDrawn) api.onTileDrawn(c, ti * TILE * CELL, tj * TILE * CELL, TILE * CELL, TILE * CELL);   // the Fight Theatre's grid
+    tiles.set(key, t);
+    const limit = Math.max(MAX_TILES, Math.ceil(W / TILE) * Math.ceil(H / TILE) <= 64 ? 64 : 0);
+    if (tiles.size > limit) { let oldK = null, oldU = Infinity; for (const [k, v] of tiles) if (v.used < oldU) { oldU = v.used; oldK = k; } tiles.delete(oldK); }
+    return t;
+  }
+  // A small picture of the whole map (colours and hill shading) for the minimap and menu thumbnails.
+  function getOverview() {
+    if (overview && !overviewDirty) return overview;
+    const S = Math.min(512, Math.max(W, H)); if (!overview) { overview = document.createElement('canvas'); overview.width = S; overview.height = S; }
+    const c = overview.getContext('2d'), img = c.createImageData(S, S), d = img.data;
+    const hex = h => [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)];
+    const cols = { [T_OPEN]: hex(COL.bg), [T_FOREST]: hex(COL.forest), [T_WATER]: hex(COL.water), [T_SWAMP]: hex(COL.swamp) }, rc = hex(COL.roadFill);
+    for (let y = 0; y < S; y++) for (let x = 0; x < S; x++) {
+      const i = Math.min(W - 1, Math.floor(x * W / S)), j = Math.min(H - 1, Math.floor(y * H / S)), k = j * W + i;
+      const il = Math.max(0, i - 1), ir = Math.min(W - 1, i + 1), ju = Math.max(0, j - 1), jd = Math.min(H - 1, j + 1);
+      const gx = (height[j * W + ir] - height[j * W + il]) / ((ir - il) * CELL) * 2.2, gy = (height[jd * W + i] - height[ju * W + i]) / ((jd - ju) * CELL) * 2.2;
+      const shade = clamp(0.72 + 0.28 * ((0.55 * gx + 0.6 * gy + 0.58) / Math.hypot(gx, gy, 1)), 0.45, 1.05);
+      const col = road[k] ? rc : cols[type[k]] || cols[T_OPEN], o = (y * S + x) * 4;
+      d[o] = col[0] * shade; d[o + 1] = col[1] * shade; d[o + 2] = col[2] * shade; d[o + 3] = 255;
+    }
+    c.putImageData(img, 0, 0); overviewDirty = false; return overview;
   }
   function smoothRegion(x0, y0, x1, y1, passes = 1) {
     for (let p = 0; p < passes; p++) {
@@ -335,49 +380,55 @@ const Terrain = (() => {
     }
     return chains;
   }
-  function drawMaskLayer(ctx, pred, color, alpha = 1) {
-    const img = maskCtx.createImageData(W, H); const d = img.data;
-    const r = parseInt(color.slice(1, 3), 16), g = parseInt(color.slice(3, 5), 16), b = parseInt(color.slice(5, 7), 16);
-    for (let k = 0; k < W * H; k++) if (pred(k)) { d[k * 4] = r; d[k * 4 + 1] = g; d[k * 4 + 2] = b; d[k * 4 + 3] = 255; }
-    maskCtx.putImageData(img, 0, 0);
-    ctx.save(); ctx.globalAlpha = alpha; ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high';
-    ctx.drawImage(maskCanvas, 0, 0, W, H, 0, 0, W * CELL, H * CELL); ctx.restore();
+  // Masks cover the region R = { i0, j0, i1, j1 } (cells, exclusive ends), drawn scaled to world units.
+  function maskImage(R) {
+    const w = R.i1 - R.i0, h = R.j1 - R.j0;
+    if (maskCanvas.width < w || maskCanvas.height < h) { maskCanvas.width = Math.max(maskCanvas.width, w); maskCanvas.height = Math.max(maskCanvas.height, h); }
+    return maskCtx.createImageData(w, h);
   }
-  function drawHillshade(ctx) {
-    const img = maskCtx.createImageData(W, H); const d = img.data;
+  function drawMask(ctx, img, R, alpha = 1, op = 'source-over') {
+    maskCtx.putImageData(img, 0, 0);
+    ctx.save(); ctx.globalAlpha = alpha; ctx.globalCompositeOperation = op; ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high';
+    ctx.drawImage(maskCanvas, 0, 0, R.i1 - R.i0, R.j1 - R.j0, R.i0 * CELL, R.j0 * CELL, (R.i1 - R.i0) * CELL, (R.j1 - R.j0) * CELL); ctx.restore();
+  }
+  function drawMaskLayer(ctx, R, pred, color, alpha = 1) {
+    const img = maskImage(R), d = img.data, w = R.i1 - R.i0;
+    const r = parseInt(color.slice(1, 3), 16), g = parseInt(color.slice(3, 5), 16), b = parseInt(color.slice(5, 7), 16);
+    for (let j = R.j0; j < R.j1; j++) for (let i = R.i0; i < R.i1; i++) if (pred(j * W + i)) { const o = ((j - R.j0) * w + (i - R.i0)) * 4; d[o] = r; d[o + 1] = g; d[o + 2] = b; d[o + 3] = 255; }
+    drawMask(ctx, img, R, alpha);
+  }
+  function drawHillshade(ctx, R) {
+    const img = maskImage(R), d = img.data, w = R.i1 - R.i0;
     const lx = -0.55, ly = -0.6, lz = 0.58; const ex = 2.2;
-    for (let j = 0; j < H; j++) for (let i = 0; i < W; i++) {
+    for (let j = R.j0; j < R.j1; j++) for (let i = R.i0; i < R.i1; i++) {
       const il = Math.max(0, i - 1), ir = Math.min(W - 1, i + 1), ju = Math.max(0, j - 1), jd = Math.min(H - 1, j + 1);
       const gx = (height[j * W + ir] - height[j * W + il]) / ((ir - il) * CELL) * ex, gy = (height[jd * W + i] - height[ju * W + i]) / ((jd - ju) * CELL) * ex;
       const nl = Math.hypot(gx, gy, 1); const dot = (-gx * lx - gy * ly + lz) / nl;
-      const v = clamp(140 + 130 * dot, 0, 255); const k = (j * W + i) * 4;
+      const v = clamp(140 + 130 * dot, 0, 255); const k = ((j - R.j0) * w + (i - R.i0)) * 4;
       d[k] = v; d[k + 1] = v; d[k + 2] = v; d[k + 3] = 255;
     }
-    maskCtx.putImageData(img, 0, 0);
-    ctx.save(); ctx.globalCompositeOperation = 'multiply'; ctx.globalAlpha = 0.28; ctx.imageSmoothingEnabled = true;
-    ctx.drawImage(maskCanvas, 0, 0, W, H, 0, 0, W * CELL, H * CELL); ctx.restore();
+    drawMask(ctx, img, R, 0.28, 'multiply');
   }
-  function smoothedMask(pred) {
-    const f = new Float32Array(W * H);
-    for (let k = 0; k < W * H; k++) f[k] = pred(k) ? 1 : 0;
+  // A 3x3-blurred 0/1 mask over the region, stored in a whole-map-indexed array (only the region is filled).
+  function smoothedMask(pred, R) {
     const out = new Float32Array(W * H);
-    for (let j = 0; j < H; j++) for (let i = 0; i < W; i++) {
+    for (let j = R.j0; j < R.j1; j++) for (let i = R.i0; i < R.i1; i++) {
       let s = 0, n = 0;
-      for (let dj = -1; dj <= 1; dj++) for (let di = -1; di <= 1; di++) { const ii = i + di, jj = j + dj; if (inb(ii, jj)) { s += f[jj * W + ii]; n++; } }
+      for (let dj = -1; dj <= 1; dj++) for (let di = -1; di <= 1; di++) { const ii = i + di, jj = j + dj; if (inb(ii, jj)) { s += pred(jj * W + ii) ? 1 : 0; n++; } }
       out[j * W + i] = s / n;
     }
     return out;
   }
-  function renderRegion(ci0, cj0, ci1, cj1) {
+  function renderRegion(ctx, ci0, cj0, ci1, cj1) {
     const m = 3;
-    ci0 = Math.max(0, ci0 - m); cj0 = Math.max(0, cj0 - m); ci1 = Math.min(W, ci1 + m); cj1 = Math.min(H, cj1 + m);
-    const ctx = cctx;
     const px = ci0 * CELL, py = cj0 * CELL, pw = (ci1 - ci0) * CELL, ph = (cj1 - cj0) * CELL;
+    ci0 = Math.max(0, ci0 - m); cj0 = Math.max(0, cj0 - m); ci1 = Math.min(W, ci1 + m); cj1 = Math.min(H, cj1 + m);
+    const R = { i0: ci0, j0: cj0, i1: ci1, j1: cj1 };
     ctx.save(); ctx.beginPath(); ctx.rect(px, py, pw, ph); ctx.clip();
     ctx.fillStyle = COL.bg; ctx.fillRect(px, py, pw, ph);
-    drawMaskLayer(ctx, k => type[k] === T_FOREST, COL.forest);
-    drawMaskLayer(ctx, k => type[k] === T_SWAMP, COL.swamp);
-    drawMaskLayer(ctx, k => type[k] === T_WATER, COL.water);
+    drawMaskLayer(ctx, R, k => type[k] === T_FOREST, COL.forest);
+    drawMaskLayer(ctx, R, k => type[k] === T_SWAMP, COL.swamp);
+    drawMaskLayer(ctx, R, k => type[k] === T_WATER, COL.water);
     // forest stipple
     ctx.fillStyle = COL.forestDark; ctx.globalAlpha = 0.7;
     for (let j = cj0; j < cj1; j++) for (let i = ci0; i < ci1; i++) if (type[j * W + i] === T_FOREST && ((i * 7 + j * 13) % 5 === 0)) { ctx.beginPath(); ctx.arc(cx(i) + ((i * 31 + j * 17) % 7) - 3, cy(j) + ((i * 13 + j * 29) % 7) - 3, 1.6, 0, Math.PI * 2); ctx.fill(); }
@@ -386,9 +437,9 @@ const Terrain = (() => {
     ctx.beginPath();
     for (let j = cj0; j < cj1; j++) for (let i = ci0; i < ci1; i++) if (type[j * W + i] === T_SWAMP && ((i + j * 3) % 3 === 0)) { const x = cx(i), y = cy(j); ctx.moveTo(x - 4, y); ctx.lineTo(x + 4, y); ctx.moveTo(x - 1.5, y - 3); ctx.lineTo(x + 1.5, y - 3); }
     ctx.stroke(); ctx.globalAlpha = 1;
-    drawHillshade(ctx);
+    drawHillshade(ctx, R);
     // water outline
-    const wm = smoothedMask(k => type[k] === T_WATER);
+    const wm = smoothedMask(k => type[k] === T_WATER, R);
     ctx.strokeStyle = COL.waterLine; ctx.lineWidth = 1.2; ctx.beginPath();
     marchingSquares(wm, 0.5, ci0 - 1, cj0 - 1, ci1, cj1, (x0, y0, x1, y1) => { ctx.moveTo(x0, y0); ctx.lineTo(x1, y1); });
     ctx.stroke();
@@ -397,7 +448,7 @@ const Terrain = (() => {
     for (const [col, w] of [[COL.roadEdge, 4.4], [COL.roadFill, 2.6]]) {
       ctx.strokeStyle = col; ctx.lineWidth = w; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.beginPath();
       for (const p of roads) {
-        if (p.length < 2) continue;
+        if (p.length < 2 || !p.some(q => q[0] > px - 400 && q[0] < px + pw + 400 && q[1] > py - 400 && q[1] < py + ph + 400)) continue;
         ctx.moveTo(p[0][0], p[0][1]);
         if (p.length === 2) { ctx.lineTo(p[1][0], p[1][1]); continue; }
         for (let n = 1; n < p.length - 1; n++) ctx.quadraticCurveTo(p[n][0], p[n][1], (p[n][0] + p[n + 1][0]) / 2, (p[n][1] + p[n + 1][1]) / 2);
@@ -407,6 +458,7 @@ const Terrain = (() => {
     }
     // deposits
     for (const d of deposits) {
+      if (d.x < px - 60 || d.x > px + pw + 60 || d.y < py - 60 || d.y > py + ph + 60) continue;
       ctx.save(); ctx.translate(d.x, d.y);
       ctx.fillStyle = 'rgba(255,255,255,0.55)'; ctx.strokeStyle = COL.deposit; ctx.lineWidth = 1.2;
       ctx.beginPath(); ctx.arc(0, 0, d.r, 0, Math.PI * 2); ctx.fill(); ctx.setLineDash([4, 3]); ctx.stroke(); ctx.setLineDash([]);
@@ -418,14 +470,15 @@ const Terrain = (() => {
     ctx.restore();
   }
 
-  return {
-    CELL, T_OPEN, T_FOREST, T_WATER, T_SWAMP, COL, LOS_TOLERANCE,
+  const api = {
+    CELL, T_OPEN, T_FOREST, T_WATER, T_SWAMP, COL, LOS_TOLERANCE, TILE,
     create, toJSON, fromJSON,
     get W() { return W; }, get H() { return H; }, get height() { return height; }, get type() { return type; }, get road() { return road; }, get slope() { return slope; },
-    get deposits() { return deposits; }, get roads() { return roads; }, get cache() { return cache; }, rasterizeRoads, eraseRoads, addRoad, removeRoad,
+    get deposits() { return deposits; }, get roads() { return roads; }, drawView, get overview() { return getOverview(); }, onTileDrawn: null, rasterizeRoads, eraseRoads, addRoad, removeRoad,
     idx, inb, cellI, cellJ, cellIdxAt, cx, cy, hAt, gradAt, typeAt, roadAt, slopeAt,
     cellPassable, terrainFactor, slopeFactor, moveFactor, edgeCost, passableAt, straightPassable, setBlocked, setPathMult, setBlockVeh, get blocked() { return blocked; }, get pathMult() { return pathMult; }, get blockVeh() { return blockVeh; },
     los, coverAt, ridgeCover, forestCellsNear, depositNear, areaOk,
     markDirty, flushDirty, recomputeDerived, smoothRegion, renderRegion,
   };
+  return api;
 })();
