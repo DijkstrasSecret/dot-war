@@ -10,6 +10,7 @@ Compare a new patch's folder with the previous one to see what a change did.
 
 | Patch | Date | Fights | Headline |
 | --- | --- | --- | --- |
+| [0.5d](0.5d/README.md) | 30 Sept 2026 | enemy behaviour checks, 5 AI matches, 1 video | The enemy falls back to heal, garrisons, digs in, researches and raids supply lines |
 | [0.5c](0.5c/README.md) | 30 Sept 2026 | 37 fights × 40 runs, 8 sweeps, 6 AI matches | Mortar Crews dominate Riflemen in the open; standing still beats walking in; the MG rework works |
 
 ## Making a new set
