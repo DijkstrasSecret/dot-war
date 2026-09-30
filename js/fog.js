@@ -13,13 +13,19 @@ const Fog = (() => {
   let castCache = new WeakMap();
   const INTERVAL = 0.25;
   let minH = 0;   // the map's lowest ground, to bound how far any ray can reach
+  // Kaan, 0.5e (faster simulation): a soldier sees from the centre of the map cell he stands in, and
+  // casts from the same cell centre, radius and eye height are shared by everyone. Results depend only
+  // on those inputs, so the cache changes speed, never the outcome. Cleared per match, when smoke
+  // changes, and when it grows past CELL_CACHE_MAX entries.
+  const CELL_CACHE_MAX = 4000;
+  let cellCache = new Map(), cellCacheVer = -1;
   const HEIGHT_BONUS = 0.9;   // flat vision bonus at the top of the map's height range (kept, Kaan 0.5b.3)
 
   function init() {
     W = Terrain.W; H = Terrain.H;
     minH = Infinity; for (let k = 0; k < W * H; k++) if (Terrain.height[k] < minH) minH = Terrain.height[k];
     for (const p of [1, 2]) vis[p] = new Uint8Array(W * H);
-    timer = 0; castCache = new WeakMap();   // per match, so a replay starts from the same state
+    timer = 0; castCache = new WeakMap(); cellCache = new Map(); cellCacheVer = -1;   // per match, so a replay starts from the same state
     imageDirty = true;
   }
 
@@ -46,6 +52,9 @@ const Fog = (() => {
     const maxX = W * CELL, maxY = H * CELL;
     const tol = 1.8 + Terrain.LOS_TOLERANCE;
     const k0 = Terrain.cellIdxAt(x, y); v[k0] = 1; if (out) out.push(k0);
+    // Speed (Kaan asked for much faster simulations): the cell index and the bilinear height lookup are
+    // inlined here with exactly the arithmetic of Terrain.cellIdxAt and Terrain.hAt, so results are identical.
+    const hgt = Terrain.height, W1 = W - 1, H1 = H - 1;
     for (let a = 0; a < rays; a++) {
       const ang = a / rays * Math.PI * 2;
       const dx = Math.cos(ang) * step, dy = Math.sin(ang) * step;
@@ -54,8 +63,12 @@ const Fog = (() => {
         px += dx; py += dy;
         if (px < 0 || py < 0 || px >= maxX || py >= maxY) break;
         const d = s * step;
-        const k = Terrain.cellIdxAt(px, py);
-        const ht = Terrain.hAt(px, py);
+        const k = Math.floor(py / CELL) * W + Math.floor(px / CELL);   // in bounds here, so no clamp needed
+        const fx = px / CELL - 0.5, fy = py / CELL - 0.5, fi = Math.floor(fx), fj = Math.floor(fy), tx = fx - fi, ty = fy - fj;
+        const i0 = fi < 0 ? 0 : fi > W1 ? W1 : fi, i1 = fi + 1 < 0 ? 0 : fi + 1 > W1 ? W1 : fi + 1;
+        const r0 = (fj < 0 ? 0 : fj > H1 ? H1 : fj) * W, r1 = (fj + 1 < 0 ? 0 : fj + 1 > H1 ? H1 : fj + 1) * W;
+        const a0 = hgt[r0 + i0], b0 = hgt[r1 + i0], l0 = a0 + (hgt[r0 + i1] - a0) * tx, l1 = b0 + (hgt[r1 + i1] - b0) * tx;
+        const ht = l0 + (l1 - l0) * ty;
         if ((ht + tol - h0) / d >= maxSlope && (d <= rEdge || d <= r * reach(h0 - ht))) { if (out && !v[k]) out.push(k); v[k] = 1; }
         const sg = (ht - h0) / d; if (sg > maxSlope) maxSlope = sg;
         if (type[k] === T_FOREST) { forest++; if (forest * step > 36) break; }
@@ -66,6 +79,12 @@ const Fog = (() => {
 
   function buildingVision(b) { const lv = b.levelDef, sl = b.slots; return { range: lv ? lv.vision : b.def.vision, eye: 2.2 + (sl ? sl.height : 0) }; }   // towers and the HQ see from their garrison height
 
+  function castShared(v, x, y, r, eye) {
+    if (cellCacheVer !== G.smokeVer || cellCache.size >= CELL_CACHE_MAX) { cellCache.clear(); cellCacheVer = G.smokeVer; }
+    const key = x + ',' + y + ',' + r + ',' + eye; let cells = cellCache.get(key);
+    if (!cells) { scratch.fill(0); const out = []; cast(scratch, x, y, r, eye, out); cells = Int32Array.from(out); cellCache.set(key, cells); }
+    for (let i = 0; i < cells.length; i++) v[cells[i]] = 1;
+  }
   function castCached(v, e, x, y, r, eye) {
     const c = castCache.get(e);
     if (c && c.x === x && c.y === y && c.r === r && c.eye === eye && c.sv === G.smokeVer) { const cells = c.cells; for (let i = 0; i < cells.length; i++) v[cells[i]] = 1; return; }
@@ -78,7 +97,10 @@ const Fog = (() => {
   function computeFor(owner) {
     const v = vis[owner]; v.fill(0); smokes = G.smokes || [];
     if (!scratch || scratch.length !== W * H) scratch = new Uint8Array(W * H);
-    for (const u of G.units) if (u.owner === owner && !u.dead && !u.inside) castCached(v, u, u.x, u.y, visionRadius(u.stats.vision, u.x, u.y), 2.2);
+    for (const u of G.units) if (u.owner === owner && !u.dead && !u.inside) {
+      const qx = Terrain.cx(Terrain.cellI(u.x)), qy = Terrain.cy(Terrain.cellJ(u.y));   // 0.5e: from the cell centre
+      castShared(v, qx, qy, visionRadius(u.stats.vision, qx, qy), 2.2);
+    }
     for (const b of G.buildings) if (b.owner === owner && !b.dead) { const bv = buildingVision(b); castCached(v, b, b.x, b.y, visionRadius(bv.range, b.x, b.y, bv.eye) * (b.built ? 1 : 0.5), bv.eye); }
   }
 

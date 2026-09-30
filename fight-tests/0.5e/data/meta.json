@@ -1,8 +1,4 @@
-'use strict';
-// Balance Lab baseline (patch 0.5e, replacing 0.5b.1 with Kaan's agreement): LabTests.metaSnapshot({ runs: 30 }) on
-// this build, made with fight-tests/tools/meta.js. The Meta snapshot section shows every new result next to these
-// numbers. Replace only when Kaan agrees on a new baseline.
-const META_BASELINE = {
+{
  "build": "0.5e",
  "duels": [
   {
@@ -529,4 +525,4 @@ const META_BASELINE = {
    ]
   }
  ]
-};
+}
