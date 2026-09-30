@@ -4,12 +4,23 @@
 // Also reachable from the top bar. The painting engine runs only while the menu is open.
 // TODO(patch 0.8): save/load slots and a settings section (scroll speed, edge scrolling on/off, sound volume).
 const Menu = (() => {
-  let open = false, view = 'front', mapId = 'highland', diff = 'normal', faction = 'british', played = false;
+  let open = false, view = 'front', mapId = 'random', diff = 'normal', faction = 'british', played = false;
   let root = null, fx = null, canvas = null, col = null, paintingId = null;
   const thumbs = {};
 
   // Builds one map for its preview. Call before the real map is built (it reuses Terrain).
-  function prepareThumbnail(m) { thumbs[m.id] = MapGen.thumbnail(m, 160); }
+  function prepareThumbnail(m) { thumbs[m.id] = m.generated ? randomThumb() : MapGen.thumbnail(m, 160); }
+  // 0.7: a generated map has no picture before it exists; show a drawn stand-in (the minimap shows the real one).
+  function randomThumb() {
+    const c = document.createElement('canvas'); c.width = 160; c.height = 160; const x = c.getContext('2d');
+    x.fillStyle = '#e9e4d2'; x.fillRect(0, 0, 160, 160); x.strokeStyle = '#b08a5a'; x.lineWidth = 1;
+    for (let r = 10; r < 90; r += 12) { x.beginPath(); x.ellipse(112, 44, r, r * 0.8, 0.4, 0, Math.PI * 2); x.stroke(); }
+    x.strokeStyle = '#5b9bd5'; x.lineWidth = 3; x.beginPath(); x.moveTo(0, 70); x.bezierCurveTo(50, 60, 70, 120, 160, 110); x.stroke();
+    x.strokeStyle = '#c0392b'; x.lineWidth = 2; x.beginPath(); x.moveTo(22, 140); x.quadraticCurveTo(80, 100, 112, 44); x.stroke();
+    x.fillStyle = Data.PLAYER_COLORS[1]; x.fillRect(16, 134, 12, 12); x.fillStyle = Data.PLAYER_COLORS[2]; x.fillRect(106, 38, 12, 12);
+    x.fillStyle = '#5a4a32'; x.font = 'bold 40px Georgia, serif'; x.textAlign = 'center'; x.fillText('?', 80, 95);
+    return c;
+  }
   function prepareThumbnails() { for (const m of MapGen.MAPS) prepareThumbnail(m); }
 
   function ensure() {

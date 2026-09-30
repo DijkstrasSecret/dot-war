@@ -10,10 +10,10 @@ const Main = (() => {
   // Building a match, as named steps so the loading bar can follow real work. Each match gets a seed
   // (random unless given), so it can be replayed exactly from G.seed and G.orders.
   function steps(mapId, difficulty, faction, seed) {
-    const spec = MapGen.MAPS.find(m => m.id === mapId) || MapGen.MAPS[0];
+    const spec = MapGen.ALL.find(m => m.id === mapId) || MapGen.MAPS[0];
     if (seed == null) seed = Math.floor(Math.random() * 4294967296);   // picking the seed is the one unseeded draw
     return [
-      { label: 'Surveying ' + spec.name, run: () => {
+      { label: spec.generated ? 'Surveying a new 13 km map' : 'Surveying ' + spec.name, run: () => {
         Sim.survey({ map: spec.id, difficulty, seed });
         // DD K: the player's faction, and a different one for the AI picked from the match seed on
         // its own stream (so it never shifts the simulation's draws). Neutrals stay mixed (null).
@@ -69,7 +69,7 @@ const Main = (() => {
     // First load: one thumbnail per map, then the default match, all behind the loading screen.
     const boot = MapGen.MAPS.map(m => ({ label: 'Charting ' + m.name, run: () => Menu.prepareThumbnail(m) }));
     loading = true;
-    try { await Loading.run(boot.concat(steps('highland', 'normal'))); } finally { loading = false; }
+    try { await Loading.run(boot.concat(steps('random', 'normal'))); } finally { loading = false; }
     Menu.show();
     last = performance.now(); requestAnimationFrame(frame);
   });

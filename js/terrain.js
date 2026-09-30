@@ -17,6 +17,7 @@ const Terrain = (() => {
   let height, type, road, slope, blocked, pathMult, blockVeh;   // blockVeh: barricades stop vehicles (0.5b)   // pathMult: extra route cost of barricades and wire (patch 0.4)
   let deposits = [];
   let roads = [];   // polylines [[x,y],...] in world units; `road` cell mask is rasterised from them
+  let roadR = 9;    // road half-width in metres; 0.7: generated maps use wider roads
   const TILE = 64, MAX_TILES = 72;
   let tiles = new Map(), tileT = 0, overview = null, overviewDirty = true;
   let dirty = null;
@@ -25,7 +26,7 @@ const Terrain = (() => {
   function create(w, h) {
     W = w; H = h;
     height = new Float32Array(w * h); type = new Uint8Array(w * h); road = new Uint8Array(w * h); slope = new Float32Array(w * h); blocked = new Uint8Array(w * h); pathMult = new Float64Array(w * h).fill(1); blockVeh = new Uint8Array(w * h);
-    deposits = []; roads = [];
+    deposits = []; roads = []; roadR = 9;
     tiles = new Map(); overview = null; overviewDirty = true;
     maskCanvas = document.createElement('canvas'); maskCanvas.width = TILE + 16; maskCanvas.height = TILE + 16; maskCtx = maskCanvas.getContext('2d');
     dirty = { x0: 0, y0: 0, x1: w, y1: h };
@@ -49,9 +50,10 @@ const Terrain = (() => {
         for (let s = 0; s <= steps; s++) {
           const x = ax + (bx - ax) * s / steps, y = ay + (by - ay) * s / steps;
           const ci = cellI(x), cj = cellJ(y);
-          for (let dj = -1; dj <= 1; dj++) for (let di = -1; di <= 1; di++) {
+          const rr = Math.ceil(roadR / CELL);
+          for (let dj = -rr; dj <= rr; dj++) for (let di = -rr; di <= rr; di++) {
             const i = ci + di, j = cj + dj; if (!inb(i, j)) continue;
-            if (Math.hypot(cx(i) - x, cy(j) - y) <= 9) road[j * W + i] = 1;   // 9 keeps diagonal roads 4-connected (no corner cutting in the field)
+            if (Math.hypot(cx(i) - x, cy(j) - y) <= roadR) road[j * W + i] = 1;   // 9 keeps diagonal roads 4-connected (no corner cutting in the field)
           }
         }
       }
@@ -105,7 +107,7 @@ const Terrain = (() => {
       const il = Math.max(0, i - 1), ir = Math.min(W - 1, i + 1), ju = Math.max(0, j - 1), jd = Math.min(H - 1, j + 1);
       const gx = (height[j * W + ir] - height[j * W + il]) / ((ir - il) * CELL);
       const gy = (height[jd * W + i] - height[ju * W + i]) / ((jd - ju) * CELL);
-      slope[j * W + i] = Math.hypot(gx, gy);
+      slope[j * W + i] = Math.sqrt(gx * gx + gy * gy);
     }
   }
 
@@ -445,7 +447,7 @@ const Terrain = (() => {
     ctx.stroke();
     drawContours(ctx, ci0 - 1, cj0 - 1, ci1, cj1);
     // roads: smooth curves through the polyline points
-    for (const [col, w] of [[COL.roadEdge, 4.4], [COL.roadFill, 2.6]]) {
+    for (const [col, w] of [[COL.roadEdge, 4.4 * roadR / 9], [COL.roadFill, 2.6 * roadR / 9]]) {
       ctx.strokeStyle = col; ctx.lineWidth = w; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.beginPath();
       for (const p of roads) {
         if (p.length < 2 || !p.some(q => q[0] > px - 400 && q[0] < px + pw + 400 && q[1] > py - 400 && q[1] < py + ph + 400)) continue;
@@ -474,7 +476,7 @@ const Terrain = (() => {
     CELL, T_OPEN, T_FOREST, T_WATER, T_SWAMP, COL, LOS_TOLERANCE, TILE,
     create, toJSON, fromJSON,
     get W() { return W; }, get H() { return H; }, get height() { return height; }, get type() { return type; }, get road() { return road; }, get slope() { return slope; },
-    get deposits() { return deposits; }, get roads() { return roads; }, drawView, get overview() { return getOverview(); }, onTileDrawn: null, rasterizeRoads, eraseRoads, addRoad, removeRoad,
+    get deposits() { return deposits; }, get roads() { return roads; }, get roadWidth() { return roadR; }, set roadWidth(v) { roadR = v; }, drawView, get overview() { return getOverview(); }, onTileDrawn: null, rasterizeRoads, eraseRoads, addRoad, removeRoad,
     idx, inb, cellI, cellJ, cellIdxAt, cx, cy, hAt, gradAt, typeAt, roadAt, slopeAt,
     cellPassable, terrainFactor, slopeFactor, moveFactor, edgeCost, passableAt, straightPassable, setBlocked, setPathMult, setBlockVeh, get blocked() { return blocked; }, get pathMult() { return pathMult; }, get blockVeh() { return blockVeh; },
     los, coverAt, ridgeCover, forestCellsNear, depositNear, areaOk,

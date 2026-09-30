@@ -186,12 +186,14 @@ const Path = (() => {
     const k = Terrain.cellIdxAt(x, y);
     if (field.costAt(k) === Infinity) {
       if (field.full || !u) return [field.tx, field.ty];
-      if (!u.route || u.routeField !== field.key) { const r = routeInto(field, x, y, cls); u.route = r ? r.cells : null; u.routeI = 0; u.routeField = field.key; }
-      const rt = u.route; if (!rt) return [field.tx, field.ty];
       const px = n => Terrain.cx(n % W), py = n => Terrain.cy((n - n % W) / W);
-      let i = u.routeI || 0;
+      // Join the route at its point nearest to us: routes are shared by everyone starting in the same block.
+      const nearest = (rt, from, span) => { let bi = from, bd = Infinity; for (let n = from; n < Math.min(rt.length, from + span); n++) { const d = Math.hypot(px(rt[n]) - x, py(rt[n]) - y); if (d < bd) { bd = d; bi = n; } } return [bi, bd]; };
+      if (!u.route || u.routeField !== field.key) { const r = routeInto(field, x, y, cls); u.route = r ? r.cells : null; u.routeField = field.key; u.routeI = u.route ? nearest(u.route, 0, 80)[0] : 0; }
+      const rt = u.route; if (!rt) return [field.tx, field.ty];
+      let [i, di] = nearest(rt, u.routeI || 0, 24);
       while (i < rt.length - 1 && Math.hypot(px(rt[i]) - x, py(rt[i]) - y) < Terrain.CELL * 1.5) i++;
-      if (Math.hypot(px(rt[i]) - x, py(rt[i]) - y) > Terrain.CELL * 6) { u.route = null; return [px(rt[i]), py(rt[i])]; }   // pushed off it: find a new one next time
+      if (di > Terrain.CELL * 12) { u.route = null; u.routeField = null; return [px(rt[i]), py(rt[i])]; }   // pushed well off it: find a new one next time
       let best = i; for (let s = i + 1; s < Math.min(rt.length, i + maxLook); s++) { if (Terrain.straightPassable(x, y, px(rt[s]), py(rt[s]), cls)) best = s; else break; }
       u.routeI = i; return [px(rt[best]), py(rt[best])];
     }
@@ -220,10 +222,30 @@ const Path = (() => {
     return { cells: r.cells, cost: r.cost + tail };
   }
 
+  // Every cell reachable on foot (or by vehicle) from (x, y), by the same step rules as the fields:
+  // a Uint8Array over the map, 1 where reachable. Used to check generated maps (0.7a).
+  function reachMap(x, y, clsName) {
+    const cls = Data.MOVE_CLASSES[clsName], tb = table(cls), P = tb.pass, height = Terrain.height, road = Terrain.road, maxG = cls.maxGrade, CELL = Terrain.CELL;
+    const seen = new Uint8Array(W * H), queue = new Int32Array(W * H); let qh = 0, qt = 0;
+    const s = Terrain.cellIdxAt(x, y); seen[s] = 1; queue[qt++] = s;
+    while (qh < qt) {
+      const k = queue[qh++], i = k % W, j = (k - i) / W;
+      for (let q = 0; q < 8; q++) {
+        const ni = i + DI[q], nj = j + DJ[q]; if (ni < 0 || nj < 0 || ni >= W || nj >= H) continue;
+        const n = nj * W + ni; if (seen[n] || P[n] === 0) continue;
+        if (q > 3 && (P[j * W + ni] === 0 || P[nj * W + i] === 0)) continue;
+        const grade = (height[n] - height[k]) / (DD[q] * CELL);
+        if (!(road[k] && road[n]) && (grade > maxG || grade < -maxG)) continue;
+        seen[n] = 1; queue[qt++] = n;
+      }
+    }
+    return seen;
+  }
+
   function reachable(field, x, y) {
     if (field.full) return field.costAt(Terrain.cellIdxAt(x, y)) !== Infinity;
     return !!route(x, y, field.tx, field.ty, field.cls);
   }
 
-  return { init, invalidate, getField, steer, nearestPassable, reachable, route, FIELD_R };
+  return { init, invalidate, getField, steer, nearestPassable, reachable, reachMap, route, FIELD_R };
 })();

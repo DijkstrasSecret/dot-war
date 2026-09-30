@@ -5,11 +5,13 @@
 const Sim = (() => {
   const STEP = 1 / 30;   // one tick; 30 ticks make a game second
 
-  // opts: { map, difficulty, seed }. The map id must be in MapGen.MAPS.
+  // opts: { map, difficulty, seed }. The map id must be in MapGen.ALL; 'random' (0.7) generates a new
+  // big map from the match seed.
   function survey(opts) {
-    const spec = MapGen.MAPS.find(m => m.id === opts.map) || MapGen.MAPS[0];
+    let spec = MapGen.ALL.find(m => m.id === opts.map) || MapGen.ALL[0];
     G.difficulty = opts.difficulty || 'normal';
     Game.init(opts.seed);
+    if (spec.generated) spec = MapGen.generate(G.seed);
     G.mapId = spec.id; G.sandbox = !spec.ai;
     MapGen.build(spec, Data.DIFFICULTY[G.difficulty]);
     return spec;
