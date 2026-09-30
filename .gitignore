@@ -7,3 +7,4 @@ __pycache__/
 # Claude Code local session files (keep launch.json)
 .claude/*
 !.claude/launch.json
+fight-tests/*/clips/

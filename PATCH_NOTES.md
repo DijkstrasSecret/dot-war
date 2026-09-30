@@ -5,6 +5,14 @@ each change live in `DESIGN_DECISIONS.md`.
 
 ---
 
+## Tool: Fight Theatre and recorded fight testing (30 September 2026)
+
+- **Fight Theatre** (`theatre.html`): watch 37 set-piece fights (every unit against every unit,
+  terrain, trenches, Bunkers and more) with both sides visible, at ¼× to 8× speed. The same fight and
+  seed always play out the same way. `theatre.html?match=1&diff=normal` follows a whole AI match.
+- **Recorded fight testing by patch** in `fight-tests/`: a report, videos and raw numbers for each
+  patch, starting with 0.5c.
+
 ## 0.5c: Balance and convenience (30 September 2026)
 
 - **Machine Gunners pin, they don't mow down:** damage 11 → 6, but their suppression now spreads to
