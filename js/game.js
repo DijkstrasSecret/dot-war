@@ -40,9 +40,66 @@ const Game = (() => {
     G.smokes = []; G.smokeVer = 0; G.lastSeen = {}; G.seenT = 0;   // smoke clouds, Signals markers (0.5a)
     G.planT = 1e9; G.cutT = 0;   // supply chains (0.5a.2): replan at once on the first tick
     G.alert = null;   // 0.5c: the latest "under attack" place, for the J key
+    initEnv();        // 0.6: weather schedule and time of day
     G.players = { 0: newPlayer(0, {}), 1: newPlayer(1, Data.START.res), 2: newPlayer(2, { wood: 3000, metal: 1500, sulfur: 600 }) };
     for (const t of Object.keys(Data.UNITS)) G.players[0].unlocked.add(t);   // neutral guards; the AI unlocks over time (DD G7)
   }
+  // ---- weather and night (patch 0.6: DD H2, H3, "Patch 0.6 details") ----
+  // The weather schedule comes from the match seed on its own stream, so both sides and replays share
+  // it and it never shifts the simulation's other draws. The first period is always Clear.
+  function initEnv() {
+    const W = Data.WEATHER, r = Util.mulberry32((G.seed ^ 0x5eed7) >>> 0);
+    G.env = { weather: W.first, dark: 0, night: false, schedule: [], forecastFor: -1 };
+    G.envOverride = null;   // the Balance Lab sets it after Game.init to fix weather and darkness
+    let t = 0;
+    for (let n = 0; n < 60; n++) {
+      t += W.every[0] + r() * (W.every[1] - W.every[0]);
+      let x = r(), kind = W.mix[0][0]; for (const [id, w] of W.mix) { if (x < w) { kind = id; break; } x -= w; }
+      G.env.schedule.push({ t, kind });
+    }
+    G.flares = [];
+  }
+  const WX = () => Data.WEATHER.kinds[G.env.weather];
+  function updateEnv(dt) {
+    const E = G.env, D = Data.DAYNIGHT, W = Data.WEATHER, O = G.envOverride;   // envOverride: the Balance Lab fixes weather and darkness
+    const c = G.time % (D.day + D.night);
+    E.dark = O && O.dark != null ? O.dark : c < D.day ? 0 : c < D.day + D.blend ? (c - D.day) / D.blend : c < D.day + D.night - D.blend ? 1 : (D.day + D.night - c) / D.blend;
+    E.night = E.dark > D.nightAt;
+    if (O && O.weather) E.weather = O.weather;
+    else {
+      const nx = E.schedule[0];
+      if (nx && G.time >= nx.t) { const was = E.weather; E.weather = nx.kind; E.schedule.shift(); if (nx.kind !== was) toast('Weather: ' + W.kinds[nx.kind].name.toLowerCase()); }
+      else if (nx && G.time >= nx.t - W.forecast && E.forecastFor !== nx.t) { E.forecastFor = nx.t; if (nx.kind !== E.weather) toast('Forecast: ' + W.kinds[nx.kind].name.toLowerCase() + ' in 1 minute'); }
+    }
+    for (const f of G.flares) f.t += dt;
+    if (G.flares.length) G.flares = G.flares.filter(f => f.t < Data.FLARE.time);
+    // Searchlights: towers of level 2+ light a cone at night that sweeps towards the enemy HQ.
+    const S = Data.SEARCHLIGHT;
+    for (const b of G.buildings) {
+      if (!b.def.tower) continue;
+      b.lit = !b.dead && b.built && E.dark > 0 && b.level >= S.minLevel && b.light !== false && G.players[b.owner] && G.players[b.owner].done.has('searchlights');
+      if (!b.lit) continue;
+      const foe = G.buildings.find(o => o.type === 'hq' && !o.dead && o.owner !== b.owner && o.owner !== 0);
+      const base = foe ? Math.atan2(foe.y - b.y, foe.x - b.x) : 0;
+      b.lightDir = base + Math.sin(G.time / S.period * Math.PI * 2) * (S.sweep / 2) * Math.PI / 180;
+    }
+  }
+  // Vision multiplier from weather and darkness, floored at 35% (DD I). A unit's nightVision is the
+  // share it keeps in full night (Night Training: 0.75); everyone else keeps DAYNIGHT.vision.
+  function envVision(e) {
+    const keep = (e && e.stats && e.stats.nightVision) || Data.DAYNIGHT.vision;
+    return Util.stack('vision', WX().vision || 1, 1 - (1 - keep) * G.env.dark);
+  }
+  // Movement: rain and snow slow units off-road; Snow Gear and Mud Tyres cancel their penalty.
+  function envSpeed(u) {
+    const w = WX(); if (!w.infSpeed && !w.vehOffroad) return 1;
+    if (Terrain.roadAt(u.x, u.y)) return 1;
+    if (u.def.cls === 'vehicle') return G.env.weather === 'rain' && rule(u.owner, 'mudTyres', false) ? 1 : (w.vehOffroad || 1);
+    return G.env.weather === 'snow' && u.stats.snowGear ? 1 : (w.infSpeed || 1);
+  }
+  // At night a shot gives the shooter away for DAYNIGHT.reveal seconds (Fog marks the cell for the enemy).
+  function revealFire(u) { if (G.env.night) u.revealT = G.time + Data.DAYNIGHT.reveal; }
+
   function toast(msg) { G.toasts.push({ msg, t: 3.5 }); if (G.toasts.length > 4) G.toasts.shift(); }
   function addDecal(d) { d.t = 0; G.decals.push(d); if (G.decals.length > 400) G.decals.shift(); }
   // First shots after a quiet spell raise the "!" mark above a unit.
@@ -51,7 +108,7 @@ const Game = (() => {
   function togglePause() { setSpeed(G.speed === 0 ? (G.lastSpeed || 1) : 0); }
 
   // ---- blueprints, costs, research ----
-  function statsFor(owner, type) { const bp = G.players[owner].blueprints[type]; return { hp: bp.hp, speed: bp.speed, vision: bp.vision, weapon: bp.weapon ? { ...bp.weapon } : null, camo: bp.camo || 0, nadeCooldown: bp.nadeCooldown || 0, armor: bp.armor, fuel: bp.fuel || 0 }; }
+  function statsFor(owner, type) { const bp = G.players[owner].blueprints[type]; return { hp: bp.hp, speed: bp.speed, vision: bp.vision, weapon: bp.weapon ? { ...bp.weapon } : null, camo: bp.camo || 0, nadeCooldown: bp.nadeCooldown || 0, nightVision: bp.nightVision || 0, snowGear: !!bp.snowGear, armor: bp.armor, fuel: bp.fuel || 0 }; }
   // A rule a Global research changed (DD F 'G' items), or its default.
   const rule = (owner, k, def) => { const p = G.players[owner]; return p && p.rules[k] != null ? p.rules[k] : def; };
   // DD I: the HQ trains Riflemen at 0.7x and Workers at full speed; prodMult maps unit type to a multiplier.
@@ -261,7 +318,7 @@ const Game = (() => {
         break;
       }
       case 'bombard':
-        if (u.stats.weapon && u.stats.weapon.indirect) u.order = { type: 'bombard', x: o.x, y: o.y, smoke: !!o.smoke };
+        if (u.stats.weapon && u.stats.weapon.indirect) u.order = { type: 'bombard', x: o.x, y: o.y, smoke: !!o.smoke, flare: !!o.flare };
         else applyOrder(u, { kind: 'attackmove', x: o.x, y: o.y, arrive: 20 });
         break;
       case 'hold': u.order = { type: 'hold', x: u.x, y: u.y, until: o.until || 0 }; break;
@@ -503,6 +560,10 @@ const Game = (() => {
   function canSee(u, e) {
     if (e instanceof Unit && !detected(e, u.owner)) return false;
     if (u.stats.weapon && u.stats.weapon.indirect && u.owner !== 0) return Fog.visible(u.owner, e.x, e.y);
+    // Kaan, 0.6: direct fire only at what your side can see: the fog, or the shooter's own eyes within his
+    // own vision range (the line of sight below decides; the fog's horizon cast can miss dead ground
+    // near a crest that a soldier standing there does see).
+    if (u.owner !== 0 && !Fog.visible(u.owner, e.x, e.y) && dist(u.x, u.y, e.x, e.y) > Fog.visionRadius(u.stats.vision, u.x, u.y, u.hBonus || 0) * envVision(u)) return false;
     if (G.smokes.length && smokeBlocks(u.x, u.y, e.x, e.y)) return false;
     return Terrain.los(u.x, u.y, e.x, e.y, 2.2 + u.hBonus, e instanceof Building ? 6 : 1.8);
   }
@@ -551,15 +612,18 @@ const Game = (() => {
     if (u.order && u.order.type === 'bombard' && w.indirect) {
       tx = u.order.x; ty = u.order.y; const d = dist(u.x, u.y, tx, ty);
       if (d > effRange(u, tx, ty) || d < w.minRange) return;
+      if (G.env.night && !u.order.flare && u.owner !== 0 && !Fog.visible(u.owner, tx, ty)) return;   // 0.6: at night only at a point your side can see
     } else {
       if (!u.target || !validTarget(u, u.target)) { u.target = null; return; }
       target = u.target; tx = target.x; ty = target.y;
     }
-    if (w.ammo && u.owner !== 0) {
+    const ammo = u.order && u.order.flare ? Data.FLARE.ammo : w.ammo;   // a flare costs 1 sulfur
+    if (ammo && u.owner !== 0) {
       const p = G.players[u.owner];
-      if (!canAfford(p, w.ammo)) { if (u.owner === 1 && G.time - (u.noAmmoT || -99) > 15) { u.noAmmoT = G.time; toast('Mortar has no sulfur for shells'); } return; }
-      pay(p, w.ammo);
+      if (!canAfford(p, ammo)) { if (u.owner === 1 && G.time - (u.noAmmoT || -99) > 15) { u.noAmmoT = G.time; toast('Mortar has no sulfur for shells'); } return; }
+      pay(p, ammo);
     }
+    revealFire(u);
     u.cooldown = w.reload * (u.suppressed ? 1.4 : 1) * (u.rank >= 3 ? VET.rank3Reload : 1) * (0.9 + R() * 0.2);
     u.facing = Math.atan2(ty - u.y, tx - u.x); u.muzzle = 0.08; u.recoil = w.indirect ? 0.2 : 0.12;
     if (w.indirect) fireShell(u, tx, ty); else fireBullet(u, target);
@@ -571,7 +635,7 @@ const Game = (() => {
     const ls = e instanceof Unit ? lineAt(e.x, e.y) : null, gb = u.inside ? G.buildingById.get(u.inside) : null;
     const p = Util.stack('hit', w.acc, 1 - 0.55 * Math.pow(Math.min(1, d / range), 2), Terrain.coverAt(e.x, e.y), 1 - 0.5 * u.stress,
       u.wasMoving ? rule(u.owner, 'movingAcc', C.movingAcc) : 1, hitMult(u, e.x, e.y), e instanceof Building ? 2.5 : 1, Math.pow(VET.perRank.acc, u.rank),
-      ls ? LINES[ls.type].hit : 1, (gb && gb.slots && gb.slots.acc) || 1);
+      ls ? LINES[ls.type].hit : 1, (gb && gb.slots && gb.slots.acc) || 1, WX().acc || 1);   // 0.6: rain x0.9
     const hit = R() < p;
     if (!hit && ls && ls.type === 'barricade') damageSeg(ls, w.dmg * DIG.smallArms);   // DD G12: small arms chip barricades
     const dmg = hit ? w.dmg * Data.ARMOR_MULT[w.dtype][e.armor] * dmgMult(u, e.x, e.y) : 0;
@@ -589,15 +653,16 @@ const Game = (() => {
   function fireShell(u, tx, ty) {
     const w = u.stats.weapon; const d = dist(u.x, u.y, tx, ty);
     const spotted = u.owner === 0 ? true : Fog.visible(u.owner, tx, ty);
-    const scatter = (12 + (1 - w.acc) * 40 + (spotted ? 0 : 70)) * (0.6 + 0.4 * d / w.range) * (1 + u.stress * 0.5) * (spotted ? rule(u.owner, 'spotScatter', 1) : 1);   // Forward Observers
+    const scatter = (12 + (1 - w.acc) * 40 + (spotted ? 0 : 70)) * (0.6 + 0.4 * d / w.range) * (1 + u.stress * 0.5) * (spotted ? rule(u.owner, 'spotScatter', 1) : 1) * (WX().mortarScatter || 1);   // Forward Observers; 0.6: rain x1.2
     const ang = R() * Math.PI * 2, off = R() * scatter;
     const lx = tx + Math.cos(ang) * off, ly = ty + Math.sin(ang) * off;
-    const smoke = !!(u.order && u.order.smoke);
-    G.projectiles.push(new Projectile({ kind: 'shell', smoke, x: u.x, y: u.y, tx: lx, ty: ly, dur: 0.9 + d / w.pspeed, arc: 25 + d * 0.12, dmg: w.dmg * dmgMult(u, lx, ly), splash: w.splash, dtype: w.dtype, shooter: u, owner: u.owner }));
-    if (smoke) nextOrder(u);   // a smoke order fires one round
+    const smoke = !!(u.order && u.order.smoke), flare = !!(u.order && u.order.flare);
+    G.projectiles.push(new Projectile({ kind: 'shell', smoke, flare, x: u.x, y: u.y, tx: lx, ty: ly, dur: 0.9 + d / w.pspeed, arc: 25 + d * 0.12, dmg: w.dmg * dmgMult(u, lx, ly), splash: w.splash, dtype: w.dtype, shooter: u, owner: u.owner }));
+    if (smoke || flare) nextOrder(u);   // a smoke or flare order fires one round
   }
   function explode(pr) {
     const { tx: x, ty: y, splash, dmg, dtype, shooter } = pr;
+    if (pr.flare) { G.flares.push({ x, y, owner: pr.owner, t: 0 }); return; }   // 0.6: lights a circle, no damage
     if (pr.smoke) { G.smokes.push({ x, y, r: Data.SMOKE.radius, t: 0, dur: Data.SMOKE.time }); G.smokeVer++; return; }   // Smoke Shells: no damage
     G.effects.push({ kind: 'explosion', x, y, r: splash, t: 0, dur: 0.6 });
     for (const e of G.units) {
@@ -782,7 +847,7 @@ const Game = (() => {
       pay(p, T.cost); sg.paid = true;
     }
     // DD B: 15 s per 10 m for a soldier, Workers 1.5x and +10% per rank (DD H1); Entrenching Tools x1.3.
-    const rate = (u.def.labour ? DIG.workerMult * Math.pow(VET.perRank.work, u.rank) : 1) * p.digMult / (T.time || DIG.time);
+    const rate = (u.def.labour ? DIG.workerMult * Math.pow(VET.perRank.work, u.rank) : 1) * p.digMult * (WX().dig || 1) / (T.time || DIG.time);   // 0.6: snow x0.7
     u.facing = Math.atan2(sg.y - u.y, sg.x - u.x); u.digT = G.time;
     const before = sg.progress; sg.progress = clamp(sg.progress + (fill ? -rate : rate) * dt, 0, 1);
     if (u.def.labour) addXp(u, Math.abs(sg.progress - before) * DIG.xpPerSegment);   // DD H1: 1 XP per 10 m dug
@@ -823,6 +888,7 @@ const Game = (() => {
   const canThrow = u => !!(u.def.grenade && G.players[u.owner] && G.players[u.owner].done.has('grenades'));
   function throwGrenade(u, tx, ty) {
     if (u.owner !== 0) { const p = G.players[u.owner]; if (!canAfford(p, NADE.ammo)) { if (u.owner === 1 && G.time - (u.noAmmoT || -99) > 15) { u.noAmmoT = G.time; toast('No sulfur for grenades'); } return false; } pay(p, NADE.ammo); }
+    revealFire(u);   // 0.6: a throw at night gives the thrower away
     u.nadeT = u.stats.nadeCooldown || NADE.cooldown; u.facing = Math.atan2(ty - u.y, tx - u.x);   // Storm Troops: 12 s cooldown for Riflemen trained after it
     // Kaan, 0.4.2: never quite on target, and now and then a throw goes wide.
     const ang = R() * Math.PI * 2, bad = R() < NADE.badChance;
@@ -1256,7 +1322,7 @@ const Game = (() => {
     const ls = lineAt(u.x, u.y);
     // DD B: trenches slow enemies and friendly vehicles to x0.4; wire doesn't slow vehicles (barricades block them).
     const lineSlow = !ls ? 1 : u.cargo ? (ls.type === 'trench' ? LINES.trench.slowEnemy : 1) : ls.owner === u.owner ? LINES[ls.type].slowOwn : LINES[ls.type].slowEnemy;
-    const spd = Util.stack('speed', u.suppressed && !retreating ? 0.6 : 1, cap(u.order), lineSlow, u.cargo && u.fuel <= 0 ? Data.FUEL.emptySpeed : 1);   // Kaan, 0.5b: an empty tank crawls
+    const spd = Util.stack('speed', u.suppressed && !retreating ? 0.6 : 1, cap(u.order), lineSlow, u.cargo && u.fuel <= 0 ? Data.FUEL.emptySpeed : 1, envSpeed(u));   // 0.6: rain and snow   // Kaan, 0.5b: an empty tank crawls
     const o = u.order;
     if (o) {
       switch (o.type) {
@@ -1475,6 +1541,12 @@ const Game = (() => {
         return orderDig(us, sg.line, c.kind === 'fill', q);
       }
       case 'grenade': { const t = c.target != null ? entById(c.target) : null; return orderGrenade(us, c.x, c.y, t && !t.dead ? t : null, q); }
+      case 'flare': {   // 0.6 Flares: mortars fire one flare at the point
+        if (!G.players[pid].done.has('flares')) return 0; let n = 0;
+        for (const u of us) if (isIndirect(u)) { issue(u, { kind: 'bombard', x: c.x, y: c.y, flare: true }, q); n++; }
+        return n;
+      }
+      case 'light': if (!b || !b.def.tower) return false; b.light = b.light === false; return true;   // 0.6: searchlight on / off
       case 'smoke': {   // Smoke Shells: mortars fire one smoke round at the point
         if (!G.players[pid].done.has('smoke')) return 0; let n = 0;
         for (const u of us) if (isIndirect(u)) { issue(u, { kind: 'bombard', x: c.x, y: c.y, smoke: true }, q); n++; }
@@ -1493,7 +1565,7 @@ const Game = (() => {
   function update(dt) {
     G.tick++;
     G.time += dt;
-    updateResearch(dt); updateBuildings(dt);
+    updateEnv(dt); updateResearch(dt); updateBuildings(dt);
     updateSquads(); updateLines(); updateHealing(dt); updateSmokes(dt); updateSignals(dt); updateLogistics(dt); updateVehicles(dt);
     for (const u of G.units) if (!u.dead) updateUnit(u, dt);
     separate();
@@ -1512,6 +1584,7 @@ const Game = (() => {
     orderMove, orderAttack, orderBombard, orderStop, orderHold, orderWork, orderRetreat, orderGarrison,
     hiresFor, squadMarchers, setLink, researchLock, researchCost, slotOf, owns, seatsFree, retrofitCost, supplyCap, supplyUsed, costOf, maxWorkers, detected, raidLaunched, smokeBlocks,
     canEnter, unloadBuilding, upgradeTower, slotCount, hasTech, canThrow, lineAt, segNear, orderDig, orderGrenade,
+    envVision, envSpeed,       // 0.6: Fog and the Balance Lab read these
     applyResearch, planDig,   // 0.5d: the scripted enemy researches and digs without going through command()
     enqueue, cancelQueue, harvestRate, activeWorkers, effRange,
     squadCentre, membersOf, setSquad,

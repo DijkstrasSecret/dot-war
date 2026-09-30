@@ -265,20 +265,22 @@ Built in two parts (Kaan): **0.5a** tech tree, buildings and supply (done); **0.
 
 ## Patch 0.6: Weather and night
 
-- [ ] Weather [H2]:
-  - [ ] Clear, rain, fog, snow; changes every 10–15 game min.
-  - [ ] 1-minute forecast banner.
-  - [ ] Effects per weather type.
-- [ ] Day and night [H3]:
-  - [ ] 600 s day, 300 s night, 30 s dawn and dusk.
-  - [ ] At night: vision ×0.5; firing reveals the shooter for 3 s; indirect fire needs a spotter.
-- [ ] Vision floor ×0.35 [I].
-- [ ] Research: Flares (a lit area counts as spotted), Searchlights, Night Training, Snow Gear,
+- [x] Weather [H2]:
+  - [x] Clear, rain, fog, snow; changes every 10–15 game min.
+  - [x] 1-minute forecast banner (a toast and the line next to the clock).
+  - [x] Effects per weather type.
+- [x] Day and night [H3]:
+  - [x] 600 s day, 300 s night, 30 s dawn and dusk.
+  - [x] At night: vision ×0.5; firing reveals the shooter for 3 s; indirect fire needs a spotter.
+- [x] Vision floor ×0.35 [I].
+- [x] Direct fire only at what your side can see (Kaan, 29 Sept).
+- [x] Research: Flares (a lit area counts as spotted), Searchlights, Night Training, Snow Gear,
       Mud Tyres.
 
 **Done when**
-- [ ] Balance Lab duels run at night and in each weather type.
-- [ ] `GAME_DESIGN.md` updated.
+- [x] Balance Lab duels run at night and in each weather type (the "Conditions" picker; the Fight
+      Theatre's "Night and weather" group).
+- [x] `GAME_DESIGN.md` updated.
 
 ---
 

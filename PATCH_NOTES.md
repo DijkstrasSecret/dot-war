@@ -5,6 +5,24 @@ each change live in `DESIGN_DECISIONS.md`.
 
 ---
 
+## 0.6: Weather and night (30 September 2026)
+
+- **Day and night:** ten minutes of day, then five of night, all match long. At night everyone sees
+  half as far, a soldier who fires is seen by the enemy for 3 seconds, and mortars fire only at what
+  your side can see.
+- **Weather:** after the first clear stretch it changes every 10 to 15 minutes: rain (slower off-road,
+  worse aim, wider mortar scatter), fog (short sight, height helps less) or snow (short sight, slow
+  infantry, slow digging). A forecast warns you a minute ahead, next to the clock.
+- **You can only shoot what you can see:** Riflemen, Machine Gunners and Snipers need your side to see
+  their target, day and night. Scouts and towers matter more.
+- **New research:** Night Training (Riflemen and Snipers see farther at night), Snow Gear, Flares
+  (mortars light up an area, key **L**), Searchlights (towers of level 2 sweep a cone at night; they
+  can be switched off, since a lit tower is visible to the enemy), Mud Tyres.
+- **On screen:** darkness at night with lit flares, searchlight cones and a glow around your soldiers;
+  rain, snow and fog effects.
+- **Balance Lab:** duels can run at night or in any weather; the Fight Theatre has a new "Night and
+  weather" group.
+
 ## 0.5e: Faster simulation (30 September 2026)
 
 - **The game simulates about 4.7× faster.** Fog of war was most of the work; soldiers now see from

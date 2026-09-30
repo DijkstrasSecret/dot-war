@@ -9,7 +9,7 @@
 // Patch 0.5a (Kaan): building and line keys work only while the Build tab is open (B, then the
 // letter), which frees the letters for unit orders: M smoke shells (mortars), C demolition charge.
 // Trucks (0.5b): right click or E on a Truck boards it, Q unloads.
-// 0.5c: I next idle Worker, O army overview, J jump to the latest alert.
+// 0.5c: I next idle Worker, O army overview, J jump to the latest alert. 0.6: L mortars fire a flare.
 const Input = (() => {
   const { dist } = Util;
   const state = { mode: 'normal', buildType: null, box: null, mouse: { x: 0, y: 0, wx: 0, wy: 0, inside: false, moveT: 0 }, keys: new Set(), lastGroupT: 0, lastGroupK: '', trainPage: 0, lineType: null, linePts: null };
@@ -71,7 +71,7 @@ const Input = (() => {
   }
   const trainable = b => b.def.produces.filter(t => G.players[1].unlocked.has(t));
   function setMode(m, buildType) {
-    if (['walk', 'attack', 'work', 'fill', 'grenade', 'smoke', 'demolish'].includes(m) && !selectedUnits().length) m = 'normal';
+    if (['walk', 'attack', 'work', 'fill', 'grenade', 'smoke', 'flare', 'demolish'].includes(m) && !selectedUnits().length) m = 'normal';
     if (m === 'build' && Data.LINES[buildType]) { m = 'line'; }   // line tools share the build menu and keys
     state.mode = m; state.buildType = m === 'build' ? buildType : null; state.lineType = m === 'line' ? buildType : null; state.linePts = null; UI.refresh();
   }
@@ -118,6 +118,10 @@ const Input = (() => {
     if (state.mode === 'smoke') {
       const n = cmd({ kind: 'smoke', units: ids(units), x: wx, y: wy, queue: q });
       if (!n) Game.toast('Smoke needs Mortar Crews and the Smoke Shells research'); marker(wx, wy, '#aaa'); if (!q) setMode('normal'); return;
+    }
+    if (state.mode === 'flare') {   // 0.6
+      const n = cmd({ kind: 'flare', units: ids(units), x: wx, y: wy, queue: q });
+      if (!n) Game.toast('Flares need Mortar Crews and the Flares research'); marker(wx, wy, '#fe8'); if (!q) setMode('normal'); return;
     }
     if (state.mode === 'demolish') {
       const sg = Game.segNear(wx, wy, false);
@@ -259,6 +263,7 @@ const Input = (() => {
       if (k === 'v' && units.some(u => Game.canThrow(u))) { setMode('grenade'); return; }
       if (k === 'm' && p.done.has('smoke') && units.some(u => u.stats.weapon && u.stats.weapon.indirect)) { setMode('smoke'); return; }
       if (k === 'c' && p.done.has('demolition') && units.some(u => u.stats.weapon)) { setMode('demolish'); return; }
+      if (k === 'l' && p.done.has('flares') && units.some(u => u.stats.weapon && u.stats.weapon.indirect)) { setMode('flare'); return; }   // 0.6
     }
     // 0.5c (free keys): I next idle Worker, O army overview, J jump to the latest "under attack" alert.
     if (k === 'i') { UI.nextIdleWorker(); return; }

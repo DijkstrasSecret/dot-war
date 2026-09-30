@@ -331,6 +331,42 @@ Every match has a seed. All randomness that can change the outcome comes from on
 and player actions are logged with the tick they happened on, so a match can be replayed exactly
 from its seed and its log. Looks-only randomness (blood, corpse shapes) has its own stream.
 
+## 7a. Weather and night (patch 0.6)
+
+Numbers in `Data.WEATHER`, `Data.DAYNIGHT`, `Data.FLARE` and `Data.SEARCHLIGHT` (all proposed).
+
+- **Day and night:** 600 s of day, then 300 s of night, repeating from the start of the match. Dusk
+  and dawn each blend over 30 s. Vision is ×(1 − 0.5 × darkness), so ×0.5 in full night; the "night"
+  rules below apply while darkness is above half.
+- **Weather:** the first period is always Clear; after that it changes every 10–15 minutes to a draw
+  from Clear 40%, Rain 25%, Fog 20%, Snow 15% (from the match seed, the same for both sides and in
+  replays). A forecast shows a minute before a change, in a toast and next to the clock.
+
+| Weather | Effects |
+| --- | --- |
+| Clear | none |
+| Rain | infantry off-road ×0.8, vehicles off-road ×0.6 (roads unchanged), accuracy ×0.9, mortar scatter ×1.2 |
+| Fog | vision ×0.6, half the height bonus to vision |
+| Snow | vision ×0.8, infantry ×0.8, vehicles off-road ×0.7, digging ×0.7 |
+
+- **Vision floor:** night, fog and snow together never cut vision below 35%.
+- **Direct fire needs sight:** Riflemen, Machine Gunners and Snipers may only shoot what their side
+  can see, day and night.
+- **At night:** a soldier who fires (or throws a grenade) is seen by the enemy for 3 s wherever he
+  stands, and Mortar Crews fire only at a point their side can see.
+- **Research:** Night Training (Infantry II, 60 wood + 60 metal, 50 s): Riflemen and Snipers trained
+  afterwards keep 75% of their vision at night. Snow Gear (Infantry II, 60 wood + 30 metal, 40 s):
+  infantry trained afterwards are not slowed by snow. Flares (Fire support II, 30 metal + 30 sulfur,
+  45 s): Mortar Crews fire a flare (L, 1 sulfur) that lets their side see a 150 m circle for 20 s.
+  Searchlights (Engineering II, 60 wood + 60 metal, 50 s): Scout Towers of level 2+ light a 250 m cone
+  at night that sweeps over 120° towards the enemy HQ every 20 s; a lit tower is visible to the enemy
+  from anywhere; a button on its panel switches it off. Mud Tyres (Logistics II, 40 metal + 10 rubber,
+  40 s): vehicles are not slowed off-road by rain.
+- **The enemy commander** researches Night Training at 20 min and Snow Gear at 22 min (Normal); it
+  fires no flares and lights no searchlights yet.
+- **On screen:** darkness over the map at night with lit flare circles, searchlight cones and a glow
+  around your own soldiers; rain streaks, snowflakes or a pale haze for fog.
+
 ## 8. Enemy commander and neutrals
 
 The AI holds the plateau, trains from its factories with unit weights rifle 5, HMG 2, sniper 1,
@@ -379,7 +415,7 @@ garrison units spawn; the garrison is placed, not trained, so it can hold Machin
 Mortars from the start. Neutral guards (creeps) hold deposits and hills in small groups of three to
 five and fight anyone who comes close.
 
-## 9. Controls (`DESIGN_DECISIONS.md` section 9, extended through 0.5c)
+## 9. Controls (`DESIGN_DECISIONS.md` section 9, extended through 0.6)
 
 W A S D, arrow keys, screen edge or middle mouse pan the camera; the wheel zooms. Right click is the
 smart command: ground moves, an enemy attacks, your camp or mine puts the selection to work, your
@@ -390,7 +426,7 @@ tower, Bunker, HQ or Truck), Q exit (unload a tower, Bunker, HQ or Truck), T upg
 flips to the next four when a factory has more (otherwise Tab cycles factories). B opens the Build tab (placing something or Esc goes back to your selection), and only while it is open a letter picks a building (L Lumber Camp, M Mine,
 Z Rubber Tapper, F Refinery, C Barracks, O Ordnance Works, K Workshop, G Depot, R R&D Lab, T Scout
 Tower, U Bunker, P Field Hospital) or a line (Y trench, I barricade, J barbed wire, E road, V
-bridge); M smoke and C demolition are unit orders (patch 0.5a), N research, O army overview, I next idle Worker, J jump to the latest under-attack alert (patch 0.5c), H headquarters, Shift queues
+bridge); M smoke and C demolition are unit orders (patch 0.5a), L mortars fire a flare (patch 0.6), N research, O army overview, I next idle Worker, J jump to the latest under-attack alert (patch 0.5c), H headquarters, Shift queues
 orders, Ctrl+1..9 squadrons (section 9a), right-drag sets a squadron's line, Space pauses, comma and period change
 speed, F1 help. New features take free keys; existing ones don't move without asking.
 

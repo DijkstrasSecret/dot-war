@@ -27,8 +27,9 @@ const LabTests = (() => {
   // first shot at B until B's first unit is suppressed. keepAliveB: B cannot die (for the pin test,
   // which measures stress alone; otherwise the MG kills the Rifleman before it is pinned).
   // squadA / squadB: that side fights as one squadron (DD E: cohesion, shared targets, halting on contact).
-  function duel({ typeA, nA, typeB, nB, ground = 'flat', seed = 1, maxTime = 180, keepAliveB = false, squadA = false, squadB = false }) {
-    Game.init(seed); G.difficulty = 'normal';
+  // env (0.6): { weather, dark } fixed for the whole fight, e.g. { dark: 1 } for night.
+  function duel({ typeA, nA, typeB, nB, ground = 'flat', seed = 1, maxTime = 180, keepAliveB = false, squadA = false, squadB = false, env = null }) {
+    Game.init(seed); G.difficulty = 'normal'; G.envOverride = env;   // 0.6: weather and darkness fixed for the fight
     for (const pid of [1, 2]) G.players[pid].res.sulfur = 1000;   // same ammunition both sides (side A once had none, so its mortars never fired)
     buildArena(ground);
     const place = (type, owner, n, x) => {

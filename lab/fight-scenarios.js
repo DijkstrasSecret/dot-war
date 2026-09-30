@@ -57,6 +57,17 @@ const FightScenarios = (() => {
     // Special situations
     S('x-sniper-idle', 'Special situations', '2 Snipers pick at 6 idle Riflemen (return fire)', [['sniper', 2]], [['rifle', 6]], { gap: 280, idleB: true, holdA: true }),
     S('x-sniper-hold', 'Special situations', '2 Snipers against 6 Riflemen on Defend', [['sniper', 2]], [['rifle', 6]], { gap: 280, defend: true, holdA: true, maxTime: 120 }),
+    // Night and weather (patch 0.6): the same fights with darkness or weather fixed for the whole fight.
+    S('n-rif-rif', 'Night and weather', 'Riflemen mirror at night', [['rifle', 6]], [['rifle', 6]], { env: { dark: 1 } }),
+    S('n-rif-snp', 'Night and weather', 'Riflemen v Snipers at night', [['rifle', 6]], [['sniper', 6]], { env: { dark: 1 } }),
+    S('n-rif-mor', 'Night and weather', 'Riflemen v Mortar Crews at night', [['rifle', 6]], [['mortar', 3]], { env: { dark: 1 } }),
+    S('n-mg-support', 'Night and weather', '1 MG + 4 Riflemen v 6 Riflemen at night', [['rifle', 4], ['hmg', 1]], [['rifle', 6]], { env: { dark: 1 } }),
+    S('n-hill', 'Night and weather', '5 v 5 Riflemen, red on a hill, at night', [['rifle', 5]], [['rifle', 5]], { defend: true, ground: 'height', env: { dark: 1 } }),
+    S('fog-rif-mor', 'Night and weather', 'Riflemen v Mortar Crews in fog', [['rifle', 6]], [['mortar', 3]], { env: { weather: 'fog' } }),
+    S('fog-hill', 'Night and weather', '5 v 5 Riflemen, red on a hill, in fog', [['rifle', 5]], [['rifle', 5]], { defend: true, ground: 'height', env: { weather: 'fog' } }),
+    S('rain-rif-rif', 'Night and weather', 'Riflemen mirror in rain', [['rifle', 6]], [['rifle', 6]], { env: { weather: 'rain' } }),
+    S('rain-rif-mor', 'Night and weather', 'Riflemen v Mortar Crews in rain', [['rifle', 6]], [['mortar', 3]], { env: { weather: 'rain' } }),
+    S('snow-flat-hold', 'Night and weather', '5 v 5 Riflemen, red holding, in snow', [['rifle', 5]], [['rifle', 5]], { defend: true, env: { weather: 'snow' } }),
     S('x-mortar-nest', 'Special situations', '3 Mortars + 3 Riflemen against an MG nest', [['rifle', 3], ['mortar', 3]], [['rifle', 2], ['hmg', 2]], { gap: 320, defend: true }),
   ];
   const byId = {}; for (const s of LIST) byId[s.id] = s;
@@ -82,7 +93,7 @@ const FightScenarios = (() => {
   // the fight is decided (or null while it goes on).
   function start(id, seed = 1) {
     const s = byId[id]; if (!s) throw new Error('No scenario ' + id);
-    Game.init(seed); G.difficulty = 'normal'; G.sandbox = true;
+    Game.init(seed); G.difficulty = 'normal'; G.sandbox = true; G.envOverride = s.env || null;
     for (const pid of [1, 2]) G.players[pid].res.sulfur = 1000;   // ammunition for mortars and grenades on both sides
     if (s.grenadesA) G.players[1].done.add('grenades');
     buildGround(s.ground);
