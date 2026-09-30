@@ -1512,6 +1512,7 @@ const Game = (() => {
     orderMove, orderAttack, orderBombard, orderStop, orderHold, orderWork, orderRetreat, orderGarrison,
     hiresFor, squadMarchers, setLink, researchLock, researchCost, slotOf, owns, seatsFree, retrofitCost, supplyCap, supplyUsed, costOf, maxWorkers, detected, raidLaunched, smokeBlocks,
     canEnter, unloadBuilding, upgradeTower, slotCount, hasTech, canThrow, lineAt, segNear, orderDig, orderGrenade,
+    applyResearch, planDig,   // 0.5d: the scripted enemy researches and digs without going through command()
     enqueue, cancelQueue, harvestRate, activeWorkers, effRange,
     squadCentre, membersOf, setSquad,
     _dbg: { lineThreat, checkCuts, planLogistics, enter: enterBuilding, planLine, finishSeg, removeSeg, damageSeg, throwGrenade, addXp, validTarget, acquire, inRange, canSee, tryFire, applyDamage, kill, addStress, rangeMult, dmgMult, hitMult, heightDiff },

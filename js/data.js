@@ -232,9 +232,9 @@ const Data = {
   // also adds that walking time. DD G7: game seconds at which the AI may train each unit; Normal
   // uses the agreed 8 / 12 / 15 min, Easy x1.25 and Hard x0.75 (proposed, set in 0.2.1).
   DIFFICULTY: {
-    easy: { name: 'Easy', desc: 'Small garrison, rare small raids, slow enemy production.', cap: 8, capGrow: 1, buildUp: 480, raidMin: 320, raidVar: 120, raidFrac: 0.4, garrison: 6, income: 0.6, unlocks: { hmg: 600, sniper: 900, mortar: 1125 } },
-    normal: { name: 'Normal', desc: 'Moderate garrison and raids every few minutes.', cap: 11, capGrow: 2, buildUp: 300, raidMin: 220, raidVar: 100, raidFrac: 0.5, garrison: 9, income: 0.8, unlocks: { hmg: 480, sniper: 720, mortar: 900 } },
-    hard: { name: 'Hard', desc: 'Full garrison on the mountain and frequent large raids.', cap: 14, capGrow: 2, buildUp: 210, raidMin: 150, raidVar: 90, raidFrac: 0.55, garrison: 12, income: 1, unlocks: { hmg: 360, sniper: 540, mortar: 675 } },
+    easy: { name: 'Easy', desc: 'Small garrison, rare small raids, slow enemy production.', cap: 8, capGrow: 1, buildUp: 480, raidMin: 320, raidVar: 120, raidFrac: 0.4, garrison: 6, income: 0.6, unlocks: { hmg: 600, sniper: 900, mortar: 1125 }, researchMult: 1.5, harassEvery: 0, digIn: false },
+    normal: { name: 'Normal', desc: 'Moderate garrison and raids every few minutes.', cap: 11, capGrow: 2, buildUp: 300, raidMin: 220, raidVar: 100, raidFrac: 0.5, garrison: 9, income: 0.8, unlocks: { hmg: 480, sniper: 720, mortar: 900 }, researchMult: 1, harassEvery: 240, digIn: true },
+    hard: { name: 'Hard', desc: 'Full garrison on the mountain and frequent large raids.', cap: 14, capGrow: 2, buildUp: 210, raidMin: 150, raidVar: 90, raidFrac: 0.55, garrison: 12, income: 1, unlocks: { hmg: 360, sniper: 540, mortar: 675 }, researchMult: 0.75, harassEvery: 150, digIn: true },
   },
   DIFFICULTY_ORDER: ['easy', 'normal', 'hard'],
 
@@ -242,6 +242,16 @@ const Data = {
   // comes in 0.7): each raid sends raidGrow more of the army than the last, up to raidFracMax; once
   // the army is allInRatio times the enemy soldiers seen in the last `memory` seconds, everyone goes.
   AI_RAIDS: { raidGrow: 0.1, raidFracMax: 0.9, allInRatio: 2, memory: 120, minEnemy: 3 },
+
+  // Patch 0.5d, a smarter enemy (DESIGN_DECISIONS "Patch 0.5d", all proposed). Research times are game
+  // seconds on Normal, scaled by DIFFICULTY.researchMult; harassment by DIFFICULTY.harassEvery.
+  AI_SMART: {
+    retreatHp: 0.4, rejoinHp: 0.8,
+    garrisonRange: 480, garrisonLinger: 30,
+    dig: { seen: 900, minGroup: 4, len: 120, tryDist: [110, 150, 190, 80], minCells: 5, diggers: 6, every: 300, early: 60, giveUp: 120 },   // early: dig this long before the first raid leaves; the distance with the most diggable ground wins
+    research: [['drill', 360], ['grenades', 480], ['entrenching', 540], ['boots', 600], ['powder', 780], ['shells', 900], ['cohesion', 1080], ['storm', 1500]],
+    harass: { size: 3, minArmy: 8, memory: 300, scoutDeposits: 5 },   // with nothing seen, check the 5 nearest deposits in turn
+  },
 
   // Squadrons (DD E). role: 1 front rank, 2 second rank, 3 rear at a safe distance, 0 support in the
   // centre. Spacing in metres; cohesion: stress decays faster within cohesionRadius of a squadmate.

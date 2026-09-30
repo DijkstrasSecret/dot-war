@@ -164,7 +164,7 @@ const LabTests = (() => {
       Game.addBuilding(b.type, 1, x, y, true);
     }
     const D = Data.DIFFICULTY[difficulty];
-    spec.ai.garrison.slice(0, D.garrison).forEach((t, n) => { const u = Game.spawnUnit(t, 1, hq1.x - 110 + (n % 6) * 40, hq1.y + 90 + Math.floor(n / 6) * 30); u.order = { type: 'hold', x: u.x, y: u.y }; });
+    spec.ai.garrison.slice(0, D.garrison).forEach((t, n) => { let x = hq1.x - 110 + (n % 6) * 40, y = hq1.y + 90 + Math.floor(n / 6) * 30; const cls = Data.MOVE_CLASSES[Data.UNITS[t].cls]; if (!Terrain.passableAt(x, y, cls)) { const q = Path.nearestPassable(Terrain.cellI(x), Terrain.cellJ(y), cls); if (q) { x = Terrain.cx(q[0]); y = Terrain.cy(q[1]); } } const u = Game.spawnUnit(t, 1, x, y); u.order = { type: 'hold', x: u.x, y: u.y }; });
     Path.init(); Fog.init(); AI.reset([1, 2]); Fog.update(0, true);
     const maxTicks = Math.round(maxMinutes * 60 / STEP);
     return {

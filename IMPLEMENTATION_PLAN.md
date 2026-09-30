@@ -254,10 +254,12 @@ Built in two parts (Kaan): **0.5a** tech tree, buildings and supply (done); **0.
 
 ## Patch 0.5d: A smarter enemy (Kaan, 30 Sept)
 
-- [ ] Garrisons its HQ and towers, digs trenches in front of its base when an army approaches.
-- [ ] Retreats units under 40% health or panicking to its HQ to heal.
-- [ ] Researches over time (Grenades, Fortification, Improved Powder and more, by game minute).
-- [ ] Raids the player's carriers and Depot lines with small groups.
+- [x] Garrisons its HQ and towers, digs trenches in front of its base when an army approaches (and
+      once before its first raid).
+- [x] Retreats units under 40% health or panicking to its HQ to heal.
+- [x] Researches over time (Grenades, Improved Powder and more, by game minute).
+- [x] Raids the player's carriers and Depot lines with small groups (scouting deposits when it has
+      seen none).
 
 ---
 

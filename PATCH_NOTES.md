@@ -5,6 +5,22 @@ each change live in `DESIGN_DECISIONS.md`.
 
 ---
 
+## 0.5d: A smarter enemy (30 September 2026)
+
+- **Wounded enemies fall back:** enemy soldiers under 40% health, or panicking, walk home to heal at
+  their HQ and come back at 80%. Chasing a beaten raid now finds fewer easy kills.
+- **The enemy garrisons its HQ** when you come close, and lets its soldiers out once you're gone.
+- **The enemy digs in:** a minute before its first raid it digs a trench across the road from your
+  base, and it digs another when it sees your army coming if none stands. Its soldiers hold the trench.
+  Bring grenades or mortars.
+- **The enemy researches over time:** better aim, grenades, faster digging, boots, powder, HE shells,
+  cohesion and Storm Troops, earlier on Hard. Expect grenades at your trenches from minute 8 on Normal.
+- **Supply raids:** every few minutes (Normal and Hard) three enemy Riflemen go after your carriers,
+  camps, mines or Depots, or come looking for your mines at the deposits nearest their base. Guard your
+  outposts.
+- **Fix:** a few enemy garrison soldiers used to start on cliffs they could never walk off.
+- **Fix:** the controls help now says a Truck hauls 120 per trip.
+
 ## Tool: Fight Theatre and recorded fight testing (30 September 2026)
 
 - **Fight Theatre** (`theatre.html`): watch 37 set-piece fights (every unit against every unit,

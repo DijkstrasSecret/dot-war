@@ -1172,6 +1172,16 @@ objectives / victory points; **0.9** Officer / radio unit, unit stances, after-m
 | Under-attack alerts | When an enemy hits your unit or building: a toast and a red ping on the map and minimap. One alert per 400 m area until it has been quiet there for 20 s. Free key **J** centres the view on the latest one. |
 | Repeat production | Right click a unit card in a factory's Train list: the factory keeps that unit queued, training the next as soon as the queue is empty and you can pay and have supply (it waits silently otherwise). Right click again to stop. One repeat per factory. |
 
+### Patch 0.5d: a smarter enemy (details picked by Claude on Kaan's go-ahead, 30 September 2026; all values proposed, tune in play)
+
+| Topic | Decision |
+| --- | --- |
+| Retreat | An AI soldier under **40%** health, or panicking, drops out of raids and defence and walks back to its HQ (which heals infantry within 150 m). It rejoins at **80%**. |
+| Garrison | While enemies are within **480 m** of its HQ, the AI puts soldiers into its HQ (6 slots) and any towers or Bunkers it owns, nearest first. It lets them out **30 s** after the last enemy has gone. |
+| Dig in | When it sees **4 or more** enemy soldiers within **900 m** of its HQ, it digs a **120 m** trench across their route in, 80 to 190 m in front of the HQ (wherever most of it can be dug), with up to 6 idle Riflemen, then holds it. It also digs one across the route from the enemy HQ a minute before its first raid. Not while half a trench already stands, at most once every **5 minutes**, never on Easy; unfinished parts are abandoned after 2 minutes. It pays for the trench like a player. |
+| Research | On a timetable by game minute (Normal): Marksmanship Drill 6, Grenades 8, Entrenching Tools 9, Field Boots 10, Improved Powder 13, HE Shells 15, Squad Cohesion 18, Storm Troops 25. Easy takes 1.5× as long, Hard 0.75×. It pays nothing (like its unit unlocks) and needs no buildings. |
+| Supply raids | Every **240 s** on Normal (**150 s** on Hard; never on Easy), if its army has at least 8 soldiers and no enemy is near its HQ, it sends **3** Riflemen at the enemy supply target it saw most recently (a carrier, a camp, a mine or a Depot, remembered for 5 minutes). With nothing seen, they go and look at the next of the 5 deposits nearest its HQ, in turn. They come home when the target is gone. |
+
 ---
 
 ## Still open

@@ -341,7 +341,26 @@ and 0.35 sulfur per second times the difficulty income factor and the game's pac
 home. Raids escalate: each sends 10% more of the army than the last (up to 90%), and once the AI's
 army is twice the enemy soldiers it has seen in the last two minutes (at least 3), it sends
 everyone. It trains Workers only to carry from its mines (two per mine; they never fight). The AI
-does not build, research, expand, dig, throw grenades, train Medics or use towers.
+does not build, expand, train Medics or upgrade towers.
+
+Since patch 0.5d it also (numbers in `Data.AI_SMART`, all proposed):
+
+- **Falls back to heal:** a soldier under 40% health, or panicking, leaves raids and defence and walks
+  to its HQ (which heals infantry within 150 m); it rejoins at 80%.
+- **Garrisons:** while enemies are within 480 m of its HQ it fills the HQ (6 slots) and any towers or
+  Bunkers it owns, nearest soldiers first, and lets them out 30 s after the last enemy has gone.
+- **Digs in:** a minute before its first raid it digs a 120 m trench across the route from the enemy
+  HQ, 80 to 190 m in front of its own (wherever most of it can be dug), with up to 6 Riflemen; it does
+  the same when it sees 4 or more enemy soldiers within 900 m and no trench stands. Soldiers idle in
+  the finished trench hold it. At most once every 5 minutes, never on Easy; unfinished parts are
+  abandoned after 2 minutes.
+- **Researches on a timetable** (free, no buildings): Marksmanship Drill at 6 min, Grenades 8,
+  Entrenching Tools 9, Field Boots 10, Improved Powder 13, HE Shells 15, Squad Cohesion 18, Storm Troops
+  25 on Normal; Easy takes 1.5× as long, Hard 0.75×. With Grenades its Riflemen throw at trenches and
+  Bunkers like the player's.
+- **Raids supply lines:** every 240 s on Normal (150 s on Hard, never on Easy), with at least 8
+  soldiers and no enemy near its HQ, it sends 3 Riflemen at the enemy carrier, camp, mine or Depot it
+  saw most recently (remembered 5 minutes), or else to check the next of the 5 deposits nearest its HQ.
 
 The first raid comes at the enemy's walking time to the player's HQ plus a build-up (Easy 480 s,
 Normal 300 s, Hard 210 s, patch 0.5c); each
