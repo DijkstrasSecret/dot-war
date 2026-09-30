@@ -1212,12 +1212,24 @@ Built from H2, H3, the vision floor (I) and the agreed answers above (sight rule
 | Enemy commander | Researches Night Training at 20 min and Snow Gear at 22 min (Normal; scaled by difficulty like its other research). It uses no flares or searchlights yet. |
 | Screen | A small weather and time-of-day line next to the clock; darkness over the map at night (lit circles and cones show through); rain streaks, snowflakes or a pale haze for fog. |
 
+### Patch 0.7 plan answers (Kaan, 30 September 2026)
+
+| Topic | Decision |
+| --- | --- |
+| Machine Gunner | Stays as 0.6 made it: weak alone (it needs someone to spot for it), strong beside Riflemen. "Gives realism to the squad design concept." No retune. |
+| Testing | No more balance testing until 0.7 is in; it changes the balance either way. |
+| Map size | **12–14 km per side**, as planned, built now (today's maps are 2.4 km). |
+| Map source | A **random generator only**: every match is a new generated big map. The 4 hand-made maps leave the menu but stay in the code for the Balance Lab, so its economy, AI-match and pressure tests stay comparable with earlier patches. |
+| Win conditions | **No alternative win conditions** (replaces the "objectives / victory points" idea): destroying the HQ stays the only way to win. Instead the map has **buff sites** worth holding. |
+| Buff sites | **Airdrop landing zone** (supply drops for the holder), **train station** (free resource deliveries), **radio mast** (wide vision and raid warnings), **fuel dump** (oil, refuelling), **field hospital ruins** (healing), and **citadels**: big neutral fortresses that are really hard to take. Numbers proposed in the 0.7 details. |
+| Capture | Stand there uncontested: soldiers within 60 m and no enemy soldiers there fill a bar over about 20 s; the site stays yours until the enemy does the same. Neutral guards hold some sites at the start. (A citadel is taken by clearing its garrison and moving in.) |
+| Modern kit | New soldiers wear Modern uniforms once the player owns an R&D Lab and has **5 Tier III** researches (Cold War stays at 2). |
+
 ---
 
 ## Still open
 
 - Every value marked (proposed): tune in the Balance Lab.
 - Exact extra weights (1 or 2) per designer extra, and the designer's chassis cost factors.
-- The research that triggers Cold War and Modern kit (section K, proposed triggers).
 - National insignia on portraits and in-game art (helmet decals, cap badges) per army and era, under
   the section K marking rules. Patch 0.2a has none yet.

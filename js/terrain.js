@@ -424,7 +424,7 @@ const Terrain = (() => {
     get W() { return W; }, get H() { return H; }, get height() { return height; }, get type() { return type; }, get road() { return road; }, get slope() { return slope; },
     get deposits() { return deposits; }, get roads() { return roads; }, get cache() { return cache; }, rasterizeRoads, eraseRoads, addRoad, removeRoad,
     idx, inb, cellI, cellJ, cellIdxAt, cx, cy, hAt, gradAt, typeAt, roadAt, slopeAt,
-    cellPassable, terrainFactor, slopeFactor, moveFactor, edgeCost, passableAt, straightPassable, setBlocked, setPathMult, setBlockVeh, get blocked() { return blocked; },
+    cellPassable, terrainFactor, slopeFactor, moveFactor, edgeCost, passableAt, straightPassable, setBlocked, setPathMult, setBlockVeh, get blocked() { return blocked; }, get pathMult() { return pathMult; }, get blockVeh() { return blockVeh; },
     los, coverAt, ridgeCover, forestCellsNear, depositNear, areaOk,
     markDirty, flushDirty, recomputeDerived, smoothRegion, renderRegion,
   };
