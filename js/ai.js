@@ -5,7 +5,10 @@
 // Normally it commands player 2 on the mountain; the Balance Lab can hand it player 1 as well
 // (AI.reset([1, 2])) for AI-versus-AI matches. Strength comes from Data.DIFFICULTY[G.difficulty];
 // a side without an HQ (sandbox maps) is idle.
-// TODO(patch 0.8): harvest instead of passive income, build towers, research, flank through cover, retreat damaged units, use mortars with spotters.
+// Patch 0.5d (Data.AI_SMART): damaged or panicking soldiers fall back to the HQ to heal, soldiers
+// garrison the HQ and towers when enemies come close, a trench is dug across an approaching army's
+// path, research follows a timetable, and small groups raid the enemy's carriers, camps and Depots.
+// TODO(patch 0.8): harvest instead of passive income, build towers, flank through cover, use mortars with spotters.
 const AI = (() => {
   const { dist } = Util;
   const R = () => G.rng();   // the AI is part of the seeded simulation
@@ -38,6 +41,105 @@ const AI = (() => {
     return choices[0];
   }
 
+  // ---- 0.5d: a smarter enemy ----
+  // Research on a timetable, free, like the unit unlocks (DD 0.5d).
+  function research(p, D) { for (const [id, at] of Data.AI_SMART.research) if (!p.done.has(id) && G.time >= at * (D.researchMult || 1)) Game.applyResearch(p, id); }
+  // Under 40% health or panicking: out of the fight and back to the HQ, which heals infantry nearby; back in at 80%.
+  function recover(hq, army) {
+    const S = Data.AI_SMART, home = () => [hq.x + (R() - 0.5) * 90, hq.y + hq.h / 2 + 30 + R() * 40];
+    for (const u of army) {
+      if (u.inside) continue;
+      const hp = u.hp / u.stats.hp;
+      if (!u.aiRecover && (hp < S.retreatHp || u.flee > 0)) { u.aiRecover = true; u.raiding = false; const [x, y] = home(); Game.orderMove([u], x, y, 'move'); }
+      else if (u.aiRecover && hp >= S.rejoinHp && u.flee <= 0) u.aiRecover = false;
+      else if (u.aiRecover && !u.order && dist(u.x, u.y, hq.x, hq.y) > 140) { const [x, y] = home(); Game.orderMove([u], x, y, 'move'); }
+    }
+  }
+  // Fill the HQ and any towers or Bunkers while enemies are close; let everyone out once it has been quiet a while.
+  function garrison(pid, st, fit, threatened) {
+    const S = Data.AI_SMART, holds = G.buildings.filter(b => b.owner === pid && !b.dead && b.built && b.slots);
+    if (threatened) st.garrisonT = G.time;
+    if (!threatened) {
+      if (G.time - (st.garrisonT || -1e9) > S.garrisonLinger) for (const b of holds) if (b.garrison.length) Game.unloadBuilding(b);
+      return;
+    }
+    for (const b of holds) {
+      const lv = b.slots, room = (lv.cap || 0) + (lv.mg || 0) + (lv.heavy || 0) - b.garrison.length - fit.filter(u => u.order && u.order.type === 'garrison' && u.order.building === b).length;
+      if (room <= 0) continue;
+      const near = fit.filter(u => !u.inside && !u.raiding && (!u.order || u.order.type === 'hold' || u.order.type === 'move') && dist(u.x, u.y, b.x, b.y) < 300 && Game.canEnter(u, b))
+        .sort((a, c) => dist(a.x, a.y, b.x, b.y) - dist(c.x, c.y, b.x, b.y) || a.id - c.id);
+      if (near.length) Game.orderGarrison(near.slice(0, room), b);
+    }
+  }
+  // Where a walk from (x, y) to this HQ passes `d` metres out, and the direction it is heading there,
+  // following the same flow field the soldiers use (so the spot is always reachable ground).
+  function approach(hq, x, y, d) {
+    const f = Path.getField(hq.x, hq.y + hq.h / 2 + 12, 'infantry', 0); if (!f) return null;
+    let k = Terrain.cellIdxAt(x, y); if (f.cost[k] === Infinity) return null;
+    let px = Terrain.cx(k % Terrain.W), py = Terrain.cy(Math.floor(k / Terrain.W));
+    for (let n = 0; n < 4000; n++) {
+      const nk = f.next[k]; if (nk < 0) return null;
+      const nx = Terrain.cx(nk % Terrain.W), ny = Terrain.cy(Math.floor(nk / Terrain.W));
+      if (dist(nx, ny, hq.x, hq.y) <= d) { const L = dist(px, py, nx, ny) || 1; return { x: nx, y: ny, ux: (nx - px) / L, uy: (ny - py) / L }; }
+      px = nx; py = ny; k = nk;
+    }
+    return null;
+  }
+  // Dig a trench across the enemy's way in: once before the first raid leaves (on the path from the
+  // enemy HQ), and when an enemy group comes into view near the base, if no trench of ours stands.
+  function digIn(pid, st, hq, fit, D) {
+    const S = Data.AI_SMART.dig; if (!D.digIn) return;
+    if (st.digLine != null && G.time - st.digT > S.giveUp) {   // unfinished after giveUp seconds: abandon the rest
+      for (const sg of G.segs.filter(x => x.line === st.digLine && !x.done)) Game._dbg.removeSeg(sg);
+      Game.orderStop(fit.filter(u => u.order && u.order.type === 'dig' && u.order.line === st.digLine)); st.digLine = null;
+    }
+    if (G.time - (st.digT || -1e9) < S.every) return;
+    if (G.segs.filter(x => x.owner === pid && x.type === 'trench' && x.done && dist(x.x, x.y, hq.x, hq.y) < Math.max(...S.tryDist) * 1.5).length >= S.minCells) return;   // half a trench already stands
+    let from = null;
+    const near = G.units.filter(u => u.owner === enemyOf(pid) && !u.dead && !u.inside && !u.def.labour && Fog.visible(pid, u.x, u.y) && dist(u.x, u.y, hq.x, hq.y) < S.seen);
+    if (near.length >= S.minGroup) { let cx = 0, cy = 0; for (const u of near) { cx += u.x; cy += u.y; } from = [cx / near.length, cy / near.length]; }
+    else if (st.digT == null && G.time >= st.walk + D.buildUp - S.early) { const e = hqOf(enemyOf(pid)); if (e) from = [e.x, e.y + e.h / 2 + 12]; }
+    if (!from) return;
+    // Try a few distances out along the route and take the one with the most diggable ground across it.
+    const h = S.len / 2, cls = Data.MOVE_CLASSES.infantry; let a = null, best = -1;
+    for (const d of S.tryDist) {
+      const c = approach(hq, from[0], from[1], d); if (!c) continue;
+      let ok = 0; for (let t = -h; t <= h; t += Data.DIG.segment) if (Terrain.passableAt(c.x - c.uy * t, c.y + c.ux * t, cls)) ok++;
+      if (ok > best) { best = ok; a = c; }
+    }
+    if (!a || best < S.minCells) return;
+    const mx = a.x, my = a.y;
+    const diggers = fit.filter(u => !u.inside && !u.raiding && u.type === 'rifle' && (!u.order || u.order.type === 'hold' || u.order.type === 'move'))
+      .sort((p, q) => dist(p.x, p.y, mx, my) - dist(q.x, q.y, mx, my) || p.id - q.id).slice(0, S.diggers);
+    if (!diggers.length) return;
+    if (Game.planDig(pid, 'trench', [[mx - a.uy * h, my + a.ux * h], [mx + a.uy * h, my - a.ux * h]], diggers, false)) { st.digT = G.time; st.digLine = G.lineNext - 1; }
+  }
+  // Remember where the enemy's supply chain was last seen: carriers at work, camps, mines, Depots.
+  function watchSupply(pid, st) {
+    const S = Data.AI_SMART.harass; st.eco = st.eco || new Map();
+    for (const u of G.units) if (u.owner === enemyOf(pid) && !u.dead && !u.inside && u.work != null && Fog.visible(pid, u.x, u.y)) st.eco.set('u' + u.id, { ent: u, x: u.x, y: u.y, t: G.time });
+    for (const b of G.buildings) if (b.owner === enemyOf(pid) && !b.dead && (b.def.harvest || b.type === 'depot') && Fog.visible(pid, b.x, b.y)) st.eco.set('b' + b.id, { ent: b, x: b.x, y: b.y, t: G.time });
+    for (const [k, e] of st.eco) if (e.ent.dead || G.time - e.t > S.memory) st.eco.delete(k);
+  }
+  // A few Riflemen go after the most recently seen part of it.
+  function harass(pid, st, fit, D, threatened) {
+    const S = Data.AI_SMART.harass; if (!D.harassEvery) return;
+    if (st.harassT == null) st.harassT = st.walk + D.buildUp + D.harassEvery;
+    if (G.time < st.harassT || threatened || fit.length < S.minArmy) return;
+    let target = null; for (const e of st.eco.values()) if (!target || e.t > target.t || (e.t === target.t && e.ent.id < target.ent.id)) target = e;
+    if (!target) {   // nothing seen: go and look at the next deposit in turn, nearest first (deposits are on everyone's map)
+      const hq = hqOf(pid), deps = Terrain.deposits.filter(d => !G.buildings.some(b => b.owner === pid && !b.dead && dist(b.x, b.y, d.x, d.y) < 80))
+        .sort((a, b) => dist(a.x, a.y, hq.x, hq.y) - dist(b.x, b.y, hq.x, hq.y)).slice(0, S.scoutDeposits);
+      if (!deps.length) return;
+      const d = deps[(st.scoutI = ((st.scoutI || 0) + 1)) % deps.length]; target = { x: d.x, y: d.y };
+    }
+    st.harassT = G.time + D.harassEvery;
+    const group = fit.filter(u => u.type === 'rifle' && !u.raiding && !u.inside && (!u.order || u.order.type === 'move' || u.order.type === 'hold')).slice(0, S.size);
+    if (!group.length) return;
+    for (const u of group) u.raiding = true;
+    Game.orderMove(group, target.x, target.y, 'attackmove'); Game.raidLaunched(pid, group);
+  }
+
   // Keep aiCarriers Workers on each finished mine: idle Workers are sent to the emptiest one, and the HQ
   // trains more while there are too few.
   function carriers(pid, hq) {
@@ -63,6 +165,8 @@ const AI = (() => {
     unlockDue(p, D);
     carriers(pid, hq);
     const mine = G.units.filter(u => u.owner === pid && !u.dead && !u.def.labour);   // the army: Workers only carry
+    research(p, D); recover(hq, mine);
+    const fit = mine.filter(u => !u.aiRecover);   // soldiers healing at the HQ sit out raids and defence
     const queued = G.buildings.reduce((n, b) => n + (b.owner === pid ? b.queue.filter(q => q.type !== 'worker').length : 0), 0);
     const cap = D.cap + Math.floor(G.time / 240) * D.capGrow;
     if (mine.length + queued < cap) {
@@ -76,28 +180,33 @@ const AI = (() => {
     const X = Data.AI_RAIDS;
     for (const u of G.units) if (u.owner === enemyOf(pid) && !u.dead && !u.inside && Fog.visible(pid, u.x, u.y)) st.seen.set(u.id, G.time);
     for (const [id, t] of st.seen) { const u = G.unitById.get(id); if (!u || u.dead || G.time - t > X.memory) st.seen.delete(id); }
-    const threats = G.units.filter(u => u.owner !== pid && !u.dead && !u.inside && Fog.visible(pid, u.x, u.y) && dist(u.x, u.y, hq.x, hq.y) < 480);
+    const threats = G.units.filter(u => u.owner !== pid && !u.dead && !u.inside && Fog.visible(pid, u.x, u.y) && dist(u.x, u.y, hq.x, hq.y) < Data.AI_SMART.garrisonRange);
+    watchSupply(pid, st); digIn(pid, st, hq, fit, D); garrison(pid, st, fit, threats.length > 0);
+    // Soldiers standing idle in their own finished trench hold it instead of charging out.
+    const inTrench = u => { const sg = Game.lineAt(u.x, u.y); return sg && sg.owner === pid && sg.type === 'trench' && sg.done; };
+    for (const u of fit) if (!u.order && !u.inside && !u.raiding && inTrench(u)) Game.orderHold([u]);
     if (threats.length) {
       if (G.time - st.lastDefend > 6) {
         st.lastDefend = G.time;
         let cx = 0, cy = 0; for (const t of threats) { cx += t.x; cy += t.y; } cx /= threats.length; cy /= threats.length;
-        const defenders = mine.filter(u => !u.raiding && (!u.order || u.order.type === 'hold' || u.order.type === 'move'));
+        const defenders = fit.filter(u => !u.raiding && !u.inside && (!u.order || (u.order.type === 'hold' && !inTrench(u)) || u.order.type === 'move'));
         if (defenders.length) Game.orderMove(defenders, cx, cy, 'attackmove');
       }
     } else {
-      for (const u of mine) {
-        if (u.raiding || u.order || dist(u.x, u.y, hq.x, hq.y) < 240 || G.time - (u.homeT || -99) < 20) continue;
+      for (const u of fit) {
+        if (u.raiding || u.order || u.inside || dist(u.x, u.y, hq.x, hq.y) < 240 || G.time - (u.homeT || -99) < 20) continue;
         u.homeT = G.time; Game.orderMove([u], hq.x + (R() - 0.5) * 160, hq.y + 70 + (R() - 0.5) * 100, 'move');
       }
     }
+    harass(pid, st, fit, D, threats.length > 0);
     st.raidT -= 1;
-    if (st.raidT <= 0 && mine.length >= Math.max(6, Math.floor(D.cap * 0.7))) {
+    if (st.raidT <= 0 && fit.length >= Math.max(6, Math.floor(D.cap * 0.7))) {
       st.raidT = st.walk + D.raidMin + R() * D.raidVar;   // DD Q2: the interval adds the walking time too
       const targetHq = hqOf(enemyOf(pid));
       // Raids escalate, and a clear numbers advantage commits the whole army (Data.AI_RAIDS).
-      const allIn = mine.length >= X.allInRatio * Math.max(X.minEnemy, st.seen.size);
+      const allIn = fit.length >= X.allInRatio * Math.max(X.minEnemy, st.seen.size);
       const frac = allIn ? 1 : Math.min(X.raidFracMax, D.raidFrac + st.raids * X.raidGrow);
-      const raiders = mine.filter(u => !u.raiding).slice(0, Math.max(3, Math.ceil(mine.length * frac)));
+      const raiders = fit.filter(u => !u.raiding && !u.inside && !(u.order && u.order.type === 'dig')).slice(0, Math.max(3, Math.ceil(fit.length * frac)));
       if (targetHq && raiders.length) { st.raids++; for (const u of raiders) u.raiding = true; Game.orderMove(raiders, targetHq.x, targetHq.y, 'attackmove'); Game.raidLaunched(pid, raiders); }
     }
     for (const u of mine) if (u.raiding && !u.order && !u.target) { u.raiding = false; Game.orderMove([u], hq.x, hq.y + 70, 'move'); }

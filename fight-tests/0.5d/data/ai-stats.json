@@ -1,0 +1,1057 @@
+[
+ {
+  "winner": 0,
+  "minutes": 39.99999999997458,
+  "kills": [
+   64,
+   32
+  ],
+  "difficulty": "easy",
+  "seed": 1,
+  "lost": [
+   36,
+   70
+  ],
+  "timeline": [
+   {
+    "min": 1,
+    "armyA": 8,
+    "armyB": 8
+   },
+   {
+    "min": 2,
+    "armyA": 8,
+    "armyB": 8
+   },
+   {
+    "min": 3,
+    "armyA": 8,
+    "armyB": 8
+   },
+   {
+    "min": 4,
+    "armyA": 8,
+    "armyB": 8
+   },
+   {
+    "min": 5,
+    "armyA": 10,
+    "armyB": 10
+   },
+   {
+    "min": 6,
+    "armyA": 10,
+    "armyB": 10
+   },
+   {
+    "min": 7,
+    "armyA": 10,
+    "armyB": 10
+   },
+   {
+    "min": 8,
+    "armyA": 10,
+    "armyB": 10
+   },
+   {
+    "min": 9,
+    "armyA": 10,
+    "armyB": 10
+   },
+   {
+    "min": 10,
+    "armyA": 10,
+    "armyB": 6
+   },
+   {
+    "min": 11,
+    "armyA": 10,
+    "armyB": 9
+   },
+   {
+    "min": 12,
+    "armyA": 11,
+    "armyB": 11
+   },
+   {
+    "min": 13,
+    "armyA": 11,
+    "armyB": 11
+   },
+   {
+    "min": 14,
+    "armyA": 11,
+    "armyB": 11
+   },
+   {
+    "min": 15,
+    "armyA": 11,
+    "armyB": 11
+   },
+   {
+    "min": 16,
+    "armyA": 10,
+    "armyB": 11
+   },
+   {
+    "min": 17,
+    "armyA": 12,
+    "armyB": 9
+   },
+   {
+    "min": 18,
+    "armyA": 12,
+    "armyB": 12
+   },
+   {
+    "min": 19,
+    "armyA": 12,
+    "armyB": 12
+   },
+   {
+    "min": 20,
+    "armyA": 13,
+    "armyB": 12
+   },
+   {
+    "min": 21,
+    "armyA": 13,
+    "armyB": 14
+   },
+   {
+    "min": 22,
+    "armyA": 13,
+    "armyB": 14
+   },
+   {
+    "min": 23,
+    "armyA": 13,
+    "armyB": 14
+   },
+   {
+    "min": 24,
+    "armyA": 13,
+    "armyB": 14
+   },
+   {
+    "min": 25,
+    "armyA": 15,
+    "armyB": 8
+   },
+   {
+    "min": 26,
+    "armyA": 15,
+    "armyB": 14
+   },
+   {
+    "min": 27,
+    "armyA": 15,
+    "armyB": 14
+   },
+   {
+    "min": 28,
+    "armyA": 14,
+    "armyB": 11
+   },
+   {
+    "min": 29,
+    "armyA": 17,
+    "armyB": 15
+   },
+   {
+    "min": 30,
+    "armyA": 17,
+    "armyB": 15
+   },
+   {
+    "min": 31,
+    "armyA": 17,
+    "armyB": 15
+   },
+   {
+    "min": 32,
+    "armyA": 16,
+    "armyB": 9
+   },
+   {
+    "min": 33,
+    "armyA": 16,
+    "armyB": 16
+   },
+   {
+    "min": 34,
+    "armyA": 16,
+    "armyB": 16
+   },
+   {
+    "min": 35,
+    "armyA": 16,
+    "armyB": 16
+   },
+   {
+    "min": 36,
+    "armyA": 17,
+    "armyB": 11
+   },
+   {
+    "min": 37,
+    "armyA": 19,
+    "armyB": 17
+   },
+   {
+    "min": 38,
+    "armyA": 19,
+    "armyB": 17
+   },
+   {
+    "min": 39,
+    "armyA": 17,
+    "armyB": 10
+   }
+  ]
+ },
+ {
+  "winner": 0,
+  "minutes": 39.99999999997458,
+  "kills": [
+   41,
+   25
+  ],
+  "difficulty": "easy",
+  "seed": 2,
+  "lost": [
+   22,
+   42
+  ],
+  "timeline": [
+   {
+    "min": 1,
+    "armyA": 8,
+    "armyB": 8
+   },
+   {
+    "min": 2,
+    "armyA": 8,
+    "armyB": 8
+   },
+   {
+    "min": 3,
+    "armyA": 8,
+    "armyB": 8
+   },
+   {
+    "min": 4,
+    "armyA": 8,
+    "armyB": 8
+   },
+   {
+    "min": 5,
+    "armyA": 10,
+    "armyB": 10
+   },
+   {
+    "min": 6,
+    "armyA": 10,
+    "armyB": 10
+   },
+   {
+    "min": 7,
+    "armyA": 10,
+    "armyB": 10
+   },
+   {
+    "min": 8,
+    "armyA": 10,
+    "armyB": 10
+   },
+   {
+    "min": 9,
+    "armyA": 10,
+    "armyB": 10
+   },
+   {
+    "min": 10,
+    "armyA": 11,
+    "armyB": 6
+   },
+   {
+    "min": 11,
+    "armyA": 11,
+    "armyB": 8
+   },
+   {
+    "min": 12,
+    "armyA": 11,
+    "armyB": 10
+   },
+   {
+    "min": 13,
+    "armyA": 11,
+    "armyB": 12
+   },
+   {
+    "min": 14,
+    "armyA": 11,
+    "armyB": 12
+   },
+   {
+    "min": 15,
+    "armyA": 11,
+    "armyB": 12
+   },
+   {
+    "min": 16,
+    "armyA": 11,
+    "armyB": 12
+   },
+   {
+    "min": 17,
+    "armyA": 13,
+    "armyB": 12
+   },
+   {
+    "min": 18,
+    "armyA": 13,
+    "armyB": 12
+   },
+   {
+    "min": 19,
+    "armyA": 13,
+    "armyB": 12
+   },
+   {
+    "min": 20,
+    "armyA": 12,
+    "armyB": 12
+   },
+   {
+    "min": 21,
+    "armyA": 15,
+    "armyB": 15
+   },
+   {
+    "min": 22,
+    "armyA": 14,
+    "armyB": 15
+   },
+   {
+    "min": 23,
+    "armyA": 14,
+    "armyB": 15
+   },
+   {
+    "min": 24,
+    "armyA": 14,
+    "armyB": 15
+   },
+   {
+    "min": 25,
+    "armyA": 14,
+    "armyB": 14
+   },
+   {
+    "min": 26,
+    "armyA": 15,
+    "armyB": 14
+   },
+   {
+    "min": 27,
+    "armyA": 15,
+    "armyB": 14
+   },
+   {
+    "min": 28,
+    "armyA": 15,
+    "armyB": 14
+   },
+   {
+    "min": 29,
+    "armyA": 15,
+    "armyB": 16
+   },
+   {
+    "min": 30,
+    "armyA": 15,
+    "armyB": 16
+   },
+   {
+    "min": 31,
+    "armyA": 15,
+    "armyB": 16
+   },
+   {
+    "min": 32,
+    "armyA": 16,
+    "armyB": 15
+   },
+   {
+    "min": 33,
+    "armyA": 16,
+    "armyB": 16
+   },
+   {
+    "min": 34,
+    "armyA": 16,
+    "armyB": 16
+   },
+   {
+    "min": 35,
+    "armyA": 16,
+    "armyB": 16
+   },
+   {
+    "min": 36,
+    "armyA": 16,
+    "armyB": 16
+   },
+   {
+    "min": 37,
+    "armyA": 19,
+    "armyB": 18
+   },
+   {
+    "min": 38,
+    "armyA": 19,
+    "armyB": 18
+   },
+   {
+    "min": 39,
+    "armyA": 19,
+    "armyB": 18
+   }
+  ]
+ },
+ {
+  "winner": 0,
+  "minutes": 39.99999999997458,
+  "kills": [
+   102,
+   61
+  ],
+  "difficulty": "normal",
+  "seed": 1,
+  "lost": [
+   56,
+   101
+  ],
+  "timeline": [
+   {
+    "min": 1,
+    "armyA": 11,
+    "armyB": 11
+   },
+   {
+    "min": 2,
+    "armyA": 11,
+    "armyB": 11
+   },
+   {
+    "min": 3,
+    "armyA": 11,
+    "armyB": 11
+   },
+   {
+    "min": 4,
+    "armyA": 11,
+    "armyB": 11
+   },
+   {
+    "min": 5,
+    "armyA": 13,
+    "armyB": 13
+   },
+   {
+    "min": 6,
+    "armyA": 13,
+    "armyB": 13
+   },
+   {
+    "min": 7,
+    "armyA": 13,
+    "armyB": 12
+   },
+   {
+    "min": 8,
+    "armyA": 13,
+    "armyB": 10
+   },
+   {
+    "min": 9,
+    "armyA": 15,
+    "armyB": 15
+   },
+   {
+    "min": 10,
+    "armyA": 15,
+    "armyB": 15
+   },
+   {
+    "min": 11,
+    "armyA": 13,
+    "armyB": 15
+   },
+   {
+    "min": 12,
+    "armyA": 15,
+    "armyB": 15
+   },
+   {
+    "min": 13,
+    "armyA": 17,
+    "armyB": 17
+   },
+   {
+    "min": 14,
+    "armyA": 17,
+    "armyB": 15
+   },
+   {
+    "min": 15,
+    "armyA": 18,
+    "armyB": 17
+   },
+   {
+    "min": 16,
+    "armyA": 18,
+    "armyB": 17
+   },
+   {
+    "min": 17,
+    "armyA": 20,
+    "armyB": 17
+   },
+   {
+    "min": 18,
+    "armyA": 20,
+    "armyB": 20
+   },
+   {
+    "min": 19,
+    "armyA": 20,
+    "armyB": 20
+   },
+   {
+    "min": 20,
+    "armyA": 15,
+    "armyB": 16
+   },
+   {
+    "min": 21,
+    "armyA": 21,
+    "armyB": 20
+   },
+   {
+    "min": 22,
+    "armyA": 21,
+    "armyB": 22
+   },
+   {
+    "min": 23,
+    "armyA": 21,
+    "armyB": 22
+   },
+   {
+    "min": 24,
+    "armyA": 21,
+    "armyB": 22
+   },
+   {
+    "min": 25,
+    "armyA": 24,
+    "armyB": 24
+   },
+   {
+    "min": 26,
+    "armyA": 18,
+    "armyB": 14
+   },
+   {
+    "min": 27,
+    "armyA": 23,
+    "armyB": 18
+   },
+   {
+    "min": 28,
+    "armyA": 23,
+    "armyB": 23
+   },
+   {
+    "min": 29,
+    "armyA": 26,
+    "armyB": 25
+   },
+   {
+    "min": 30,
+    "armyA": 26,
+    "armyB": 25
+   },
+   {
+    "min": 31,
+    "armyA": 26,
+    "armyB": 25
+   },
+   {
+    "min": 32,
+    "armyA": 25,
+    "armyB": 15
+   },
+   {
+    "min": 33,
+    "armyA": 26,
+    "armyB": 20
+   },
+   {
+    "min": 34,
+    "armyA": 27,
+    "armyB": 27
+   },
+   {
+    "min": 35,
+    "armyA": 27,
+    "armyB": 27
+   },
+   {
+    "min": 36,
+    "armyA": 27,
+    "armyB": 27
+   },
+   {
+    "min": 37,
+    "armyA": 30,
+    "armyB": 29
+   },
+   {
+    "min": 38,
+    "armyA": 30,
+    "armyB": 23
+   },
+   {
+    "min": 39,
+    "armyA": 27,
+    "armyB": 27
+   }
+  ]
+ },
+ {
+  "winner": 0,
+  "minutes": 39.99999999997458,
+  "kills": [
+   148,
+   67
+  ],
+  "difficulty": "normal",
+  "seed": 2,
+  "lost": [
+   61,
+   151
+  ],
+  "timeline": [
+   {
+    "min": 1,
+    "armyA": 11,
+    "armyB": 11
+   },
+   {
+    "min": 2,
+    "armyA": 11,
+    "armyB": 11
+   },
+   {
+    "min": 3,
+    "armyA": 11,
+    "armyB": 11
+   },
+   {
+    "min": 4,
+    "armyA": 11,
+    "armyB": 11
+   },
+   {
+    "min": 5,
+    "armyA": 13,
+    "armyB": 13
+   },
+   {
+    "min": 6,
+    "armyA": 13,
+    "armyB": 13
+   },
+   {
+    "min": 7,
+    "armyA": 13,
+    "armyB": 12
+   },
+   {
+    "min": 8,
+    "armyA": 13,
+    "armyB": 12
+   },
+   {
+    "min": 9,
+    "armyA": 15,
+    "armyB": 15
+   },
+   {
+    "min": 10,
+    "armyA": 15,
+    "armyB": 15
+   },
+   {
+    "min": 11,
+    "armyA": 15,
+    "armyB": 16
+   },
+   {
+    "min": 12,
+    "armyA": 16,
+    "armyB": 14
+   },
+   {
+    "min": 13,
+    "armyA": 13,
+    "armyB": 9
+   },
+   {
+    "min": 14,
+    "armyA": 16,
+    "armyB": 9
+   },
+   {
+    "min": 15,
+    "armyA": 17,
+    "armyB": 18
+   },
+   {
+    "min": 16,
+    "armyA": 18,
+    "armyB": 18
+   },
+   {
+    "min": 17,
+    "armyA": 21,
+    "armyB": 20
+   },
+   {
+    "min": 18,
+    "armyA": 19,
+    "armyB": 19
+   },
+   {
+    "min": 19,
+    "armyA": 20,
+    "armyB": 20
+   },
+   {
+    "min": 20,
+    "armyA": 21,
+    "armyB": 19
+   },
+   {
+    "min": 21,
+    "armyA": 21,
+    "armyB": 21
+   },
+   {
+    "min": 22,
+    "armyA": 21,
+    "armyB": 21
+   },
+   {
+    "min": 23,
+    "armyA": 21,
+    "armyB": 16
+   },
+   {
+    "min": 24,
+    "armyA": 22,
+    "armyB": 21
+   },
+   {
+    "min": 25,
+    "armyA": 25,
+    "armyB": 23
+   },
+   {
+    "min": 26,
+    "armyA": 25,
+    "armyB": 23
+   },
+   {
+    "min": 27,
+    "armyA": 25,
+    "armyB": 23
+   },
+   {
+    "min": 28,
+    "armyA": 25,
+    "armyB": 17
+   },
+   {
+    "min": 29,
+    "armyA": 25,
+    "armyB": 24
+   },
+   {
+    "min": 30,
+    "armyA": 24,
+    "armyB": 17
+   },
+   {
+    "min": 31,
+    "armyA": 23,
+    "armyB": 17
+   },
+   {
+    "min": 32,
+    "armyA": 25,
+    "armyB": 25
+   },
+   {
+    "min": 33,
+    "armyA": 28,
+    "armyB": 27
+   },
+   {
+    "min": 34,
+    "armyA": 27,
+    "armyB": 14
+   },
+   {
+    "min": 35,
+    "armyA": 27,
+    "armyB": 22
+   },
+   {
+    "min": 36,
+    "armyA": 27,
+    "armyB": 12
+   },
+   {
+    "min": 37,
+    "armyA": 29,
+    "armyB": 11
+   },
+   {
+    "min": 38,
+    "armyA": 31,
+    "armyB": 19
+   },
+   {
+    "min": 39,
+    "armyA": 31,
+    "armyB": 21
+   }
+  ]
+ },
+ {
+  "winner": 0,
+  "minutes": 39.99999999997458,
+  "kills": [
+   143,
+   134
+  ],
+  "difficulty": "hard",
+  "seed": 1,
+  "lost": [
+   132,
+   144
+  ],
+  "timeline": [
+   {
+    "min": 1,
+    "armyA": 14,
+    "armyB": 14
+   },
+   {
+    "min": 2,
+    "armyA": 14,
+    "armyB": 14
+   },
+   {
+    "min": 3,
+    "armyA": 14,
+    "armyB": 14
+   },
+   {
+    "min": 4,
+    "armyA": 14,
+    "armyB": 14
+   },
+   {
+    "min": 5,
+    "armyA": 16,
+    "armyB": 8
+   },
+   {
+    "min": 6,
+    "armyA": 15,
+    "armyB": 12
+   },
+   {
+    "min": 7,
+    "armyA": 15,
+    "armyB": 16
+   },
+   {
+    "min": 8,
+    "armyA": 17,
+    "armyB": 17
+   },
+   {
+    "min": 9,
+    "armyA": 18,
+    "armyB": 18
+   },
+   {
+    "min": 10,
+    "armyA": 18,
+    "armyB": 15
+   },
+   {
+    "min": 11,
+    "armyA": 15,
+    "armyB": 17
+   },
+   {
+    "min": 12,
+    "armyA": 18,
+    "armyB": 18
+   },
+   {
+    "min": 13,
+    "armyA": 21,
+    "armyB": 18
+   },
+   {
+    "min": 14,
+    "armyA": 21,
+    "armyB": 20
+   },
+   {
+    "min": 15,
+    "armyA": 16,
+    "armyB": 20
+   },
+   {
+    "min": 16,
+    "armyA": 20,
+    "armyB": 22
+   },
+   {
+    "min": 17,
+    "armyA": 23,
+    "armyB": 22
+   },
+   {
+    "min": 18,
+    "armyA": 23,
+    "armyB": 21
+   },
+   {
+    "min": 19,
+    "armyA": 22,
+    "armyB": 21
+   },
+   {
+    "min": 20,
+    "armyA": 18,
+    "armyB": 22
+   },
+   {
+    "min": 21,
+    "armyA": 24,
+    "armyB": 25
+   },
+   {
+    "min": 22,
+    "armyA": 25,
+    "armyB": 24
+   },
+   {
+    "min": 23,
+    "armyA": 22,
+    "armyB": 23
+   },
+   {
+    "min": 24,
+    "armyA": 24,
+    "armyB": 26
+   },
+   {
+    "min": 25,
+    "armyA": 24,
+    "armyB": 21
+   },
+   {
+    "min": 26,
+    "armyA": 27,
+    "armyB": 26
+   },
+   {
+    "min": 27,
+    "armyA": 27,
+    "armyB": 26
+   },
+   {
+    "min": 28,
+    "armyA": 14,
+    "armyB": 23
+   },
+   {
+    "min": 29,
+    "armyA": 27,
+    "armyB": 28
+   },
+   {
+    "min": 30,
+    "armyA": 29,
+    "armyB": 25
+   },
+   {
+    "min": 31,
+    "armyA": 29,
+    "armyB": 28
+   },
+   {
+    "min": 32,
+    "armyA": 22,
+    "armyB": 21
+   },
+   {
+    "min": 33,
+    "armyA": 21,
+    "armyB": 19
+   },
+   {
+    "min": 34,
+    "armyA": 24,
+    "armyB": 22
+   },
+   {
+    "min": 35,
+    "armyA": 27,
+    "armyB": 21
+   },
+   {
+    "min": 36,
+    "armyA": 30,
+    "armyB": 25
+   },
+   {
+    "min": 37,
+    "armyA": 29,
+    "armyB": 21
+   },
+   {
+    "min": 38,
+    "armyA": 29,
+    "armyB": 23
+   },
+   {
+    "min": 39,
+    "armyA": 27,
+    "armyB": 20
+   }
+  ]
+ }
+]

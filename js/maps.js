@@ -119,7 +119,12 @@ const MapGen = (() => {
       Game.addBuilding('hq', 2, A.hq[0], A.hq[1], true);
       for (const b of A.buildings) Game.addBuilding(b.type, 2, b.x, b.y, true);
       const gc = A.garrisonCenter;
-      A.garrison.slice(0, diff.garrison).forEach((t, n) => { const u = Game.spawnUnit(t, 2, gc[0] - 110 + (n % 6) * 40, gc[1] + Math.floor(n / 6) * 30); u.order = { type: 'hold', x: u.x, y: u.y }; });
+      A.garrison.slice(0, diff.garrison).forEach((t, n) => {
+        let x = gc[0] - 110 + (n % 6) * 40, y = gc[1] + Math.floor(n / 6) * 30;
+        const cls = Data.MOVE_CLASSES[Data.UNITS[t].cls];   // 0.5d fix: some spots were on cliffs the soldier could never walk off
+        if (!Terrain.passableAt(x, y, cls)) { const q = Path.nearestPassable(Terrain.cellI(x), Terrain.cellJ(y), cls); if (q) { x = Terrain.cx(q[0]); y = Terrain.cy(q[1]); } }
+        const u = Game.spawnUnit(t, 2, x, y); u.order = { type: 'hold', x: u.x, y: u.y };
+      });
     }
     for (const g of spec.creeps) g.units.forEach((t, n) => { const a = n / g.units.length * Math.PI * 2; Game.spawnUnit(t, 0, g.c[0] + Math.cos(a) * g.r, g.c[1] + Math.sin(a) * g.r); });
   }
