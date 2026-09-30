@@ -20,6 +20,7 @@ const FightScenarios = (() => {
     S('s-rif-mg', 'Equal supply, open ground', 'Riflemen v Machine Gunners', [['rifle', 6]], [['hmg', 6]]),
     S('s-rif-snp', 'Equal supply, open ground', 'Riflemen v Snipers', [['rifle', 6]], [['sniper', 6]]),
     S('s-rif-mor', 'Equal supply, open ground', 'Riflemen v Mortar Crews', [['rifle', 6]], [['mortar', 3]]),
+    S('s-rif-mor-loose', 'Equal supply, open ground', 'Riflemen spread 30 m apart v Mortar Crews', [['rifle', 6]], [['mortar', 3]], { spreadA: 30 }),
     S('s-mg-mg', 'Equal supply, open ground', 'Machine Gunner mirror', [['hmg', 6]], [['hmg', 6]]),
     S('s-mg-snp', 'Equal supply, open ground', 'Machine Gunners v Snipers', [['hmg', 6]], [['sniper', 6]]),
     S('s-mg-mor', 'Equal supply, open ground', 'Machine Gunners v Mortar Crews', [['hmg', 6]], [['mortar', 3]]),
@@ -92,7 +93,7 @@ const FightScenarios = (() => {
     const place = (comp, owner, x0, dir) => {
       const out = [];
       for (const [t, n] of comp) for (let i = 0; i < n; i++) {
-        const spread = s.fort === 'trench' && owner === 2 ? 22 : 14;
+        const spread = s.fort === 'trench' && owner === 2 ? 22 : (owner === 1 ? s.spreadA : s.spreadB) || 14;   // metres between soldiers in a row
         out.push(Game.spawnUnit(t, owner, x0 + dir * (ROW[t] || 0), MIDY + (i - (n - 1) / 2) * spread));
       }
       return out;
