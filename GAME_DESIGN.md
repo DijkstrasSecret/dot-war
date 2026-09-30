@@ -25,14 +25,23 @@ Victory: destroy the enemy Headquarters. Defeat: lose yours. The sandbox map has
 
 ## 2. The world
 
-- A map is 200 x 200 cells of 12 world units, so 2400 x 2400 units. One world unit is treated as
-  one metre for slopes and heights. Heights run roughly 15 to 270 m.
+- Every match is played on a **new random map** (patch 0.7a) of 1100 x 1100 cells of 12 world units,
+  so 13.2 km a side. One world unit is treated as one metre for slopes and heights. Heights run
+  roughly 15 to 270 m.
+- The generator (`MapGen.generate`, from the match seed): the player in one corner, the enemy HQ on a
+  plateau mountain in the opposite corner (about 14 km away); 13 hills, three of them with sulfur and
+  neutral guards; one or two winding rivers kept 900 m from both bases, with marshy lower reaches;
+  forests, with one near each base; an iron deposit 450–750 m from each base and the enemy's sulfur
+  mine by its HQ; contested deposits between the bases (5 iron, 1 sulfur, 2 rubber, 2 oil), most with
+  neutral guards; roads laid along gentle ground from base to base and out to every deposit, with
+  bridges where they cross rivers, 14 m wide (they were 9). Every deposit and the enemy HQ are checked
+  reachable on foot from the player's base; if not, a road is laid to them.
 - Contour lines every 10 m, bold index contours every 50 m.
 - Terrain types per cell: open, forest, water, swamp. Roads are polylines rasterised onto cells;
   a road across water is a bridge. Buildings block the cells under them.
-- Four maps: Highland Pass (the tutorial layout: player base in a valley, enemy on a plateau
-  mountain), Western Ridge and Southern Reach (the same spec mirrored), Open Valley (sandbox with
-  neutral guards and no enemy commander).
+- The four hand-made 2.4 km maps (Highland Pass, Western Ridge, Southern Reach, Open Valley) are no
+  longer in the menu; the Balance Lab and the Fight Theatre still use Highland Pass so their numbers
+  stay comparable.
 - Resource deposits are placed by the map spec: iron ore (metal), sulfur, rubber trees, oil seeps.
   Rubber (Rubber Tapper) pays for Trucks and Motorisation; oil (Refinery, Depot trickle) is Truck fuel.
 

@@ -120,9 +120,20 @@ raid must arrive.
 ## 5. Pathfinding and fog
 
 One Dijkstra per destination cell (`Path.compute`, costs in `Float64Array`, never Float32) gives
-`cost` and `next` for every cell; fields are cached by cell and move class and evicted oldest-first
-beyond 48. `Path.steer` walks the `next` chain up to ten cells and returns the farthest cell centre
-reachable in a straight line. Units re-steer ten times a second.
+cost and next cell for every cell of its window: the whole map on maps up to 400 cells, otherwise
+`FIELD_R` (96) cells around the destination. Read them with `field.costAt(k)` / `field.nextAt(k)`
+(map cell indices). Fields are cached by cell and move class and evicted oldest-first beyond 48.
+`Path.steer` walks the next chain up to ten cells and returns the farthest cell centre reachable in a
+straight line; a unit outside the window follows a route from a weighted A* search (`routeInto`,
+cached per 8x8-cell starting block and field, joined at its nearest point) until it enters the window.
+`Path.route(ax, ay, bx, by, cls)` gives a whole walk ({ cells, cost }) for long-range needs (AI walk
+time, supply lines); `Path.reachMap` floods reachability for map checks. The loops are inlined over
+per-class tables (`pass`, `base` = pathMult / terrain factor) rebuilt on `invalidate()`.
+Units re-steer ten times a second.
+
+Terrain is drawn in tiles of 64 x 64 cells as they come into view (`Terrain.drawView`, at most 72
+kept on big maps); `Terrain.overview` is a small picture of the whole map for the minimap and
+thumbnails; `Terrain.onTileDrawn` lets a page decorate tiles (the Fight Theatre's grid).
 
 `Fog.computeFor(owner)` casts rays from every unit that is not inside a building and from every
 building, using the horizon-angle method with the same tolerance as `los`. Vision radius grows

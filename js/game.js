@@ -88,7 +88,7 @@ const Game = (() => {
   // share it keeps in full night (Night Training: 0.75); everyone else keeps DAYNIGHT.vision.
   function envVision(e) {
     const keep = (e && e.stats && e.stats.nightVision) || Data.DAYNIGHT.vision;
-    return Util.stack('vision', WX().vision || 1, 1 - (1 - keep) * G.env.dark);
+    return Util.stack('vision', WX().vision || 1, 1 - (1 - keep) * Math.round(G.env.dark * 10) / 10);   // dusk and dawn in 10 steps, so sight casts can be reused
   }
   // Movement: rain and snow slow units off-road; Snow Gear and Mud Tyres cancel their penalty.
   function envSpeed(u) {

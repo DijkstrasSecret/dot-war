@@ -5,6 +5,19 @@ each change live in `DESIGN_DECISIONS.md`.
 
 ---
 
+## 0.7a: Big random maps (30 September 2026)
+
+- **Every game is a new 13 km map:** your base in one corner, the enemy stronghold on a plateau in the
+  far corner about 14 km away, hills, one or two rivers, forests, marshes and a road network with
+  bridges. Every map is checked so every deposit and the enemy base can be reached.
+- **Wider roads** (14 m instead of 9).
+- **Long marches work:** soldiers plan a route along roads and good ground; a march of several
+  kilometres finds its way. The enemy's first raid now needs about 6 minutes to walk to you.
+- **Faster pathfinding and drawing:** routes are found about 100× faster than before on a big map, and
+  the map is drawn in pieces as you look at it.
+- The four old maps (Highland Pass and the others) are no longer in the menu; the Balance Lab still
+  uses Highland Pass so its results stay comparable.
+
 ## 0.6: Weather and night (30 September 2026)
 
 - **Day and night:** ten minutes of day, then five of night, all match long. At night everyone sees

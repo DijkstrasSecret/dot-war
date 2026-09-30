@@ -1225,6 +1225,18 @@ Built from H2, H3, the vision floor (I) and the agreed answers above (sight rule
 | Capture | Stand there uncontested: soldiers within 60 m and no enemy soldiers there fill a bar over about 20 s; the site stays yours until the enemy does the same. Neutral guards hold some sites at the start. (A citadel is taken by clearing its garrison and moving in.) |
 | Modern kit | New soldiers wear Modern uniforms once the player owns an R&D Lab and has **5 Tier III** researches (Cold War stays at 2). |
 
+### Patch 0.7a: big-map details (picked by Claude, 30 September 2026; proposed)
+
+| Topic | Decision |
+| --- | --- |
+| Size | 1100 x 1100 cells of 12 m = **13.2 km** a side (inside Kaan's 12–14 km). |
+| Layout | Player in a random corner, the enemy HQ on a plateau mountain (as on Highland Pass) in the opposite one, both jittered a little; about 14 km apart. |
+| Features | 13 hills (3 with sulfur and guards), 1–2 rivers (60%: two) kept 900 m from both bases, forests (one near each base), marsh on lower river banks. |
+| Deposits | Iron 450–750 m from each base; the enemy's sulfur mine by its HQ; contested between the bases: 5 iron, 1 sulfur, 2 rubber, 2 oil, most with 3–4 neutral guards. |
+| Roads | 14 m wide (was 9). Laid along gentle ground from base to base and out to every deposit; a crossing becomes a bridge. |
+| Check | Every deposit and the enemy HQ must be reachable on foot from the player's base; if one isn't, a road is laid to it. |
+| Dusk and dawn | Vision changes in 10 steps across the 30 s blend (for speed; the look of the darkness still blends smoothly). |
+
 ---
 
 ## Still open
