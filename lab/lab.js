@@ -1,4 +1,6 @@
 'use strict';
+// 0.6: the duel's weather and darkness, fixed for the whole fight (G.envOverride).
+const condEnv = c => !c ? null : { night: { dark: 1 }, rain: { weather: 'rain' }, fog: { weather: 'fog' }, snow: { weather: 'snow' }, 'fog-night': { weather: 'fog', dark: 1 } }[c];
 // Balance Lab page: runs LabTests in small slices (so the page stays responsive) and shows tables,
 // a chart and the target table. All game logic is in LabTests and the simulation files.
 (() => {
@@ -42,8 +44,8 @@
   }
   const name = t => Data.UNITS[t].name;
   $('runDuel').onclick = async () => {
-    const o = { typeA: $('tA').value, nA: +$('nA').value, typeB: $('tB').value, nB: +$('nB').value, ground: $('ground').value, squadA: $('sqA').checked, squadB: $('sqB').checked };
-    await runDuels(o, +$('runs').value, `${o.nA} ${name(o.typeA)}${o.squadA ? ' (squadron)' : ''} v ${o.nB} ${name(o.typeB)}${o.squadB ? ' (squadron)' : ''}, ${$('ground').selectedOptions[0].textContent}`);
+    const o = { typeA: $('tA').value, nA: +$('nA').value, typeB: $('tB').value, nB: +$('nB').value, ground: $('ground').value, squadA: $('sqA').checked, squadB: $('sqB').checked, env: condEnv($('cond').value) };
+    await runDuels(o, +$('runs').value, `${o.nA} ${name(o.typeA)}${o.squadA ? ' (squadron)' : ''} v ${o.nB} ${name(o.typeB)}${o.squadB ? ' (squadron)' : ''}, ${$('ground').selectedOptions[0].textContent}${$('cond').value ? ', ' + $('cond').selectedOptions[0].textContent : ''}`);
   };
   $('runGates').onclick = async () => {
     // The pin test keeps the Rifleman alive: it measures stress alone (the MG would kill it first).

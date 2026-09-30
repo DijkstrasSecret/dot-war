@@ -32,8 +32,8 @@ const Fog = (() => {
   // Standing high: a flat bonus by altitude, up to +90% at 300 m. Kaan, 0.5b.3: on top of it, each clear
   // line of sight reaches farther where the ground drops away below the eye (see cast).
   function visionRadius(base, x, y, extraH = 0) {
-    const h = Terrain.hAt(x, y) + extraH;
-    return base * (1 + clamp(h / 300, 0, 1) * HEIGHT_BONUS);
+    const h = Terrain.hAt(x, y) + extraH, w = G.env && Data.WEATHER.kinds[G.env.weather];
+    return base * (1 + clamp(h / 300, 0, 1) * HEIGHT_BONUS * ((w && w.heightVision) || 1));   // 0.6: fog halves the height bonus
   }
   const VIS = Data.VISION;
   const reach = drop => drop < VIS.deadZone ? 1 : 1 + Math.min(VIS.max, VIS.perSqrt * Math.sqrt(drop));
@@ -43,7 +43,8 @@ const Fog = (() => {
   // distance d is seen if d <= r x reach(eye height - ground height there).
   let smokes = [];
   function inSmoke(px, py) { for (const c of smokes) if ((px - c.x) * (px - c.x) + (py - c.y) * (py - c.y) < c.r * c.r) return true; return false; }
-  function cast(v, x, y, r, eyeH = 2.2, out = null) {
+  // arc (optional): only rays within arc.half radians of arc.dir, for searchlight cones (0.6).
+  function cast(v, x, y, r, eyeH = 2.2, out = null, arc = null) {
     const CELL = Terrain.CELL;
     const h0 = Terrain.hAt(x, y) + eyeH, rMax = r * reach(h0 - minH);
     const step = CELL * 0.5, nsteps = Math.ceil(rMax / step), rEdge = Math.ceil(r / step) * step;   // the old last step past r
@@ -57,6 +58,7 @@ const Fog = (() => {
     const hgt = Terrain.height, W1 = W - 1, H1 = H - 1;
     for (let a = 0; a < rays; a++) {
       const ang = a / rays * Math.PI * 2;
+      if (arc) { let da = ang - arc.dir; da -= Math.round(da / (Math.PI * 2)) * Math.PI * 2; if (Math.abs(da) > arc.half) continue; }
       const dx = Math.cos(ang) * step, dy = Math.sin(ang) * step;
       let px = x, py = y, maxSlope = -Infinity, forest = 0;
       for (let s = 1; s <= nsteps; s++) {
@@ -99,9 +101,20 @@ const Fog = (() => {
     if (!scratch || scratch.length !== W * H) scratch = new Uint8Array(W * H);
     for (const u of G.units) if (u.owner === owner && !u.dead && !u.inside) {
       const qx = Terrain.cx(Terrain.cellI(u.x)), qy = Terrain.cy(Terrain.cellJ(u.y));   // 0.5e: from the cell centre
-      castShared(v, qx, qy, visionRadius(u.stats.vision, qx, qy), 2.2);
+      castShared(v, qx, qy, Math.round(visionRadius(u.stats.vision, qx, qy) * Game.envVision(u) - Terrain.CELL / 2), 2.2);   // 0.6: night and weather; half a cell less, since a whole cell counts as seen once a ray reaches it
     }
-    for (const b of G.buildings) if (b.owner === owner && !b.dead) { const bv = buildingVision(b); castCached(v, b, b.x, b.y, visionRadius(bv.range, b.x, b.y, bv.eye) * (b.built ? 1 : 0.5), bv.eye); }
+    const bm = Game.envVision(null);
+    for (const b of G.buildings) if (b.owner === owner && !b.dead) { const bv = buildingVision(b); castCached(v, b, b.x, b.y, visionRadius(bv.range, b.x, b.y, bv.eye) * (b.built ? 1 : 0.5) * bm, bv.eye); }
+    // 0.6: flares light a circle for their side; lit searchlights sweep a cone; at night a shooter gives
+    // himself away for a few seconds, and a lit tower is seen by the enemy from anywhere.
+    const F = Data.FLARE, SL = Data.SEARCHLIGHT;
+    for (const f of G.flares || []) if (f.owner === owner) castShared(v, Terrain.cx(Terrain.cellI(f.x)), Terrain.cy(Terrain.cellJ(f.y)), F.radius, F.eye);
+    for (const b of G.buildings) {
+      if (!b.lit) continue;
+      if (b.owner === owner) { cast(v, b.x, b.y, SL.range, buildingVision(b).eye, null, { dir: b.lightDir, half: SL.cone / 2 }); }
+      else v[Terrain.cellIdxAt(b.x, b.y)] = 1;
+    }
+    for (const u of G.units) if (u.owner !== owner && u.owner !== 0 && !u.dead && u.revealT > G.time) v[Terrain.cellIdxAt(u.x, u.y)] = 1;
   }
 
   // The fog picture is made only when the renderer asks for it, so the simulation never touches a canvas.

@@ -72,6 +72,14 @@ const UI = (() => {
     refreshSpeed();
   }
   function showTab(t) { tab = t; refresh(); }
+  // 0.6: weather and time of day next to the clock, with the forecast in its last minute.
+  function envLine() {
+    const E = G.env; if (!E) return '';
+    const W = Data.WEATHER, k = W.kinds[E.weather], D = Data.DAYNIGHT, c = G.time % (D.day + D.night);
+    const tod = E.night ? '☾ night' : E.dark > 0 ? (c < D.day + D.night / 2 ? 'dusk' : 'dawn') : c > D.day - 60 ? 'day, dusk soon' : 'day';
+    const nx = E.schedule[0], soon = nx && nx.kind !== E.weather && nx.t - G.time <= W.forecast ? ' → ' + W.kinds[nx.kind].name.toLowerCase() + ' in ' + Math.ceil(nx.t - G.time) + ' s' : '';
+    return k.icon + ' ' + k.name.toLowerCase() + soon + ' · ' + tod;
+  }
   // ---- 0.5c conveniences: idle Workers, the army overview ----
   // What a unit of yours is doing, for the army overview. Workers at a camp count as working.
   function unitState(u) {
@@ -90,7 +98,7 @@ const UI = (() => {
     const p = G.players[1];
     for (const r of Data.RES) { const v = Math.floor(p.res[r]); resEls[r].textContent = v; resEls[r].className = v < 20 ? 'low' : ''; }
     const su = Game.supplyUsed(1), sc = Game.supplyCap(1); resEls.supply.textContent = su + '/' + sc; resEls.supply.className = su >= sc ? 'low' : '';
-    clockEl.textContent = Util.fmtTime(G.time) + (G.speed === 0 ? '  ⏸' : '');
+    clockEl.textContent = Util.fmtTime(G.time) + (G.speed === 0 ? '  ⏸' : '') + '  ' + envLine();
     refreshT -= dt;
     if (refreshT > 0) { if (tick) tick(); return; }
     refreshT = 0.2;
@@ -163,7 +171,7 @@ const UI = (() => {
   function signature() {
     const p = G.players[1];
     let s = tab + '|' + Input.state.mode + '|' + (Input.state.buildType || Input.state.lineType || '') + '|' + [...p.unlocked].join(',') + '|' + [...p.done].join(',') + '|' + Object.entries(p.research).map(([k, j]) => k + j.id).join(',') + '|' + G.buildings.filter(b => b.owner === 1 && b.built).length + '|';
-    if (tab === 'sel') s += Object.values(G.squads).map(q => q.id + q.move + q.spacing + q.contact + q.members.length).join('') + '|' + G.selection.map(e => e.id + ':' + (e.dead ? 'd' : '') + (e instanceof Building ? e.queue.map(q => q.type).join('.') + ':' + e.built + ':' + e.workers.length + ':' + e.level + ':' + e.garrison.join('.') + ':' + !!e.upgrading + ':' + e.link + ':' + (e.def.harvest ? Game.hiresFor(e) + '.' + Game.canAfford(p, p.blueprints.worker.cost) : '') + ':' + (e.def.levels && e.level < e.def.levels.length ? Game.canAfford(p, e.def.levels[e.level].cost) : '') : (e.work || '') + ':' + (e.order ? e.order.type : '') + ':' + (e.flee > 0) + ':' + e.suppressed + ':' + e.rank + ':' + e.squad + ':' + (e.cargo ? e.cargo.length + '.' + e.bpLevel : ''))).join(',');
+    if (tab === 'sel') s += Object.values(G.squads).map(q => q.id + q.move + q.spacing + q.contact + q.members.length).join('') + '|' + G.selection.map(e => e.id + ':' + (e.dead ? 'd' : '') + (e instanceof Building ? e.queue.map(q => q.type).join('.') + ':' + e.built + ':' + e.workers.length + ':' + e.level + ':' + e.garrison.join('.') + ':' + !!e.upgrading + ':' + e.light + ':' + e.link + ':' + (e.def.harvest ? Game.hiresFor(e) + '.' + Game.canAfford(p, p.blueprints.worker.cost) : '') + ':' + (e.def.levels && e.level < e.def.levels.length ? Game.canAfford(p, e.def.levels[e.level].cost) : '') : (e.work || '') + ':' + (e.order ? e.order.type : '') + ':' + (e.flee > 0) + ':' + e.suppressed + ':' + e.rank + ':' + e.squad + ':' + (e.cargo ? e.cargo.length + '.' + e.bpLevel : ''))).join(',');
     if (tab === 'build') s += Data.BUILD_LIST.map(t => Game.canAfford(p, Game.costOf(1, t)) + Util.costStr(Game.costOf(1, t))).join(',');
     if (tab === 'research') s += Data.RESEARCH_ORDER.map(r => Game.researchState(p, r)).join(',');
     if (tab === 'army') s += G.units.filter(u => u.owner === 1 && !u.dead).map(u => u.type + unitState(u)).sort().join(',');
@@ -190,6 +198,7 @@ const UI = (() => {
     ];
     const pl = G.players[1];
     if (pl.done.has('smoke') && units.some(u => u.stats.weapon && u.stats.weapon.indirect)) items.push(['Smoke', 'M', () => Input.setMode('smoke'), mode === 'smoke', 'Mortars fire one smoke round: a cloud that blocks sight for 15 s.']);
+    if (pl.done.has('flares') && units.some(u => u.stats.weapon && u.stats.weapon.indirect)) items.push(['Flare', 'L', () => Input.setMode('flare'), mode === 'flare', 'Mortars fire one flare (1 sulfur): a 150 m circle your side can see for 20 s. At night mortars fire only at what your side can see.']);
     if (pl.done.has('demolition') && units.some(u => u.stats.weapon)) items.push(['Demolish', 'C', () => Input.setMode('demolish'), mode === 'demolish', 'The nearest soldier blows up a barricade, wire or bridge segment: 3 s to set, 1 sulfur.']);
     if (units.some(u => u.cargo)) items.push(['Unload', 'Q', () => { for (const t of units.filter(v => v.cargo)) Game.command({ kind: 'unload', building: t.id }); }, false, 'Let everyone out of the selected Trucks.']);
     if (units.some(u => u.def.labour)) items.push(['Fill', 'K', () => Input.setMode('fill'), mode === 'fill', 'Workers fill in one of your trenches, as slowly as it was dug.']);
@@ -363,6 +372,10 @@ const UI = (() => {
         ub.disabled = !!b.upgrading || !Game.canAfford(p, next.cost); row.appendChild(ub);
       }
       row.appendChild(btn('[Q] Unload all', () => { Game.command({ kind: 'unload', building: b.id }); refresh(); }));
+      if (b.def.tower && p.done.has('searchlights')) {   // 0.6: searchlight switch (lights at night from level 2)
+        const on = b.light !== false, sb = btn('Searchlight: ' + (on ? 'on' : 'off'), () => { Game.command({ kind: 'light', building: b.id }); refresh(); }, b.level >= Data.SEARCHLIGHT.minLevel ? 'At night it sweeps a 250 m cone towards the enemy. A lit tower is visible to the enemy.' : 'Works from level ' + Data.SEARCHLIGHT.minLevel + '.');
+        if (on) sb.classList.add('on'); row.appendChild(sb);
+      }
       content.appendChild(row);
       if (b.upgrading) { upBar = bar('#ffd257'); content.appendChild(el('div', 'small', 'Upgrading')); content.appendChild(upBar); }
     }

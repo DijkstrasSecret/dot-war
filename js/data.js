@@ -134,6 +134,20 @@ const Data = {
   DEMOLITION: { time: 3, cost: { sulfur: 1 }, reach: 16 },   // targets: line types with demolish: true
   // Smoke Shells (DD F): a mortar round that blocks sight through a circle for 15 s (radius proposed).
   SMOKE: { radius: 35, time: 15 },
+  // Patch 0.6 (DD H2, H3 and "Patch 0.6 details"). Times in game seconds.
+  WEATHER: {
+    first: 'clear', every: [600, 900], forecast: 60,
+    mix: [['clear', 0.40], ['rain', 0.25], ['fog', 0.20], ['snow', 0.15]],
+    kinds: {
+      clear: { name: 'Clear', icon: '☀' },
+      rain: { name: 'Rain', icon: '☂', infSpeed: 0.8, vehOffroad: 0.6, acc: 0.9, mortarScatter: 1.2 },
+      fog: { name: 'Fog', icon: '≋', vision: 0.6, heightVision: 0.5 },
+      snow: { name: 'Snow', icon: '❄', vision: 0.8, infSpeed: 0.8, vehOffroad: 0.7, dig: 0.7 },
+    },
+  },
+  DAYNIGHT: { day: 600, night: 300, blend: 30, vision: 0.5, nightAt: 0.5, reveal: 3 },   // nightAt: darkness above which night rules apply
+  FLARE: { radius: 150, time: 20, eye: 40, ammo: { sulfur: 1 } },
+  SEARCHLIGHT: { range: 250, cone: 0.7, sweep: 120, period: 20, minLevel: 2 },   // cone width in radians, sweep in degrees
   // Digging: 15 s per 10 m for a soldier, Workers 1.5x (DD B); several diggers add up. A drawn line
   // with no infantry selected goes to idle Workers within 300 m (DD J). XP: 1 per 10 m dug (DD H1).
   DIG: { segment: 10, time: 15, workerMult: 1.5, idleWorkerRange: 300, maxPoints: 60, xpPerSegment: 1, smallArms: 0.1 },
@@ -194,12 +208,18 @@ const Data = {
     truckEngine: { branch: 'lab', tier: 2, tag: 'B', track: 'engine', name: 'Truck Engine', icon: 'truck', cost: { wood: 20, metal: 40 }, time: 40, req: ['motorisation'], desc: '+8% Truck speed per level.' },
     truckTank: { branch: 'lab', tier: 2, tag: 'B', track: 'tank', name: 'Truck Fuel Tank', icon: 'truck', cost: { wood: 20, metal: 40 }, time: 40, req: ['motorisation'], desc: '+20% fuel tank per level.' },
     truckHeavy: { branch: 'lab', tier: 2, tag: 'B', name: 'Heavy Truck Armour', icon: 'truck', cost: { wood: 20, metal: 40 }, time: 40, req: ['motorisation'], needsArmour: 5, desc: 'Needs Armour level 5. New Trucks get heavy armour, but lose all Engine speed gained so far; later Engine levels add speed again.' },
+    // Patch 0.6 (DD H2, H3): night and weather research.
+    nightTraining: { branch: 'inf', tier: 2, tag: 'B', name: 'Night Training', icon: 'sniper', cost: { wood: 60, metal: 60 }, time: 50, req: [], effects: [{ units: ['rifle', 'sniper'], stat: 'nightVision', set: 0.75 }], desc: 'Riflemen and Snipers trained afterwards keep 75% of their vision at night instead of 50%.' },
+    snowGear: { branch: 'inf', tier: 2, tag: 'B', name: 'Snow Gear', icon: 'rifle', cost: { wood: 60, metal: 30 }, time: 40, req: [], effects: [{ units: 'infantry', stat: 'snowGear', set: true }], desc: 'Infantry trained afterwards are not slowed by snow.' },
+    flares: { branch: 'fire', tier: 2, tag: 'G', name: 'Flares', icon: 'mortar', cost: { metal: 30, sulfur: 30 }, time: 45, req: [], desc: 'Mortar Crews can fire a flare (L): 1 sulfur, lights a 150 m circle for 20 s that your side can see.' },
+    searchlights: { branch: 'eng', tier: 2, tag: 'G', name: 'Searchlights', icon: 'tower', cost: { wood: 60, metal: 60 }, time: 50, req: [], desc: 'Scout Towers of level 2 or more light a 250 m cone at night, sweeping towards the enemy. A lit tower is visible to the enemy; switch it off on its panel.' },
+    mudTyres: { branch: 'log', tier: 2, tag: 'G', name: 'Mud Tyres', icon: 'truck', cost: { metal: 40, rubber: 10 }, time: 40, req: [], effects: [{ rule: 'mudTyres', set: true }], desc: 'Vehicles are not slowed off-road by rain.' },
     intelligence: { branch: 'med', tier: 3, tag: 'G', name: 'Intelligence', icon: 'signal', cost: { wood: 120, metal: 120 }, time: 80, req: ['signals'], desc: 'A warning when an enemy raid leaves its base.' },
   },
-  RESEARCH_ORDER: ['drill', 'boots', 'grenades', 'hmg', 'sniper', 'powder', 'assault', 'cohesion', 'camo', 'storm',
-    'mortar', 'shells', 'smoke', 'observers',
-    'fortification', 'entrenching', 'roads', 'concrete', 'bridging', 'demolition',
-    'logistics', 'shafts', 'motorisation', 'supplyOrg', 'refinery',
+  RESEARCH_ORDER: ['drill', 'boots', 'grenades', 'hmg', 'sniper', 'powder', 'assault', 'cohesion', 'nightTraining', 'snowGear', 'camo', 'storm',
+    'mortar', 'shells', 'smoke', 'observers', 'flares',
+    'fortification', 'entrenching', 'roads', 'concrete', 'searchlights', 'bridging', 'demolition',
+    'logistics', 'shafts', 'motorisation', 'supplyOrg', 'refinery', 'mudTyres',
     'medicine', 'hospital', 'triage', 'signals', 'intelligence',
     'truckArmour', 'truckEngine', 'truckTank', 'truckHeavy'],
   BRANCHES: {
@@ -249,7 +269,7 @@ const Data = {
     retreatHp: 0.4, rejoinHp: 0.8,
     garrisonRange: 480, garrisonLinger: 30,
     dig: { seen: 900, minGroup: 4, len: 120, tryDist: [110, 150, 190, 80], minCells: 5, diggers: 6, every: 300, early: 60, giveUp: 120 },   // early: dig this long before the first raid leaves; the distance with the most diggable ground wins
-    research: [['drill', 360], ['grenades', 480], ['entrenching', 540], ['boots', 600], ['powder', 780], ['shells', 900], ['cohesion', 1080], ['storm', 1500]],
+    research: [['drill', 360], ['grenades', 480], ['entrenching', 540], ['boots', 600], ['powder', 780], ['shells', 900], ['cohesion', 1080], ['nightTraining', 1200], ['snowGear', 1320], ['storm', 1500]],
     harass: { size: 3, minArmy: 8, memory: 300, scoutDeposits: 5 },   // with nothing seen, check the 5 nearest deposits in turn
   },
 

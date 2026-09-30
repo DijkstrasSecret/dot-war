@@ -289,10 +289,11 @@ const Render = (() => {
       ctx.beginPath(); pts.forEach((p, i) => ctx[i ? 'lineTo' : 'moveTo'](p[0], p[1])); ctx.stroke(); ctx.setLineDash([]);
       if (n) { ctx.font = '10px "Segoe UI", Arial, sans-serif'; ctx.textAlign = 'left'; ctx.textBaseline = 'bottom'; ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(246,243,230,0.9)'; const txt = n * 10 + ' m · ' + Util.costStr(cost); ctx.strokeText(txt, st.mouse.wx + 8, st.mouse.wy - 6); ctx.fillStyle = '#222'; ctx.fillText(txt, st.mouse.wx + 8, st.mouse.wy - 6); }
     }
-    if (['attack', 'walk', 'work', 'fill', 'grenade', 'smoke', 'demolish'].includes(st.mode)) { ctx.strokeStyle = st.mode === 'attack' || st.mode === 'grenade' || st.mode === 'demolish' ? '#c33' : st.mode === 'smoke' ? '#888' : '#3a3'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(st.mouse.wx, st.mouse.wy, 6, 0, Math.PI * 2); ctx.stroke(); }
+    if (['attack', 'walk', 'work', 'fill', 'grenade', 'smoke', 'flare', 'demolish'].includes(st.mode)) { ctx.strokeStyle = st.mode === 'attack' || st.mode === 'grenade' || st.mode === 'demolish' ? '#c33' : st.mode === 'smoke' ? '#888' : st.mode === 'flare' ? '#e8c640' : '#3a3'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(st.mouse.wx, st.mouse.wy, 6, 0, Math.PI * 2); ctx.stroke(); }
     for (const u of G.selection) if (u instanceof Unit && u.queue.length) { ctx.strokeStyle = 'rgba(60,60,60,0.5)'; ctx.setLineDash([2, 4]); ctx.beginPath(); ctx.moveTo(u.order && u.order.x != null ? u.order.x : u.x, u.order && u.order.y != null ? u.order.y : u.y); for (const o of u.queue) if (o.x != null) ctx.lineTo(o.x, o.y); ctx.stroke(); ctx.setLineDash([]); }
     // screen-space overlays
     ctx.setTransform(1, 0, 0, 1, 0, 0);
+    drawEnv();
     if (st.rdrag) { const [x0, y0] = toScreen(st.rdrag.wx, st.rdrag.wy), [x1, y1] = toScreen(st.rdrag.ex, st.rdrag.ey); ctx.strokeStyle = '#3c3'; ctx.lineWidth = 2; ctx.setLineDash([6, 4]); ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x1, y1); ctx.stroke(); ctx.setLineDash([]); }   // arrival line being dragged
     if (st.box) { const b = st.box; ctx.strokeStyle = '#fff'; ctx.fillStyle = 'rgba(255,255,255,0.15)'; ctx.lineWidth = 1; ctx.fillRect(b.x0, b.y0, b.x1 - b.x0, b.y1 - b.y0); ctx.strokeRect(b.x0, b.y0, b.x1 - b.x0, b.y1 - b.y0); }
     let ty = h - 30;   // toasts rise from the bottom centre, between the two bottom panels
@@ -318,6 +319,44 @@ const Render = (() => {
       ctx.fillStyle = 'rgba(0,0,0,0.5)'; ctx.fillRect(8, 50, tw, 22); ctx.fillStyle = '#fff'; ctx.fillText(txt, 16, 61);
     }
     drawMinimap();
+  }
+
+  // ---- weather and night (patch 0.6), drawn in screen space over the map ----
+  // Darkness is painted on its own canvas with holes cut where light falls (flares, searchlight cones,
+  // the fires of explosions), then laid over the map. Rain, snow and fog are simple animated layers;
+  // their positions come from the clock, so they need no random numbers.
+  let darkCv = null, darkCtx = null;
+  function drawEnv() {
+    const E = G.env; if (!E) return;
+    const t = performance.now() / 1000;
+    if (E.weather === 'fog') { ctx.fillStyle = 'rgba(226, 228, 222, 0.32)'; ctx.fillRect(0, 0, w, h); }
+    if (E.dark > 0) {
+      if (!darkCv) { darkCv = document.createElement('canvas'); darkCtx = darkCv.getContext('2d'); }
+      if (darkCv.width !== w || darkCv.height !== h) { darkCv.width = w; darkCv.height = h; }
+      const d = darkCtx; d.globalCompositeOperation = 'source-over'; d.clearRect(0, 0, w, h);
+      d.fillStyle = 'rgba(8, 12, 32, ' + (0.62 * E.dark).toFixed(3) + ')'; d.fillRect(0, 0, w, h);
+      d.globalCompositeOperation = 'destination-out';
+      const hole = (x, y, r, a) => { const [sx, sy] = toScreen(x, y), sr = r * cam.zoom; const g = d.createRadialGradient(sx, sy, sr * 0.2, sx, sy, sr); g.addColorStop(0, 'rgba(0,0,0,' + a + ')'); g.addColorStop(1, 'rgba(0,0,0,0)'); d.fillStyle = g; d.beginPath(); d.arc(sx, sy, sr, 0, Math.PI * 2); d.fill(); };
+      for (const f of G.flares || []) if (spectator || f.owner === 1 || Fog.visible(1, f.x, f.y)) hole(f.x, f.y, Data.FLARE.radius * (1 - Math.max(0, f.t - Data.FLARE.time + 3) / 3), 0.95);
+      for (const e of G.effects) if (e.kind === 'explosion') hole(e.x, e.y, e.r * 2.2, 0.8 * (1 - e.t / e.dur));
+      const SL = Data.SEARCHLIGHT;
+      for (const b of G.buildings) if (b.lit && (spectator || buildingVisible(b))) {
+        const [sx, sy] = toScreen(b.x, b.y), R = SL.range * cam.zoom, g = d.createRadialGradient(sx, sy, 0, sx, sy, R);
+        g.addColorStop(0, 'rgba(0,0,0,0.9)'); g.addColorStop(1, 'rgba(0,0,0,0)'); d.fillStyle = g;
+        d.beginPath(); d.moveTo(sx, sy); d.arc(sx, sy, R, b.lightDir - SL.cone / 2, b.lightDir + SL.cone / 2); d.closePath(); d.fill();
+      }
+      for (const u of G.units) if (!u.dead && !u.inside && u.owner === 1 && !spectator) hole(u.x, u.y, 22, 0.35);   // your own soldiers carry a little light
+      ctx.drawImage(darkCv, 0, 0);
+      for (const f of G.flares || []) if (spectator || f.owner === 1 || Fog.visible(1, f.x, f.y)) { const [sx, sy] = toScreen(f.x, f.y); ctx.fillStyle = 'rgba(255, 244, 200, 0.9)'; ctx.beginPath(); ctx.arc(sx, sy, 3 + Math.sin(t * 20) * 0.6, 0, Math.PI * 2); ctx.fill(); }
+    }
+    if (E.weather === 'rain') {
+      ctx.strokeStyle = 'rgba(70, 90, 120, 0.35)'; ctx.lineWidth = 1; ctx.beginPath();
+      for (let i = 0; i < 220; i++) { const x = ((i * 97.3) % w + t * 60) % w, y = ((i * 57.1) % h + t * (520 + (i % 7) * 30)) % h; ctx.moveTo(x, y); ctx.lineTo(x - 3, y + 12); }
+      ctx.stroke();
+    } else if (E.weather === 'snow') {
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
+      for (let i = 0; i < 180; i++) { const x = ((i * 83.7) % w + Math.sin(t * 0.8 + i) * 14 + w) % w, y = ((i * 61.3) % h + t * (40 + (i % 5) * 9)) % h; ctx.fillRect(x, y, i % 3 ? 2 : 3, i % 3 ? 2 : 3); }
+    }
   }
 
   function drawMinimap() {

@@ -1189,6 +1189,29 @@ objectives / victory points; **0.9** Officer / radio unit, unit stances, after-m
 | Fog of war | A soldier sees from the **centre of the 12 m map cell** he stands in, and everyone in the same cell shares one sight calculation. About 4.7× faster simulation (fog was 75–85% of the work). It moves the edge of vision by a few metres, which changed one early test noticeably (Mortar Crews v Riflemen, 98% → 75% mortar wins), so the Balance Lab baseline is re-run and replaced with this patch (Kaan: "switch and re-baseline"). Buildings still see from their exact spot. |
 | Test tools | Fight tests and the Meta snapshot run on all CPU cores (`fight-tests/tools/batch.js`, `meta.js`). |
 
+
+### Patch 0.6: weather and night, details (picked by Claude on Kaan's go-ahead to continue the patches, 30 September 2026; proposed, tune in play)
+
+Built from H2, H3, the vision floor (I) and the agreed answers above (sight rule, weather mix, sweeping searchlight).
+
+| Topic | Decision |
+| --- | --- |
+| Weather schedule | The first period is always **Clear**. After that the weather changes every **10–15 game minutes** to a draw from the mix (Clear 40%, Rain 25%, Fog 20%, Snow 15%; the same weather may come twice). The schedule comes from the match seed on its own random stream, so it is the same for both sides and in replays. A change is instant; a **forecast** banner shows 60 s before it. |
+| Weather effects | As in H2, the same for both sides: Rain: infantry off-road ×0.8, vehicles off-road ×0.6, roads unchanged, accuracy ×0.9, mortar scatter ×1.2. Fog: vision ×0.6 and half the height bonus to vision. Snow: vision ×0.8, infantry ×0.8, vehicles off-road ×0.7, digging ×0.7. |
+| Day and night | Day 600 s, then night 300 s, repeating from the start of the match; dusk and dawn each blend over 30 s (darkness rises from 600 s to 630 s and falls from 870 s to 900 s). |
+| At night | Vision ×(1 − 0.5 × darkness), so ×0.5 in full night. "Night" rules (below) apply while darkness is above half. |
+| Firing reveals | At night a unit that fires (rifle, MG, sniper, mortar, grenade) is visible to the enemy for **3 s**, wherever it stands. |
+| Night mortars | At night a Mortar fires only at a point its side can see (a spotter, a flare or a searchlight); bombarding an unseen point waits. |
+| Shooting needs sight | Direct fire (Rifles, MGs, Snipers) may target only what the shooter's side can see, day and night (Kaan, 29 Sept). "Can see" means the fog of war shows it, **or** it is within the shooter's own vision range with a clear line of sight: the fog's sight calculation misses dead ground just past a crest that a soldier standing there does see, and without this, hill defenders went blind (attackers won 98% instead of 0%). A Sniper beyond his own vision still needs a spotter. |
+| Vision floor | Night × fog × snow never cut vision below 35% (the existing cap). |
+| Fog accuracy | A soldier's fog-of-war reach is half a cell (6 m) shorter than his vision range, because a whole 12 m cell counts as seen once a ray reaches it. Without this, whoever stood at a cell's edge was seen from farther away than he could see back (snow: attackers won 75% against holders; the mortar mirror went 78/23). |
+| Flares | After the Flares research, Mortar Crews get a **Flare** order (key **L**, a free key): one round, 1 sulfur, lighting a 150 m circle for 20 s. The lit circle is visible to the firing side, as if a soldier stood there with a clear view. |
+| Searchlights | After the Searchlights research, Scout Towers of level 2 or more light a 250 m cone at night that sweeps slowly (a full sweep every 20 s) over 120° towards the enemy HQ. The lit cone is visible to its owner; a lit tower is visible to the enemy at any distance. A button on the tower's panel switches it off (and on). |
+| Night Training | Riflemen and Snipers trained after it lose only 25% vision at night instead of 50% (H3). |
+| Snow Gear / Mud Tyres | Snow Gear removes the infantry snow slow-down; Mud Tyres remove the vehicle rain penalty off-road (H2). |
+| Enemy commander | Researches Night Training at 20 min and Snow Gear at 22 min (Normal; scaled by difficulty like its other research). It uses no flares or searchlights yet. |
+| Screen | A small weather and time-of-day line next to the clock; darkness over the map at night (lit circles and cones show through); rain streaks, snowflakes or a pale haze for fog. |
+
 ---
 
 ## Still open
