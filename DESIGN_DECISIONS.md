@@ -1320,6 +1320,19 @@ by the Balance Lab):
 | Shells at a citadel | Kaan: "a shell only reaches 1–2 men", and less than 30% damage if it still falls quickly. A shell (not a grenade) that bursts at a citadel hurts **1 or 2** of the men inside, picked at random, at **20%** of its damage (was: everyone inside at 30%). Grenades still reach everyone inside at 30%. |
 | Why 20% | With 1–2 men at 30%, 3 Mortar Crews still emptied a citadel (6 Riflemen + 2 MG) in 1.7 min. At 20%: 1 Mortar Crew takes about 7.8 min, 2 take 3.9 min, 3 take 2.5 min, 8 grenadiers + 2 Mortar Crews 4 min (fight-tests/0.7, 100 runs each). |
 
+
+### Patch 0.8: artillery, armoured car, AT rifles (Kaan, 1 October 2026; AT Rifle numbers proposed by Claude)
+
+| Topic | Decision |
+| --- | --- |
+| Field Gun | As in J (Ordnance Works, Artillery research): 90 HP, speed 22, 2 seats in a Truck, 30 wood + 90 metal, 25 s, supply 3; 110 explosive, range 900, min range 200, accuracy 0.45, reload 9 s, splash 45, 4 sulfur a shell; indirect fire rules as for mortars, needs a spotter. Its blast uses the same sharp centre as the mortar's (0.7b.1), and a shell at a citadel reaches 1–2 men like a mortar's (0.7d.1). |
+| Armoured car | As in J (Workshop, Armoured Car research): triangle, 260 HP, light armour, speed 95 (×1.5 on roads, as every vehicle), vision 180, 40 wood + 90 metal + 15 rubber, 25 s, supply 3, fuel 60; hull MG 11 ballistic, range 190, accuracy 0.4, reload 0.2 s, suppress 0.035; fires on the move at the usual 0.35. It carries nobody. |
+| AP Rounds | **Kaan: unlocks a new unit, the AT Rifle team** (the designer's RPG part is gone). Barracks; a 2-man team, square (2 seats, heavy garrison slot), 80 HP, speed 40, vision 160, **20 wood + 50 metal, 16 s, supply 2**; anti-tank rifle **90 ap damage, range 220, accuracy 0.7, reload 3 s**, suppress 0.1, and the team takes **half the usual stress**. (First proposal 70 / 0.6 / 4 s: two teams lost to a car 93% of the time, pinned by its MG; with these, two teams beat a car 70%, one team + 2 Riflemen about 58%, and 3 teams still lose to 6 Riflemen.) ap does 100% to light armour, 90% to heavy, 60% to infantry, 50% to buildings. Strong against the armoured car, weaker than Riflemen against infantry. (Numbers proposed.) |
+| Scout Tower level 4 | As in B: 6 infantry + 1 heavy (a Mortar Crew or a Field Gun), +28 m height, 1200 HP, vision 320, 150 wood + 120 metal, 40 s; needs Artillery. |
+| Counter-battery | As in F: an enemy Mortar Crew or Field Gun that fires is revealed to you for 10 s. |
+| Enemy commander | **Kaan: Field Guns only.** It trains them at its Ordnance Works from 30 / 25 / 20 min (Easy / Normal / Hard), about half of that factory's output (mortars the rest); no armoured cars or AT Rifles yet (no Workshop or economy). |
+| Modern kit | Already settled in 0.7c (R&D Lab + 5 Tier III). |
+
 ---
 
 ## Still open

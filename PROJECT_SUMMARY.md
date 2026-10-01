@@ -406,19 +406,19 @@ section 11.
 | **0.5** | Vehicles, logistics and the tech tree (Truck, fuel, Workshop, Depot, R&D Lab, Rubber Tapper, Refinery, supply) |
 | **0.6** | Weather and night |
 | **0.7** | 0.7a big random maps (built) · 0.7b living infantry (built) · 0.7c villages, buff sites, props as cover, trees (built) · 0.7d siege AI (built) |
-| **0.8** | Artillery (Field Gun), armoured car (the blueprint designer was dropped) |
+| **0.8** | Artillery (Field Gun), armoured car, AT Rifle team (built; the blueprint designer was dropped) |
 | Later | AI on player economy, multiplayer, replays, save and load, sound, tutorial, drones |
 
 ---
 
 ## 7. Next steps for Kaan
 
-Built and merged up to 0.7d (see `PATCH_NOTES.md`, the ticks in `IMPLEMENTATION_PLAN.md` and the
+Built and merged up to 0.8 (see `PATCH_NOTES.md`, the ticks in `IMPLEMENTATION_PLAN.md` and the
 "Patch ..." notes in `DESIGN_DECISIONS.md`). `BALANCE_BASELINE.md` records the balance of 0.5e for
 comparison; recorded fights per patch are in `fight-tests/`.
 
 To do, in order:
-1. Patch 0.8: Field Gun and armoured car.
+1. Patch 0.9: officer / radio unit, squad stances, after-match report.
 
 
 ---

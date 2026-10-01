@@ -1,7 +1,6 @@
 'use strict';
 // All static game data: resources, damage model, unit blueprints, buildings, research, difficulty, hotkeys.
 // Times are game seconds (the loop runs them at half real time at 1x). Speeds are world units per game second.
-// TODO(patch 0.8): armoured car blueprint (shape 'tri'); 'rpg', 'artillery' and 'emp' weapons; ap damage type is already in ARMOR_MULT.
 const Data = {
   RES: ['wood', 'metal', 'rubber', 'oil', 'sulfur'],
   RES_COLORS: { wood: '#a86b32', metal: '#8fa2b5', rubber: '#555', oil: '#3a3a3a', sulfur: '#e0c020' },
@@ -59,6 +58,28 @@ const Data = {
          falloff: { centre: 1.3, edge: 0.15, power: 1.5 } },   // Kaan, 0.7b.1: share 0.15 + 1.15 (1 - f)^1.5 of the radius out: the centre kills, the edge stings
       desc: 'Indirect fire over ridges. Costs sulfur per shell. Needs a spotter to be accurate.',
     },
+    // Patch 0.8 (DD J, "Patch 0.8"): the Field Gun (Artillery research), the armoured car (Armoured Car
+    // research) and the AT Rifle team (AP Rounds; Kaan's pick, numbers proposed).
+    fieldgun: {
+      name: 'Field Gun', shape: 'square', icon: 'artillery', cls: 'infantry', size: 8, role: 3,
+      hp: 90, armor: 'none', speed: 22, vision: 120, cost: { wood: 30, metal: 90 }, time: 25, supply: 3, requires: 'artillery',
+      weapon: { dmg: 110, dtype: 'explosive', range: 900, minRange: 200, acc: 0.45, reload: 9, pspeed: 260, indirect: true, splash: 45, suppress: 0.45, ammo: { sulfur: 4 },
+        falloff: { centre: 1.3, edge: 0.15, power: 1.5 } },   // the mortar's sharp centre (Kaan, 0.7b.1)
+      desc: 'Long-range gun for fixed positions: 900 m, 4 sulfur a shell, needs a spotter. Slow; tow it in a Truck (2 seats).',
+    },
+    armoredcar: {
+      name: 'Armoured Car', shape: 'tri', icon: 'armoredcar', cls: 'vehicle', size: 9, role: 1, labour: 0,
+      hp: 260, armor: 'light', speed: 95, vision: 180, cost: { wood: 40, metal: 90, rubber: 15 }, time: 25, supply: 3, requires: 'armoredCar',
+      weapon: { dmg: 11, dtype: 'ballistic', range: 190, minRange: 0, acc: 0.4, reload: 0.2, pspeed: 900, indirect: false, splash: 0, suppress: 0.035 },
+      seats: 0, fuel: 60, spare: 0,
+      desc: 'Fast patrol car with a hull machine gun that fires on the move. Light armour shrugs off rifle fire; AT Rifles and explosives hurt it. Burns fuel.',
+    },
+    atrifle: {
+      name: 'AT Rifle team', shape: 'square', icon: 'atrifle', cls: 'infantry', size: 7, role: 2,
+      hp: 80, armor: 'none', speed: 40, vision: 160, cost: { wood: 20, metal: 50 }, time: 16, supply: 2, requires: 'apRounds', stressTaken: 0.5,   // a dug-in AT team keeps its nerve under a car's MG
+      weapon: { dmg: 90, dtype: 'ap', range: 220, minRange: 0, acc: 0.7, reload: 3, pspeed: 1100, indirect: false, splash: 0, suppress: 0.1 },   // tuned in 0.8: 70 dmg / 0.6 / 4 s lost to the car 93%
+      desc: 'Two men with an anti-tank rifle: full damage to armoured cars, 60% to infantry. Takes half the usual stress.',
+    },
     // DD A, patch 0.5b. Seats: a circle takes 1, a square 2. Hauls `load` on a supply link (Kaan).
     // labour 0: a Truck on a camp adds no labour, it only carries.
     truck: {
@@ -89,14 +110,14 @@ const Data = {
     hq: { name: 'Headquarters', w: 64, h: 64, hp: 1500, icon: 'hq', produces: ['rifle', 'worker'], prodMult: { rifle: 0.7 },   // DD I: Riflemen at 0.7x, Workers at full speed
       garrison: { cap: 6, heavy: 0, height: 6 }, heal: { rate: 0.5, range: 150 },   // DD B, I: a last stand; heals infantry nearby
       cost: {}, buildTime: 0, vision: 220, desc: 'Your command post. Holds 6 infantry and heals infantry within 150 m. Lose it and the game is over.' },
-    barracks: { name: 'Barracks', w: 48, h: 40, hp: 600, icon: 'circle', produces: ['rifle', 'hmg', 'sniper', 'medic'], cost: { wood: 80, metal: 20 }, buildTime: 30, vision: 120, desc: 'Trains infantry (circles).' },
-    ordnance: { name: 'Ordnance Works', w: 52, h: 44, hp: 700, icon: 'square', produces: ['mortar'], cost: { wood: 60, metal: 60 }, buildTime: 40, vision: 120, desc: 'Builds mortars and other heavy weapons (squares).' },
+    barracks: { name: 'Barracks', w: 48, h: 40, hp: 600, icon: 'circle', produces: ['rifle', 'hmg', 'sniper', 'medic', 'atrifle'], cost: { wood: 80, metal: 20 }, buildTime: 30, vision: 120, desc: 'Trains infantry (circles).' },
+    ordnance: { name: 'Ordnance Works', w: 52, h: 44, hp: 700, icon: 'square', produces: ['mortar', 'fieldgun'], cost: { wood: 60, metal: 60 }, buildTime: 40, vision: 120, desc: 'Builds mortars and other heavy weapons (squares).' },
     lumber: { name: 'Lumber Camp', w: 40, h: 32, hp: 350, icon: 'lumber', harvest: 'wood', rate: 1.0, perWorker: 0.6, maxWorkers: 4, cost: { wood: 40 }, buildTime: 20, vision: 100, needs: 'forest', desc: 'Place next to forest. Assign Workers (or soldiers, at half rate) to speed it up.' },
     mine: { name: 'Mine', w: 40, h: 36, hp: 400, icon: 'mine', harvest: 'deposit', rate: 0.5, perWorker: 0.35, maxWorkers: 4, cost: { wood: 70 }, buildTime: 25, vision: 100, needs: 'deposit', deposits: ['metal', 'sulfur'], desc: 'Place on a metal or sulfur deposit. Assign Workers (or soldiers, at half rate).' },
     // Patch 0.5a (DD B, G1, I, G14). (p) values proposed in DD B.
     rubber: { name: 'Rubber Tapper', w: 40, h: 32, hp: 350, icon: 'rubber', harvest: 'deposit', rate: 0.6, perWorker: 0.3, maxWorkers: 4, cost: { wood: 50 }, buildTime: 25, vision: 100, needs: 'deposit', deposits: ['rubber'], desc: 'Place on rubber trees. Assign Workers (or soldiers, at half rate).' },
     refinery: { name: 'Refinery', w: 60, h: 48, hp: 600, icon: 'refinery', harvest: 'deposit', rate: 1.0, perWorker: 0.4, maxWorkers: 4, cost: { wood: 100, metal: 80 }, buildTime: 40, vision: 100, needs: 'deposit', deposits: ['oil'], requires: 'refinery', desc: 'Place on an oil seep. Assign Workers (or soldiers, at half rate).' },
-    workshop: { name: 'Workshop', w: 56, h: 44, hp: 700, icon: 'workshop', produces: ['truck'], cost: { wood: 80, metal: 60 }, buildTime: 40, vision: 120, desc: 'Builds Trucks, repairs vehicles within 60 m (5 HP/s, 1 metal per 10 HP) and retrofits Trucks. Engineering research (Tiers II and III).' },
+    workshop: { name: 'Workshop', w: 56, h: 44, hp: 700, icon: 'workshop', produces: ['truck', 'armoredcar'], cost: { wood: 80, metal: 60 }, buildTime: 40, vision: 120, desc: 'Builds Trucks, repairs vehicles within 60 m (5 HP/s, 1 metal per 10 HP) and retrofits Trucks. Engineering research (Tiers II and III).' },
     depot: { name: 'Depot', w: 48, h: 40, hp: 500, icon: 'depot', cost: { wood: 80, metal: 40 }, buildTime: 30, vision: 120, costGrow: 1.25, supply: true, trickle: { oil: 0.1 }, desc: '+10 supply and 0.1 oil/s. Logistics research (Tiers II and III). Each extra Depot costs 25% more.' },
     lab: { name: 'R&D Lab', w: 52, h: 44, hp: 600, icon: 'flask', cost: { wood: 100, metal: 80 }, buildTime: 45, vision: 120, desc: 'Needed for Tier III research in every branch. Researches the endless Truck upgrades.' },
     tower: {
@@ -105,8 +126,9 @@ const Data = {
         { cap: 2, heavy: 0, height: 8, hp: 400, vision: 200 },
         { cap: 4, heavy: 0, height: 14, hp: 650, vision: 240, cost: { wood: 80, metal: 30 }, time: 25 },
         { cap: 6, heavy: 1, height: 20, hp: 900, vision: 280, cost: { wood: 100, metal: 60 }, time: 30 },
+        { cap: 6, heavy: 1, height: 28, hp: 1200, vision: 320, cost: { wood: 150, metal: 120 }, time: 40, requires: 'artillery' },   // DD B, 0.8
       ],
-      desc: 'Garrison infantry for height, sight and cover. Upgrade twice; level 3 also holds one mortar.',
+      desc: 'Garrison infantry for height, sight and cover. Level 3 also holds a Mortar Crew; level 4 (Artillery research) a Field Gun.',
     },
     // DD B. "+10 accuracy" is hit chance x1.1 (DD I). Vision proposed.
     bunker: { name: 'Bunker', w: 32, h: 32, hp: 1200, icon: 'bunker', cost: { wood: 120, metal: 90 }, buildTime: 45, vision: 160, requires: 'fortification',
@@ -206,6 +228,8 @@ const Data = {
     mortar: { branch: 'fire', tier: 1, tag: 'U', name: 'Mortar', cost: { wood: 40, metal: 60 }, time: 50, req: [], unlock: 'mortar', desc: 'Unlocks Mortar Crews (needs sulfur for shells).' },
     shells: { branch: 'fire', tier: 2, tag: 'B', name: 'HE Shells', cost: { sulfur: 40, metal: 40 }, time: 45, req: ['mortar'], effects: [{ units: ['mortar'], stat: 'dmg', mult: 1.25 }], desc: '+25% mortar damage for new crews.' },
     smoke: { branch: 'fire', tier: 2, tag: 'G', name: 'Smoke Shells', icon: 'smoke', cost: { metal: 30, sulfur: 50 }, time: 50, req: ['mortar'], desc: 'Mortars can fire smoke (M) that blocks sight for 15 s.' },
+    artillery: { branch: 'fire', tier: 3, tag: 'U', name: 'Artillery', icon: 'artillery', cost: { metal: 150, sulfur: 80 }, time: 90, req: ['shells'], unlock: 'fieldgun', desc: 'Unlocks the Field Gun at the Ordnance Works and Scout Tower level 4.' },
+    counterBattery: { branch: 'fire', tier: 3, tag: 'G', name: 'Counter-battery', icon: 'mortar', cost: { metal: 100, sulfur: 60 }, time: 70, req: ['observers'], desc: 'An enemy Mortar Crew or Field Gun that fires is revealed to you for 10 s.' },
     observers: { branch: 'fire', tier: 2, tag: 'G', name: 'Forward Observers', icon: 'mortar', cost: { wood: 60, metal: 80 }, time: 55, req: ['mortar'], effects: [{ rule: 'spotScatter', set: 0.7 }], desc: 'Shells aimed at a spotted point scatter 30% less.' },
     // 3 Engineering (Workshop)
     fortification: { branch: 'eng', tier: 1, tag: 'U', name: 'Fortification', icon: 'bunker', cost: { wood: 60, metal: 60 }, time: 45, req: [], desc: 'Unlocks the Bunker, barricades and barbed wire.' },
@@ -219,6 +243,8 @@ const Data = {
     shafts: { branch: 'log', tier: 1, tag: 'G', name: 'Deep Shafts', icon: 'mine', cost: { wood: 80, metal: 40 }, time: 45, req: [], effects: [{ rule: 'mineWorkers', set: 6 }], desc: 'Mines take 6 workers instead of 4 (Mines only).' },
     motorisation: { branch: 'log', tier: 2, tag: 'U', name: 'Motorisation', icon: 'truck', cost: { wood: 60, metal: 80, rubber: 10 }, time: 50, req: [], unlock: 'truck', desc: 'Unlocks the Truck at the Workshop.' },
     supplyOrg: { branch: 'log', tier: 2, tag: 'G', name: 'Supply Organisation', icon: 'depot', cost: { wood: 100, metal: 80 }, time: 60, req: [], effects: [{ rule: 'perDepot', set: 15 }], desc: '+15 supply per Depot instead of +10.' },
+    armoredCar: { branch: 'log', tier: 3, tag: 'U', name: 'Armoured Car', icon: 'armoredcar', cost: { metal: 120, rubber: 20, oil: 20 }, time: 90, req: ['motorisation', 'refinery'], unlock: 'armoredcar', desc: 'Unlocks the armoured car at the Workshop.' },
+    apRounds: { branch: 'log', tier: 3, tag: 'U', name: 'AP Rounds', icon: 'atrifle', cost: { metal: 100, sulfur: 60 }, time: 70, req: ['armoredCar'], unlock: 'atrifle', desc: 'Unlocks the AT Rifle team at the Barracks.' },
     refinery: { branch: 'log', tier: 2, tag: 'U', name: 'Refinery', icon: 'refinery', cost: { wood: 80, metal: 100 }, time: 60, req: [], desc: 'Unlocks the Refinery, built on an oil seep.' },
     // 5 Command & medical (Field Hospital)
     medicine: { branch: 'med', tier: 1, tag: 'U', name: 'Field Medicine', cost: { wood: 40, metal: 40 }, time: 40, req: [], unlock: 'medic', desc: 'Unlocks Medics at the Barracks.' },
@@ -240,9 +266,9 @@ const Data = {
     intelligence: { branch: 'med', tier: 3, tag: 'G', name: 'Intelligence', icon: 'signal', cost: { wood: 120, metal: 120 }, time: 80, req: ['signals'], desc: 'A warning when an enemy raid leaves its base.' },
   },
   RESEARCH_ORDER: ['drill', 'boots', 'grenades', 'hmg', 'sniper', 'powder', 'assault', 'cohesion', 'nightTraining', 'snowGear', 'camo', 'storm',
-    'mortar', 'shells', 'smoke', 'observers', 'flares',
+    'mortar', 'shells', 'smoke', 'observers', 'flares', 'artillery', 'counterBattery',
     'fortification', 'entrenching', 'roads', 'concrete', 'searchlights', 'bridging', 'demolition',
-    'logistics', 'shafts', 'motorisation', 'supplyOrg', 'refinery', 'mudTyres',
+    'logistics', 'shafts', 'motorisation', 'supplyOrg', 'refinery', 'mudTyres', 'armoredCar', 'apRounds',
     'medicine', 'hospital', 'triage', 'signals', 'intelligence',
     'truckArmour', 'truckEngine', 'truckTank', 'truckHeavy'],
   BRANCHES: {
@@ -291,9 +317,9 @@ const Data = {
   // also adds that walking time. DD G7: game seconds at which the AI may train each unit; Normal
   // uses the agreed 8 / 12 / 15 min, Easy x1.25 and Hard x0.75 (proposed, set in 0.2.1).
   DIFFICULTY: {
-    easy: { name: 'Easy', desc: 'Small garrison, rare small raids, slow enemy production.', cap: 8, capGrow: 1, buildUp: 480, raidMin: 320, raidVar: 120, raidFrac: 0.4, garrison: 6, income: 0.6, unlocks: { hmg: 600, sniper: 900, mortar: 1125 }, researchMult: 1.5, harassEvery: 0, digIn: false },
-    normal: { name: 'Normal', desc: 'Moderate garrison and raids every few minutes.', cap: 11, capGrow: 2, buildUp: 300, raidMin: 220, raidVar: 100, raidFrac: 0.5, garrison: 9, income: 0.8, unlocks: { hmg: 480, sniper: 720, mortar: 900 }, researchMult: 1, harassEvery: 240, digIn: true },
-    hard: { name: 'Hard', desc: 'Full garrison on the mountain and frequent large raids.', cap: 14, capGrow: 2, buildUp: 210, raidMin: 150, raidVar: 90, raidFrac: 0.55, garrison: 12, income: 1, unlocks: { hmg: 360, sniper: 540, mortar: 675 }, researchMult: 0.75, harassEvery: 150, digIn: true },
+    easy: { name: 'Easy', desc: 'Small garrison, rare small raids, slow enemy production.', cap: 8, capGrow: 1, buildUp: 480, raidMin: 320, raidVar: 120, raidFrac: 0.4, garrison: 6, income: 0.6, unlocks: { hmg: 600, sniper: 900, mortar: 1125, fieldgun: 1800 }, researchMult: 1.5, harassEvery: 0, digIn: false },
+    normal: { name: 'Normal', desc: 'Moderate garrison and raids every few minutes.', cap: 11, capGrow: 2, buildUp: 300, raidMin: 220, raidVar: 100, raidFrac: 0.5, garrison: 9, income: 0.8, unlocks: { hmg: 480, sniper: 720, mortar: 900, fieldgun: 1500 }, researchMult: 1, harassEvery: 240, digIn: true },
+    hard: { name: 'Hard', desc: 'Full garrison on the mountain and frequent large raids.', cap: 14, capGrow: 2, buildUp: 210, raidMin: 150, raidVar: 90, raidFrac: 0.55, garrison: 12, income: 1, unlocks: { hmg: 360, sniper: 540, mortar: 675, fieldgun: 1200 }, researchMult: 0.75, harassEvery: 150, digIn: true },
   },
   DIFFICULTY_ORDER: ['easy', 'normal', 'hard'],
 

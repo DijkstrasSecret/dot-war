@@ -1,7 +1,6 @@
 'use strict';
 // Core simulation: players, economy, production, research, orders, movement, combat, garrisons,
 // line defences, grenades, healing, supply chains and trucks.
-// TODO(patch 0.8): the armoured car (a second vehicle, cls 'vehicle', shape 'tri') reuses the Truck's fuel and repair code.
 // Randomness (patch 0.2.1): everything that can change a match's outcome draws from G.rng, a seeded
 // Util.mulberry32 stream; looks-only randomness (decals, facing) draws from G.vrng. Player actions
 // arrive through Game.command and are logged with their tick in G.orders, ready for replays.
@@ -260,6 +259,7 @@ const Game = (() => {
   function upgradeTower(b) {
     if (!b.def.levels || b.dead || !b.built || b.upgrading || b.level >= b.def.levels.length) return false;
     const next = b.def.levels[b.level]; const p = G.players[b.owner];
+    if (next.requires && !p.done.has(next.requires)) { if (b.owner === 1) toast('Research ' + Data.RESEARCH[next.requires].name + ' first'); return false; }   // 0.8: level 4 needs Artillery
     if (!canAfford(p, next.cost)) { if (b.owner === 1) toast('Not enough resources'); return false; }
     pay(p, next.cost); b.upgrading = { t: 0, total: next.time }; return true;
   }
@@ -346,7 +346,7 @@ const Game = (() => {
         break;
       }
       case 'board': {   // walk to a Truck and get in (0.5b); the rest of the queue waits until it unloads
-        const t = o.truck; if (!t || t.dead || !t.cargo || t.owner !== u.owner || u.def.cls !== 'infantry') break;
+        const t = o.truck; if (!t || t.dead || !isTruck(t) || t.owner !== u.owner || u.def.cls !== 'infantry') break;
         u.order = { type: 'board', truck: t, tk: -1, ferry: !!o.ferry };
         break;
       }
@@ -377,7 +377,7 @@ const Game = (() => {
     for (const [n, members] of bySquad(list)) {
       if (n === 0) { loose.push(...members); continue; }
       // Riders already in the squadron's Truck get their new place too, and the Truck unloads there.
-      const s = G.squads[n], t = members.find(m => m.cargo), aboard = t ? membersOf(s).filter(m => m.inside === t.id) : [];
+      const s = G.squads[n], t = members.find(isTruck), aboard = t ? membersOf(s).filter(m => m.inside === t.id) : [];
       const slots = formation(s, members.concat(aboard), x, y, opts);
       if (!queue) for (const r of aboard) { const o = slots.get(r); r.queue = [{ kind: mode, x, y, offx: o[0], offy: o[1], arrive: o[2] }]; }
       if (!queue && !retreat && ferry(s, members, x, y, mode, slots)) continue;
@@ -627,10 +627,12 @@ const Game = (() => {
     const ammo = u.order && u.order.flare ? Data.FLARE.ammo : w.ammo;   // a flare costs 1 sulfur
     if (ammo && u.owner !== 0) {
       const p = G.players[u.owner];
-      if (!canAfford(p, ammo)) { if (u.owner === 1 && G.time - (u.noAmmoT || -99) > 15) { u.noAmmoT = G.time; toast('Mortar has no sulfur for shells'); } return; }
+      if (!canAfford(p, ammo)) { if (u.owner === 1 && G.time - (u.noAmmoT || -99) > 15) { u.noAmmoT = G.time; toast(u.def.name + ' has no sulfur for shells'); } return; }
       pay(p, ammo);
     }
     revealFire(u);
+    // 0.8, Counter-battery (DD F): a firing Mortar Crew or Field Gun is revealed to an enemy who has it, for 10 s.
+    if (w.indirect) for (const pid of [1, 2]) if (pid !== u.owner && G.players[pid].done.has('counterBattery')) u.revealT = Math.max(u.revealT || 0, G.time + 10);
     u.cooldown = w.reload * (u.suppressed ? 1.4 : 1) * (u.rank >= 3 ? VET.rank3Reload : 1) * (0.9 + R() * 0.2);
     u.facing = Math.atan2(ty - u.y, tx - u.x); u.muzzle = 0.08; u.recoil = w.indirect ? 0.2 : 0.12; u.shotT = G.time;   // shotT: civilians hear it (0.7c)
     if (w.indirect) fireShell(u, tx, ty); else fireBullet(u, target);
@@ -732,7 +734,7 @@ const Game = (() => {
     const A = Data.ALERT, a = G.alert;
     if (a && dist(a.x, a.y, e.x, e.y) < A.area && G.time - a.t < A.every) { a.t = G.time; return; }
     G.alert = { x: e.x, y: e.y, t: G.time };
-    const what = e instanceof Building ? 'Your ' + e.def.name + ' is' : e.def.labour ? 'Your Workers are' : e.cargo ? 'Your Truck is' : 'Your soldiers are';
+    const what = e instanceof Building ? 'Your ' + e.def.name + ' is' : e.def.labour ? 'Your Workers are' : e.cargo ? 'Your ' + e.def.name + ' is' : 'Your soldiers are';
     toast(what + ' under attack (J to look)'); G.effects.push({ kind: 'ping', x: e.x, y: e.y, t: 0, dur: 4, alert: true });
   }
   function kill(e, by) {
@@ -1084,6 +1086,7 @@ const Game = (() => {
   // ---- trucks (DD A, I, J; patch 0.5b) ----
   const FUEL = Data.FUEL;
   const seatCost = u => u.def.shape === 'square' ? 2 : 1;
+  const isTruck = u => !!(u && u.cargo && u.def.seats > 0);   // 0.8: the armoured car is a vehicle without seats
   function seatsFree(t) { let n = 0; for (const id of t.cargo) { const p = G.unitById.get(id); if (p && !p.dead) n += seatCost(p); } return t.def.seats - n; }
   function embark(u, t) {
     releaseWork(u); u.order = null; u.field = null; u.forced = null; u.target = null; u.micro = null; u.shift = null; u.flee = 0;   // the queue stays: it runs after unloading
@@ -1124,7 +1127,7 @@ const Game = (() => {
   }
   // Retrofit at a Workshop (DD A): the latest blueprint for 40% of the price difference.
   function retrofit(u) {
-    if (!u.cargo || u.dead) return false; const p = G.players[u.owner], bp = p.blueprints[u.type];
+    if (!isTruck(u) || u.dead) return false; const p = G.players[u.owner], bp = p.blueprints[u.type];
     if ((bp.level || 0) === u.bpLevel) return false;
     if (!G.buildings.some(b => b.owner === u.owner && b.type === 'workshop' && b.built && !b.dead && dist(b.x, b.y, u.x, u.y) < Data.REPAIR.range + b.size)) { if (u.owner === 1) toast('Retrofits are done at a Workshop: drive the Truck next to one'); return false; }
     const cost = retrofitCost(u); if (!canAfford(p, cost)) { if (u.owner === 1) toast('Not enough resources'); return false; }
@@ -1135,7 +1138,7 @@ const Game = (() => {
   // Kaan, 0.5b.1: how many members of a squadron with a Truck won't fit and will march on a long move
   // (same seat order as ferry()). 0 when there is no Truck or everyone fits.
   function squadMarchers(s) {
-    const ms = membersOf(s), t = ms.find(m => m.cargo); if (!t) return 0;
+    const ms = membersOf(s), t = ms.find(isTruck); if (!t) return 0;
     let free = t.def.seats, n = 0;
     for (const r of [1, 2, 0, 3]) for (const m of ms) if (m !== t && m.def.cls === 'infantry' && (m.def.role != null ? m.def.role : 1) === r) { if (seatCost(m) <= free) free -= seatCost(m); else n++; }
     return n;
@@ -1143,7 +1146,7 @@ const Game = (() => {
   // Squad auto-carry (DD E, G4): on a long move the squadron's Truck takes as many members as fit, the
   // rest march; the riders unload at the destination and walk to their places in the line.
   function ferry(s, members, x, y, mode, slots) {
-    const t = members.find(m => m.cargo && !m.dead && !m.inside);
+    const t = members.find(m => isTruck(m) && !m.dead && !m.inside);
     if (!t || !['move', 'attackmove'].includes(mode)) return false;
     let cx = 0, cy = 0; for (const m of members) { cx += m.x; cy += m.y; } cx /= members.length; cy /= members.length;
     if (dist(cx, cy, x, y) < Data.FERRY.minDist) return false;
@@ -1788,7 +1791,7 @@ const Game = (() => {
       case 'link': return setLink(b, c.target, pid);   // Kaan, 0.5a.3: a gatherer's or Depot's supply link (null: the HQ)
       case 'unload': return b ? (b instanceof Unit ? unloadTruck(b) : unloadBuilding(b)) : 0;
       case 'unloadOne': { const u = entById(c.unit); if (!u) return false; if (b instanceof Unit) { if (!b.cargo || !b.cargo.includes(c.unit)) return false; b.cargo = b.cargo.filter(x => x !== c.unit); placeOutside(u, b, b.cargo.length); if (u.queue.length) nextOrder(u); return true; } return unloadOne(b, u); }
-      case 'board': { const t = entById(c.target); if (!(t instanceof Unit) || !t.cargo || t.owner !== pid) return 0; let n = 0; for (const u of us) if (u !== t && u.def.cls === 'infantry' && !u.inside) { issue(u, { kind: 'board', truck: t }, q); n++; } return n; }
+      case 'board': { const t = entById(c.target); if (!(t instanceof Unit) || !isTruck(t) || t.owner !== pid) return 0; let n = 0; for (const u of us) if (u !== t && u.def.cls === 'infantry' && !u.inside) { issue(u, { kind: 'board', truck: t }, q); n++; } return n; }
       case 'retrofit': { let n = 0; for (const u of us) if (retrofit(u)) n++; return n; }
       case 'line': return planDig(pid, c.type, c.points, us, q);
       case 'dig': case 'fill': {   // resume digging a line, or (Workers only) fill a trench, from one of its segments
@@ -1839,7 +1842,7 @@ const Game = (() => {
     spawnUnit, addBuilding, canPlace, placeBuilding,
     orderMove, orderAttack, orderBombard, orderStop, orderHold, orderWork, orderRetreat, orderGarrison,
     hiresFor, squadMarchers, setLink, researchLock, researchCost, slotOf, owns, seatsFree, retrofitCost, supplyCap, supplyUsed, costOf, maxWorkers, detected, raidLaunched, smokeBlocks,
-    canEnter, enterBuilding, unloadBuilding, upgradeTower, slotCount, hasTech, canThrow, lineAt, segNear, orderDig, orderGrenade,
+    isTruck, canEnter, enterBuilding, unloadBuilding, upgradeTower, slotCount, hasTech, canThrow, lineAt, segNear, orderDig, orderGrenade,
     envVision, envSpeed,       // 0.6: Fog and the Balance Lab read these
     applyResearch, planDig,   // 0.5d: the scripted enemy researches and digs without going through command()
     enqueue, cancelQueue, harvestRate, activeWorkers, effRange,

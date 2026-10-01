@@ -11,7 +11,7 @@
 const FightScenarios = (() => {
   const STEP = Sim.STEP;
   const W = 80, H = 50, MIDY = 300, BX = 600;   // 960 x 600 m; side B's front row stands at x = 600
-  const ROW = { rifle: 0, medic: 22, sniper: 18, hmg: 14, mortar: 70, worker: 30 };
+  const ROW = { rifle: 0, medic: 22, sniper: 18, hmg: 14, mortar: 70, worker: 30, atrifle: 14, fieldgun: 110, armoredcar: -10 };
 
   const S = (id, group, title, A, B, o = {}) => Object.assign({ id, group, title, A, B, gap: 220, ground: 'flat', maxTime: 180 }, o);
   const LIST = [
@@ -70,6 +70,15 @@ const FightScenarios = (() => {
     S('snow-flat-hold', 'Night and weather', '5 v 5 Riflemen, red holding, in snow', [['rifle', 5]], [['rifle', 5]], { defend: true, env: { weather: 'snow' } }),
     S('x-mortar-nest', 'Special situations', '3 Mortars + 3 Riflemen against an MG nest', [['rifle', 3], ['mortar', 3]], [['rifle', 2], ['hmg', 2]], { gap: 320, defend: true }),
     // Patch 0.7: cover from ruins, walls and houses, citadels, and the living infantry of 0.7b.
+    // Patch 0.8: the armoured car, AT Rifle teams and the Field Gun.
+    S('v-car-rif', 'Artillery and vehicles (0.8)', '1 Armoured Car v 6 Riflemen', [['armoredcar', 1]], [['rifle', 6]]),
+    S('v-car-mg', 'Artillery and vehicles (0.8)', '1 Armoured Car v 3 Machine Gunners', [['armoredcar', 1]], [['hmg', 3]]),
+    S('v-car-at', 'Artillery and vehicles (0.8)', '1 Armoured Car v 2 AT Rifle teams', [['armoredcar', 1]], [['atrifle', 2]]),
+    S('v-car-at1', 'Artillery and vehicles (0.8)', '1 Armoured Car v 1 AT Rifle team + 2 Riflemen', [['armoredcar', 1]], [['atrifle', 1], ['rifle', 2]]),
+    S('v-at-rif', 'Artillery and vehicles (0.8)', '3 AT Rifle teams v 6 Riflemen (equal supply)', [['atrifle', 3]], [['rifle', 6]]),
+    S('v-car-squad', 'Artillery and vehicles (0.8)', 'Armoured Car + 4 Riflemen v 7 Riflemen', [['armoredcar', 1], ['rifle', 4]], [['rifle', 7]]),
+    S('v-gun-trench', 'Artillery and vehicles (0.8)', '6 Riflemen + a Field Gun attack 5 in a trench', [['rifle', 6], ['fieldgun', 1]], [['rifle', 5]], { defend: true, gap: 420, fort: 'trench', maxTime: 240 }),
+    S('v-gun-mortar', 'Artillery and vehicles (0.8)', '6 Riflemen + a Field Gun v 6 Riflemen + 2 Mortars', [['rifle', 6], ['fieldgun', 1]], [['rifle', 6], ['mortar', 2]], { gap: 320 }),
     S('p-ruins-hold', 'Map detail and living infantry (0.7)', '5 v 5 Riflemen, red holding in ruins', [['rifle', 5]], [['rifle', 5]], { defend: true, ground: 'ruins' }),
     S('p-ruins-7v5', 'Map detail and living infantry (0.7)', '7 Riflemen attack 5 in ruins', [['rifle', 7]], [['rifle', 5]], { defend: true, ground: 'ruins' }),
     S('p-wall-hold', 'Map detail and living infantry (0.7)', '5 v 5 Riflemen, red behind a stone wall', [['rifle', 5]], [['rifle', 5]], { defend: true, ground: 'wall' }),

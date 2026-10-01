@@ -44,6 +44,10 @@ const Render = (() => {
       if (u.fuel <= 0) { ctx.fillStyle = '#ff5a3a'; ctx.font = 'bold 8px sans-serif'; ctx.textAlign = 'center'; ctx.fillText('NO FUEL', 0, -s - 10); }
     }
     else if (u.def.shape === 'square') { ctx.fillRect(-s, -s, 2 * s, 2 * s); ctx.strokeRect(-s, -s, 2 * s, 2 * s); }
+    else if (u.def.shape === 'tri') {   // 0.8: the armoured car, a triangle pointing where it drives
+      ctx.save(); ctx.rotate(u.facing); ctx.beginPath(); ctx.moveTo(s * 1.45, 0); ctx.lineTo(-s, -s * 1.05); ctx.lineTo(-s, s * 1.05); ctx.closePath(); ctx.fill(); ctx.stroke(); ctx.restore();
+      if (u.fuel <= 0) { ctx.fillStyle = '#ff5a3a'; ctx.font = 'bold 8px sans-serif'; ctx.textAlign = 'center'; ctx.fillText('NO FUEL', 0, -s - 10); }
+    }
     else { ctx.beginPath(); ctx.arc(0, 0, s, 0, Math.PI * 2); ctx.fill(); ctx.stroke(); }
     ctx.strokeStyle = 'rgba(255,255,255,0.9)'; ctx.lineWidth = 1.2; ctx.beginPath();
     ctx.moveTo(Math.cos(u.facing) * s * 0.75, Math.sin(u.facing) * s * 0.75); ctx.lineTo(Math.cos(u.facing) * (s + 2.5), Math.sin(u.facing) * (s + 2.5)); ctx.stroke();

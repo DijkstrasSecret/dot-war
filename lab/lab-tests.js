@@ -380,5 +380,46 @@ const LabTests = (() => {
     return out;
   }
 
-  return { buildArena, duel, duels, fort, forts, economy, aiMatch, metaDuels, metaTerrain, metaForts, metaEconomy, aiPressure, aiPressureRun, metaSnapshot, behaviourChecks, mapChecks, siegeChecks };
+  // ---- patch 0.8: artillery, armoured car, AT rifles ----
+  function vehicleChecks(seed = 1) {
+    const out = [], check = (name, pass, detail) => out.push({ name, pass: !!pass, detail });
+    const stage = () => { Game.init(seed); G.difficulty = 'normal'; G.envOverride = { weather: 'clear', dark: 0 }; buildArena('flat'); for (const p of [1, 2]) G.players[p].res.sulfur = 1000; };
+    const run = (s, each) => { for (let i = 0, n = Math.round(s / STEP); i < n; i++) { if (each) each(); Game.update(STEP); } };
+    // 1. Scout Tower level 4 needs Artillery.
+    stage();
+    const t = Game.addBuilding('tower', 1, 200, MIDY, true); t.level = 3; Object.assign(G.players[1].res, { wood: 1000, metal: 1000 });
+    const before = Game.upgradeTower(t); Game.applyResearch(G.players[1], 'artillery'); const after = Game.upgradeTower(t); run(45);
+    check('Scout Tower level 4 needs the Artillery research', !before && after && t.level === 4, (before ? 'upgraded without Artillery' : 'refused without Artillery') + ', level ' + t.level + ' after');
+    // 2. A Field Gun in the level 4 tower fires at a point 800 m off... here, at an enemy 600 m away that a spotter sees.
+    stage();
+    const gun = Game.spawnUnit('fieldgun', 1, 60, MIDY), spot = Game.spawnUnit('sniper', 1, 520, MIDY + 40), foe = Game.spawnUnit('rifle', 2, 660, MIDY);
+    foe.order = { type: 'hold', x: foe.x, y: foe.y }; spot.order = { type: 'hold', x: spot.x, y: spot.y };
+    let shots = 0; const s0 = G.players[1].res.sulfur; run(40, () => { foe.stress = 0; if (gun.muzzle > 0.07) shots++; });
+    check('A Field Gun shells a spotted enemy 600 m away (4 sulfur a shell)', shots >= 1 && (shots >= 2 || foe.dead) && s0 - G.players[1].res.sulfur === shots * 4, shots + ' shells, ' + (s0 - G.players[1].res.sulfur) + ' sulfur, the Rifleman ' + (foe.dead ? 'killed' : 'at ' + Math.round(foe.hp) + ' HP'));
+    // 3. Counter-battery: an enemy mortar that fires is revealed for 10 s.
+    stage();
+    G.players[2].done.add('counterBattery');
+    const mortar = Game.spawnUnit('mortar', 1, 150, MIDY), m2 = Game.spawnUnit('rifle', 1, 330, MIDY), target = Game.spawnUnit('rifle', 2, 450, MIDY);
+    target.order = { type: 'hold', x: target.x, y: target.y }; m2.order = { type: 'hold', x: m2.x, y: m2.y };
+    let seen = false; run(15, () => { target.hp = target.stats.hp; if (Fog.visible(2, mortar.x, mortar.y)) seen = true; });
+    check('Counter-battery reveals an enemy mortar that fires', seen, seen ? 'the mortar was revealed to the enemy' : 'never revealed');
+    // 4. The armoured car carries nobody and burns fuel.
+    stage();
+    const car = Game.spawnUnit('armoredcar', 1, 150, MIDY), r = Game.spawnUnit('rifle', 1, 170, MIDY);
+    const boarded = Game.command({ kind: 'board', units: [r.id], target: car.id });
+    Game.orderMove([car], 600, MIDY); const f0 = car.fuel; run(10);
+    check('The armoured car takes no passengers and burns fuel', !boarded && !r.inside && car.fuel < f0, (boarded ? 'a Rifleman boarded' : 'no boarding') + ', fuel ' + Math.round(f0) + ' → ' + Math.round(car.fuel));
+    // 5. AP rounds: an AT team's shot does full damage to the car, a Rifleman's 35%.
+    const ap = Data.ARMOR_MULT.ap.light, bal = Data.ARMOR_MULT.ballistic.light;
+    check('AT Rifles do full damage to light armour, rifles 35%', ap === 1 && bal === 0.35, 'ap ×' + ap + ', ballistic ×' + bal);
+    // 6. The enemy commander trains Field Guns once they unlock.
+    Sim.newMatch({ map: 'highland', difficulty: 'hard', seed });
+    G.time = Data.DIFFICULTY.hard.unlocks.fieldgun + 1; Sim.run(30 * 240);
+    const guns = G.units.filter(u => u.owner === 2 && u.type === 'fieldgun').length, queued = G.buildings.filter(b => b.owner === 2 && b.queue.some(q => q.type === 'fieldgun')).length;
+    check('The enemy commander trains Field Guns after their unlock time', guns + queued > 0, guns + ' Field Gun(s) after 4 min, ' + queued + ' in production (its army cap limits how many)');
+    G.envOverride = null;
+    return out;
+  }
+
+  return { vehicleChecks, buildArena, duel, duels, fort, forts, economy, aiMatch, metaDuels, metaTerrain, metaForts, metaEconomy, aiPressure, aiPressureRun, metaSnapshot, behaviourChecks, mapChecks, siegeChecks };
 })();

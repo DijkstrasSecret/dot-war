@@ -105,7 +105,7 @@ Victory: destroy the enemy Headquarters. Defeat: lose yours. The sandbox map has
 
 ## 3. Units
 
-Six infantry blueprints and one vehicle, the Truck (patch 0.5b). Squares count as "heavy" for tower
+Eight infantry blueprints and two vehicles, the Truck (patch 0.5b) and the armoured car (patch 0.8). Squares count as "heavy" for tower
 capacity and take two Truck seats. The Musketeer was removed in patch 0.2.1; the Medic arrived in
 patch 0.4.
 
@@ -118,6 +118,9 @@ patch 0.4.
 | Mortar Crew | square | 70 | 34 | 140 | 20 wood, 40 metal | 16 s | Mortar |
 | Medic | circle | 50 | 50 | 140 | 20 wood, 15 metal | 10 s | Field Medicine |
 | Truck | rectangle | 150 (light armour) | 110, x1.5 on roads | 150 | 40 wood, 30 metal, 5 rubber | 18 s (Workshop) | Motorisation |
+| AT Rifle team (0.8) | square | 80 | 40 | 160 | 20 wood, 50 metal | 16 s (Barracks) | AP Rounds |
+| Field Gun (0.8) | square | 90 | 22 | 120 | 30 wood, 90 metal | 25 s (Ordnance Works) | Artillery |
+| Armoured Car (0.8) | triangle | 260 (light armour) | 95, x1.5 on roads | 180 | 40 wood, 90 metal, 15 rubber | 25 s (Workshop) | Armoured Car |
 
 Weapons:
 
@@ -130,6 +133,9 @@ Weapons:
 | Mortar Crew | 50 | explosive | 380 | 150 | 0.50 | 5 s | 0.35 | indirect, splash 32, costs 2 sulfur per shell, needs a spotter; steps back from enemies inside 150 m |
 | Medic | – | – | – | – | – | – | – | unarmed; heals one soldier at a time, 4 HP/s within 40 m |
 | Grenade (Riflemen) | 45 | explosive | 25 | 0 | – | 20 s | – | after the Grenades research; splash 18, 1 sulfur each, 1 s wind-up standing still |
+| AT Rifle team | 90 | ap | 220 | 0 | 0.70 | 3 s | 0.10 | full damage to light armour, 60% to infantry; takes half stress; supply 2 |
+| Field Gun | 110 | explosive | 900 | 200 | 0.45 | 9 s | 0.45 | indirect, splash 45 with the mortar's sharp centre, 4 sulfur a shell, needs a spotter; supply 3; 2 Truck seats |
+| Armoured Car | 11 | ballistic | 190 | 0 | 0.40 | 0.2 s | 0.035 | fires on the move (0.35); fuel 60; carries nobody; supply 3 |
 
 Speeds are world units per game second. Times are game seconds. Every soldier has armor class
 "none"; the Truck is "light", or "heavy" after Heavy Truck Armour:
@@ -287,6 +293,7 @@ rally point.
 | 1 | 2 | 0 | 8 m | 400 | 200 | build 60 wood, 10 metal | 25 s |
 | 2 | 4 | 0 | 14 m | 650 | 240 | 80 wood, 30 metal | 25 s |
 | 3 | 6 | 1 | 20 m | 900 | 280 | 100 wood, 60 metal | 30 s |
+| 4 (needs Artillery, 0.8) | 6 | 1 (a Mortar Crew or Field Gun) | 28 m | 1200 | 320 | 150 wood, 120 metal | 40 s |
 
 A harvest building with free slots has a **Train a Worker for this** button: the HQ trains a Worker
 who walks straight to it (patch 0.5b.3).
@@ -473,6 +480,9 @@ site within 4 km of its HQ that it doesn't hold: 2 soldiers per guard there plus
 **Civilians (patch 0.7c)** are their own side (owner 3). Nobody targets them, though blasts can hurt
 them, and they don't count as kills. They stroll around their village; when a shot is fired or a shell
 bursts within 150 m they run 250 m away from it, wait 30 s and walk home. They take no orders.
+
+**Field Guns (patch 0.8):** the commander trains them at its Ordnance Works from 30 / 25 / 20 min
+(Easy / Normal / Hard), about half of that factory's output. It has no armoured cars or AT Rifles.
 
 **Kit (patch 0.7c):** soldiers trained once a side owns an R&D Lab and has 2 Tier III researches wear
 Cold War uniforms, and at 5 Tier III Modern ones (looks only).
