@@ -693,10 +693,15 @@ const Game = (() => {
     for (const b of G.buildings) {
       if (b.dead) continue; const d = Math.max(0, dist(b.x, b.y, x, y) - b.size * 0.7); if (d > splash) continue;
       // DD G13: a grenade reaches a Bunker's occupants for 30% damage and full stress.
-      if ((pr.grenade || b.def.citadel) && b.slots && b.slots.grenadeReach) for (const id of b.garrison.slice()) {   // 0.7c: shells reach a citadel's occupants too
-        const u = G.unitById.get(id); if (!u || u.dead) continue;
-        addStress(u, 0.3 * (1 - d / splash) + 0.1, true); u.lastHitBy = shooter;
-        applyDamage(u, dmg * (0.35 + 0.65 * (1 - d / splash)) * Data.ARMOR_MULT[dtype][u.armor] * NADE.bunkerDmg, shooter);
+      if ((pr.grenade || b.def.citadel) && b.slots && b.slots.grenadeReach) {   // 0.7c: shells reach a citadel's occupants too
+        let inside = b.garrison.map(id => G.unitById.get(id)).filter(u => u && !u.dead), share = NADE.bunkerDmg;
+        // Kaan, 0.7d.1: a shell (not a grenade) reaches only 1-2 of a citadel's men, at the citadel's own share.
+        const cs = !pr.grenade && b.slots.shell;
+        if (cs) { const n = cs.reach[0] + Math.floor(R() * (cs.reach[1] - cs.reach[0] + 1)); inside = inside.map(u => [R(), u]).sort((p, q) => p[0] - q[0]).slice(0, n).map(p => p[1]); share = cs.dmg; }
+        for (const u of inside) {
+          addStress(u, 0.3 * (1 - d / splash) + 0.1, true); u.lastHitBy = shooter;
+          applyDamage(u, dmg * (0.35 + 0.65 * (1 - d / splash)) * Data.ARMOR_MULT[dtype][u.armor] * share, shooter);
+        }
       }
       applyDamage(b, dmg * (0.5 + 0.5 * (1 - d / splash)) * Data.ARMOR_MULT[dtype].building, shooter);
     }
