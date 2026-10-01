@@ -1298,6 +1298,20 @@ by the Balance Lab):
 | Modern kit | Soldiers trained after the player owns an R&D Lab and has **5 Tier III** researches wear Modern uniforms (Cold War stays at 2). Looks only. |
 | Enemy commander | Every 5 min, with at least 10 soldiers, it sends a team to capture the nearest buff site within 4 km of its HQ that it doesn't hold: 2 soldiers per guard there plus 2 (at least 4, at most 10), keeping 4 at home. (Claude, while building: a team of 4 kept losing to guarded sites.) The full siege AI is 0.7d. |
 
+
+### Patch 0.7d: siege AI (Kaan, "go ahead" 1 October 2026; details picked by Claude from Q24, values proposed)
+
+| Topic | Decision |
+| --- | --- |
+| What the raid knows | The enemy commander remembers every building of yours it has seen (and always knows where your HQ is). It never attacks a building it hasn't seen. |
+| Outposts | Your buildings other than the HQ, and the buff sites you hold. **Related to the main base** (Q24.3): within 2 km of your HQ, or within 1.2 km of the straight line from its HQ to yours. Anything else is ignored. Citadels are left alone. |
+| 1. Towers first (Q24.1) | A raid first goes for the nearest Scout Tower or Bunker of yours it knows among the related outposts. |
+| 2. Weakest outpost towards the HQ (Q24.2) | When the towers are down, and **no large threat is near** (fewer of your soldiers in sight within 500 m than 80% of the raiders), it moves to the weakest known related outpost that is closer to your HQ than the raid is. "Weakest" = health plus 150 for each of your soldiers within 200 m of it. A buff site you hold is taken back by standing on it. |
+| 3. Then the HQ (Q24.4) | With nothing left on the way, it marches on your HQ. |
+| Large threat | While one is near, the raid fights it where it is and doesn't move on. |
+| Raid size | The current escalation stays (DD L: +10% of the army per raid, up to 90%, all-in at twice your seen soldiers). A new raid joins the one still out. |
+| Stuck on a slope (found in 0.7c) | A soldier whose route crosses a slope the cell rules allow but whose step is refused (the enemy's mountain) scrambles across at 0.3× speed after 2 s stuck, instead of standing there forever. |
+
 ---
 
 ## Still open

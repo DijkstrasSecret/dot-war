@@ -324,10 +324,10 @@ generated maps only, Modern kit at an R&D Lab + 5 Tier III.
 - [x] Modern kit at an R&D Lab + 5 Tier III.
 
 **0.7d (siege AI)**
-- [ ] AI raid logic [Q24]:
-  1. [ ] Probe towers first.
-  2. [ ] Move to the weakest outpost toward the HQ.
-  3. [ ] Ignore unrelated outposts.
+- [x] AI raid logic [Q24]:
+  1. [x] Probe towers first.
+  2. [x] Move to the weakest outpost toward the HQ.
+  3. [x] Ignore unrelated outposts.
 - [ ] AI vs AI match length 45–75 game min: moved to Later, it needs the AI on the player's economy
       (two identical scripted AIs stall; DD section L).
 

@@ -350,8 +350,34 @@ const LabTests = (() => {
     for (const id of t3) Game.applyResearch(G.players[1], id);
     check('Modern kit after an R&D Lab and 5 Tier III researches', G.players[1].kitEra === 'modern', 'kit: ' + G.players[1].kitEra + ' (' + t3.length + ' Tier III)');
     G.envOverride = null;
+    return out.concat(siegeChecks(3));
+  }
+  // ---- siege raid (patch 0.7d, DD Q24) ----
+  // On a big map: a tower and two outposts of the player's along the line between the bases, and a
+  // tower 3 km off to the side. A raid of 14 should take the tower, then the weakest outpost ahead,
+  // then the HQ, and leave the far tower alone.
+  function siegeChecks(seed) {
+    const out = [], check = (name, pass, detail) => out.push({ name, pass: !!pass, detail });
+    Sim.newMatch({ map: 'random', difficulty: 'normal', seed });
+    const hq1 = G.buildings.find(b => b.type === 'hq' && b.owner === 1), hq2 = G.buildings.find(b => b.type === 'hq' && b.owner === 2);
+    const at = f => [hq2.x + (hq1.x - hq2.x) * f, hq2.y + (hq1.y - hq2.y) * f];
+    const place = (type, p) => { for (let r = 0; r < 200; r += 12) for (let a = 0; a < 6.3; a += 0.7) { const x = p[0] + Math.cos(a) * r, y = p[1] + Math.sin(a) * r; if (Game.canPlace(type, 1, x, y)) return Game.addBuilding(type, 1, x, y, true); } return Game.addBuilding(type, 1, Math.round(p[0]), Math.round(p[1]), true); };   // unexplored ground fails canPlace: place it anyway
+    const tower = place('tower', at(0.6)), depot = place('depot', at(0.8)), weak = place('barracks', at(0.88));
+    const mid = at(0.75), nx = -(hq1.y - hq2.y), ny = hq1.x - hq2.x, nl = Math.hypot(nx, ny), far = place('tower', [mid[0] + nx / nl * 3000, mid[1] + ny / nl * 3000]);
+    if (!tower || !depot || !weak || !far) { check('Siege raid: test ground', false, 'could not place the test buildings'); return out; }
+    weak.hp = 150;
+    const st = AI.st; st.known = new Set([tower.id, depot.id, weak.id, far.id, hq1.id]); st.raidT = 1e9;
+    const raiders = []; for (let i = 0; i < 14; i++) { const p = at(0.5); raiders.push(Game.spawnUnit('rifle', 2, p[0] + (i % 5) * 14, p[1] + Math.floor(i / 5) * 14)); }
+    for (const u of raiders) { u.raiding = true; u.sieging = true; }
+    st.siege = { ids: raiders.map(u => u.id), target: null, stage: 'tower' };
+    for (const u of G.units) if (u.owner === 1 && u.stats.weapon) u.dead = true;   // the player's soldiers stay out of it
+    const order = [];
+    for (let s = 0; s < 30 * 900 && !hq1.dead && AI.st.siege; s++) { Game.update(STEP); const t = AI.st.siege && G.buildingById.get(AI.st.siege.target); const tag = t ? t.type : null; if (tag && order[order.length - 1] !== tag) order.push(tag); }
+    const want = ['tower', 'barracks', 'hq'];
+    check('Siege raid: the tower first, then the weakest outpost ahead, then the HQ', want.every((w, i) => order[i] === w), 'targets: ' + order.join(' → '));
+    check('Siege raid: an outpost off the line between the bases is ignored', !far.dead && far.hp === far.maxHp, 'the far tower is ' + (far.dead ? 'destroyed' : 'untouched'));
     return out;
   }
 
-  return { buildArena, duel, duels, fort, forts, economy, aiMatch, metaDuels, metaTerrain, metaForts, metaEconomy, aiPressure, aiPressureRun, metaSnapshot, behaviourChecks, mapChecks };
+  return { buildArena, duel, duels, fort, forts, economy, aiMatch, metaDuels, metaTerrain, metaForts, metaEconomy, aiPressure, aiPressureRun, metaSnapshot, behaviourChecks, mapChecks, siegeChecks };
 })();
