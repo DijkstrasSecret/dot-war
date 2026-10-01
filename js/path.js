@@ -21,12 +21,12 @@ const Path = (() => {
   const tables = new Map();
   function table(cls) {
     let t = tables.get(cls); if (t) return t;
-    const N = W * H, type = Terrain.type, road = Terrain.road, slope = Terrain.slope, blocked = Terrain.blocked, pathMult = Terrain.pathMult, blockVeh = Terrain.blockVeh;
+    const N = W * H, type = Terrain.type, road = Terrain.road, slope = Terrain.slope, blocked = Terrain.blocked, pathMult = Terrain.pathMult, blockVeh = Terrain.blockVeh, prop = Terrain.prop, PR = Data.PROPS;
     const T_WATER = Terrain.T_WATER, T_FOREST = Terrain.T_FOREST, T_SWAMP = Terrain.T_SWAMP, slopeCap = cls.maxGrade * 1.1, veh = !!cls.vehicle;
     const pass = new Uint8Array(N), base = new Float64Array(N);
     for (let k = 0; k < N; k++) {
-      pass[k] = !(blocked[k] || (veh && blockVeh[k])) && (road[k] ? true : type[k] !== T_WATER && slope[k] <= slopeCap) ? 1 : 0;
-      base[k] = pathMult[k] / (road[k] ? cls.road : type[k] === T_FOREST ? cls.forest : type[k] === T_SWAMP ? cls.swamp : 1);
+      pass[k] = !(blocked[k] || (veh && (blockVeh[k] || prop[k]))) && (road[k] ? true : type[k] !== T_WATER && slope[k] <= slopeCap) ? 1 : 0;
+      base[k] = pathMult[k] / (road[k] ? cls.road : prop[k] ? PR[prop[k]].slow : type[k] === T_FOREST ? cls.forest : type[k] === T_SWAMP ? cls.swamp : 1);   // 0.7c: props
     }
     t = { pass, base }; tables.set(cls, t); return t;
   }

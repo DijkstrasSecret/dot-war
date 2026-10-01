@@ -1277,6 +1277,27 @@ by the Balance Lab):
 | Squadron v loose | Kaan: a squadron beating loose soldiers about 63% of the time "makes sense". The Balance Lab target widens from 55–60% to **55–65%**. |
 | Mortar blast | "The centre of the mortar's hit is hurt more compared to the blast effect." Damage share at a fraction f of the 32 m radius: **0.15 + 1.15 × (1 − f)^1.5** (was 0.35 + 0.65 × (1 − f)). A direct hit does 65 (was 50; a fresh Rifleman has 70), half-way out about 22 (was 34), the edge 7.5 (was 17.5). Kaan picked this "mild" shape out of three: in the test fights 6 Riflemen beat 3 Mortar Crews about 48% of the time instead of 20%, the mortar mirror stays even. Grenades keep the old linear share. |
 
+
+### Patch 0.7c: map detail and buff sites (plan sent to Kaan 30 September, "go ahead" 1 October 2026; numbers proposed by Claude, tune in play)
+
+| Topic | Decision |
+| --- | --- |
+| Capture | Armed soldiers (not inside a building) within **60 m**, of one side only, with no soldiers of any other side there (neutral guards count), fill the capture bar in **20 s**. If the other side starts, the bar empties first at the same rate; with nobody there it drains in 40 s. The site stays its owner's until the other side captures it. Buff sites can't be damaged or targeted. |
+| Sites per map | Placed at least 1.5 km from both bases and 700 m from each other and from deposits. Half of them have 3 neutral guards (sometimes with a Machine Gunner). |
+| Airdrop zone (1) | Every **3 min** the holder gets a supply drop: **40 wood, 60 metal, 15 sulfur**. A parachute shows where it lands. |
+| Train station (1) | Every **4 min** a freight train brings **150 metal** into the station's stock (at most 450). The holder's Workers or Trucks carry it home like a mine's output (4 worker places), so the line can be raided. Rails run off the map edge. The enemy commander gets the metal directly (its usual rule). |
+| Radio mast (2) | **600 m** of sight for the holder, and **raid warnings**: when 3 or more enemy soldiers are within 1.5 km of the holder's HQ, a warning and a minimap ping (at most once a minute). |
+| Fuel dump (2) | **+0.15 oil/s** for the holder, and it refuels the holder's vehicles within 60 m like a Depot. |
+| Field hospital ruins (2) | Heals the holder's infantry within **120 m** at **1 HP/s**. |
+| Citadels (1–2) | Big neutral fortresses (64 × 64 m) on hills near the middle, along the main road. They can't be destroyed. Room for 10 soldiers, 2 Machine Gunners and 2 Mortar Crews, **10 m** of height, occupants shoot **×1.15** accurately, 300 m of sight. They start with 6 Riflemen and 2 Machine Gunners inside and 4 Riflemen outside. **Taken by clearing the garrison and moving in:** when it is empty, either side's soldiers can enter, and the citadel belongs to whoever is inside. Shells and grenades reach the occupants for 30% damage and full stress, and Riflemen throw grenades at it as at an enemy Bunker. |
+| Villages | As in J: 3–5 hamlets (4–6 houses, 6–10 civilians) and 1–2 towns near the middle (8–12 houses, 15–25 civilians), each joined to the road network. |
+| Civilians | Their own owner (id 3). Never auto-targeted by anyone; blasts can still hurt them. They stroll around their village. When a shot is fired or a shell lands within 150 m, they run 250 m away from it, wait 30 s and walk home. They can't be selected or ordered. No penalty for civilian deaths yet. |
+| Houses, ruins, walls and wrecks | Scenery that gives cover: houses and ruins **×0.6** hit chance (like a trench), walls and wrecks **×0.7** (like a barricade), and blasts ×0.85 as in forest. Vehicles can't cross them; infantry cross houses and ruins at ×0.7 speed, walls and wrecks at ×0.8. They don't block sight. Never on roads, deposits or sites. Per map: about 25 ruin clusters, 30 stone walls (30–80 m long), 20 wrecks beside the roads. "Take cover" (0.7b) counts them. |
+| Trees | Forest cells are drawn with tree crowns. Looks only: forest rules don't change. |
+| Neutral patrols | Guard groups that hold no site or citadel walk together to a random point within 120 m of home every 60–120 s. **Leash 150 m:** a guard more than 150 m from home walks back, even mid-fight (was 90 m and only when idle). Neutral soldiers heal 1 HP/s once nobody has shot at them for 20 s. |
+| Modern kit | Soldiers trained after the player owns an R&D Lab and has **5 Tier III** researches wear Modern uniforms (Cold War stays at 2). Looks only. |
+| Enemy commander | Every 5 min, with at least 10 soldiers, it sends a team to capture the nearest buff site within 4 km of its HQ that it doesn't hold: 2 soldiers per guard there plus 2 (at least 4, at most 10), keeping 4 at home. (Claude, while building: a team of 4 kept losing to guarded sites.) The full siege AI is 0.7d. |
+
 ---
 
 ## Still open

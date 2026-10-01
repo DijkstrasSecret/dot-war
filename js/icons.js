@@ -121,6 +121,30 @@ const Icons = (() => {
     creep(ctx) { poly(ctx, [0, -0.9, 0.8, 0.7, -0.8, 0.7], true); },
     // patch 0.4
     medic(ctx) { ctx.fillRect(-0.25, -0.85, 0.5, 1.7); ctx.fillRect(-0.85, -0.25, 1.7, 0.5); },
+    // 0.7c: buff sites, citadel, villagers
+    airdrop(ctx) {   // a parachute over a crate
+      ctx.beginPath(); ctx.arc(0, -0.25, 0.85, Math.PI, 0); ctx.closePath(); ctx.fill();
+      line(ctx, -0.8, -0.25, -0.2, 0.45, 0.08); line(ctx, 0.8, -0.25, 0.2, 0.45, 0.08); line(ctx, 0, -0.25, 0, 0.45, 0.08);
+      ctx.fillRect(-0.32, 0.42, 0.64, 0.5);
+    },
+    train(ctx) {   // a locomotive from the side
+      ctx.fillRect(-0.95, -0.2, 1.3, 0.6); ctx.fillRect(0.2, -0.75, 0.6, 1.15); ctx.fillRect(-0.7, -0.6, 0.25, 0.4);
+      for (const x of [-0.65, -0.1, 0.5]) circ(ctx, x, 0.62, 0.22, true);
+    },
+    radio(ctx) {   // a mast with waves
+      line(ctx, 0, -0.5, -0.45, 0.95, 0.12); line(ctx, 0, -0.5, 0.45, 0.95, 0.12); line(ctx, -0.25, 0.3, 0.25, 0.3, 0.1);
+      circ(ctx, 0, -0.55, 0.14, true); ctx.lineWidth = 0.1;
+      for (const r of [0.38, 0.65]) { ctx.beginPath(); ctx.arc(0, -0.55, r, -Math.PI * 0.85, -Math.PI * 0.15); ctx.stroke(); }
+    },
+    citadel(ctx) {   // a keep with battlements
+      ctx.fillRect(-0.8, -0.4, 1.6, 1.3);
+      for (const x of [-0.8, -0.3, 0.2, 0.6]) ctx.fillRect(x, -0.75, 0.2, 0.4);
+      ctx.save(); ctx.globalCompositeOperation = 'destination-out'; ctx.beginPath(); ctx.arc(0, 0.9, 0.3, Math.PI, 0); ctx.lineTo(0.3, 0.9); ctx.fill(); ctx.restore();
+    },
+    civilian(ctx) {   // a person: head and shoulders
+      circ(ctx, 0, -0.45, 0.35, true);
+      ctx.beginPath(); ctx.moveTo(-0.7, 0.9); ctx.quadraticCurveTo(-0.7, 0.05, 0, 0.05); ctx.quadraticCurveTo(0.7, 0.05, 0.7, 0.9); ctx.closePath(); ctx.fill();
+    },
     hospital(ctx) { ctx.lineWidth = 0.14; ctx.strokeRect(-0.9, -0.9, 1.8, 1.8); ctx.fillRect(-0.2, -0.65, 0.4, 1.3); ctx.fillRect(-0.65, -0.2, 1.3, 0.4); },
     bunker(ctx) { ctx.beginPath(); ctx.moveTo(-0.95, 0.7); ctx.lineTo(-0.95, -0.1); ctx.quadraticCurveTo(0, -0.95, 0.95, -0.1); ctx.lineTo(0.95, 0.7); ctx.closePath(); ctx.fill();
       ctx.save(); ctx.globalCompositeOperation = 'destination-out'; ctx.fillRect(-0.55, -0.15, 1.1, 0.22); ctx.restore(); },

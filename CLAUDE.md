@@ -55,8 +55,7 @@ step-by-step instructions for anything he has to run or check.
 - **Stacking:** bonuses and penalties multiply, then the section I caps apply: hit chance ≤ 0.95,
   stress taken ≥ ×0.25, speed ≥ ×0.2, vision ≥ ×0.35. Use one shared helper.
 - Flow-field costs stay `Float64Array` (Float32 makes Dijkstra loop for minutes).
-- Player ids: 0 neutral, 1 human, 2 AI. Civilians get their own id (patch 0.7) that nothing
-  auto-targets. Buildings use `b.maxHp`, never `def.hp`.
+- Player ids: 0 neutral, 1 human, 2 AI, 3 civilians (patch 0.7c; nothing auto-targets them). Buildings use `b.maxHp`, never `def.hp`.
 - **Hotkeys:** the key layout is `DESIGN_DECISIONS.md` section 9, built in patch 0.2.1: WASD
   pans the camera, F attack-move, R defend, G retreat, X stop, E enter, Q exit, T tower upgrade,
   Z X C V train. New features take free keys; existing ones don't move without asking.

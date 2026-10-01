@@ -14,8 +14,9 @@ const Terrain = (() => {
   };
 
   let W = 0, H = 0;
-  let height, type, road, slope, blocked, pathMult, blockVeh;   // blockVeh: barricades stop vehicles (0.5b)   // pathMult: extra route cost of barricades and wire (patch 0.4)
+  let height, type, road, slope, blocked, pathMult, blockVeh, prop;   // prop (0.7c): 1 house, 2 ruin, 3 wall, 4 wreck (Data.PROPS)   // blockVeh: barricades stop vehicles (0.5b)   // pathMult: extra route cost of barricades and wire (patch 0.4)
   let deposits = [];
+  let props = [];   // 0.7c: shapes { code, x, y, w, h, a } for drawing; `prop` is their cell mask
   let roads = [];   // polylines [[x,y],...] in world units; `road` cell mask is rasterised from them
   let roadR = 9;    // road half-width in metres; 0.7: generated maps use wider roads
   const TILE = 64, MAX_TILES = 72;
@@ -25,8 +26,8 @@ const Terrain = (() => {
 
   function create(w, h) {
     W = w; H = h;
-    height = new Float32Array(w * h); type = new Uint8Array(w * h); road = new Uint8Array(w * h); slope = new Float32Array(w * h); blocked = new Uint8Array(w * h); pathMult = new Float64Array(w * h).fill(1); blockVeh = new Uint8Array(w * h);
-    deposits = []; roads = []; roadR = 9;
+    height = new Float32Array(w * h); type = new Uint8Array(w * h); road = new Uint8Array(w * h); slope = new Float32Array(w * h); blocked = new Uint8Array(w * h); pathMult = new Float64Array(w * h).fill(1); blockVeh = new Uint8Array(w * h); prop = new Uint8Array(w * h);
+    deposits = []; roads = []; roadR = 9; props = [];
     tiles = new Map(); overview = null; overviewDirty = true;
     maskCanvas = document.createElement('canvas'); maskCanvas.width = TILE + 16; maskCanvas.height = TILE + 16; maskCtx = maskCanvas.getContext('2d');
     dirty = { x0: 0, y0: 0, x1: w, y1: h };
@@ -117,7 +118,7 @@ const Terrain = (() => {
     for (let j = j0; j <= j1; j++) for (let i = i0; i <= i1; i++) blocked[j * W + i] = val ? 1 : 0;
   }
   function cellPassable(k, cls) {
-    if (blocked[k] || (cls.vehicle && blockVeh[k])) return false;
+    if (blocked[k] || (cls.vehicle && (blockVeh[k] || prop[k]))) return false;   // 0.7c: vehicles can't cross houses, ruins, walls or wrecks
     if (road[k]) return true;               // roads are engineered: always walkable, bridges over water included
     const t = type[k];
     if (t === T_WATER) return false;
@@ -125,6 +126,7 @@ const Terrain = (() => {
   }
   function terrainFactor(k, cls) {
     if (road[k]) return cls.road;
+    if (prop[k]) return Data.PROPS[prop[k]].slow;   // 0.7c: infantry pick their way through rubble
     const t = type[k];
     if (t === T_FOREST) return cls.forest;
     if (t === T_SWAMP) return cls.swamp;
@@ -135,7 +137,7 @@ const Terrain = (() => {
     const g = gradAt(x, y); const grade = g[0] * dx + g[1] * dy;
     if (Math.abs(grade) > cls.maxGrade * 1.25) return 0;   // the flow field already avoids steep cells; allow local wiggle
     const k = cellIdxAt(x, y);
-    if (blocked[k] || (cls.vehicle && blockVeh[k]) || (type[k] === T_WATER && !road[k])) return 0;
+    if (blocked[k] || (cls.vehicle && (blockVeh[k] || prop[k])) || (type[k] === T_WATER && !road[k])) return 0;
     return slopeFactor(grade) * terrainFactor(k, cls);
   }
   function edgeCost(from, to, cls, d) {
@@ -188,7 +190,20 @@ const Terrain = (() => {
     for (let dj = -FOREST_EDGE; dj <= FOREST_EDGE; dj++) for (let di = -FOREST_EDGE; di <= FOREST_EDGE; di++) { const a = i + di, b = j + dj; if (inb(a, b) && type[b * W + a] !== T_FOREST) return true; }
     return false;
   }
-  function coverAt(x, y) { const i = cellI(x), j = cellJ(y); return type[j * W + i] === T_FOREST && forestEdge(i, j) ? 0.75 : 1; }   // Kaan, 0.5c: 0.55 -> 0.75
+  function coverAt(x, y) {
+    const i = cellI(x), j = cellJ(y), k = j * W + i;
+    if (prop[k]) return Data.PROPS[prop[k]].cover;   // 0.7c: houses, ruins, walls, wrecks
+    return type[k] === T_FOREST && forestEdge(i, j) ? 0.75 : 1;   // Kaan, 0.5c: 0.55 -> 0.75
+  }
+  // 0.7c: add a prop (house, ruin, wall, wreck): a rotated rectangle drawn on the map and stamped into the cell mask.
+  function addProp(code, x, y, w, h, a) {
+    props.push({ code, x, y, w, h, a });
+    const ca = Math.cos(a), sa = Math.sin(a), R = Math.hypot(w, h) / 2 + CELL;
+    for (let j = cellJ(y - R); j <= cellJ(y + R); j++) for (let i = cellI(x - R); i <= cellI(x + R); i++) {
+      if (!inb(i, j)) continue; const dx = cx(i) - x, dy = cy(j) - y, lx = dx * ca + dy * sa, ly = -dx * sa + dy * ca;
+      if (Math.abs(lx) <= Math.max(w, CELL) / 2 + CELL * 0.1 && Math.abs(ly) <= Math.max(h, CELL) / 2 + CELL * 0.1) prop[j * W + i] = code;   // a thin wall still covers a line of cells
+    }
+  }
   // Is a unit at (ux,uy) sheltered from a blast at (bx,by) by a crest in between?
   function ridgeCover(bx, by, ux, uy) {
     const mx = (bx + ux) / 2, my = (by + uy) / 2;
@@ -431,9 +446,14 @@ const Terrain = (() => {
     drawMaskLayer(ctx, R, k => type[k] === T_FOREST, COL.forest);
     drawMaskLayer(ctx, R, k => type[k] === T_SWAMP, COL.swamp);
     drawMaskLayer(ctx, R, k => type[k] === T_WATER, COL.water);
-    // forest stipple
-    ctx.fillStyle = COL.forestDark; ctx.globalAlpha = 0.7;
-    for (let j = cj0; j < cj1; j++) for (let i = ci0; i < ci1; i++) if (type[j * W + i] === T_FOREST && ((i * 7 + j * 13) % 5 === 0)) { ctx.beginPath(); ctx.arc(cx(i) + ((i * 31 + j * 17) % 7) - 3, cy(j) + ((i * 13 + j * 29) % 7) - 3, 1.6, 0, Math.PI * 2); ctx.fill(); }
+    // 0.7c: tree crowns in forest cells (looks only): a shadow, the crown, a lit side
+    const trees = [];
+    for (let j = cj0; j < cj1; j++) for (let i = ci0; i < ci1; i++) if (type[j * W + i] === T_FOREST && ((i * 7 + j * 13) % 3 === 0)) trees.push([cx(i) + ((i * 31 + j * 17) % 9) - 4, cy(j) + ((i * 13 + j * 29) % 9) - 4, 3.6 + ((i * 5 + j * 11) % 5) * 0.55]);
+    for (const [col, dx, dy, k] of [['rgba(60,90,40,0.28)', 1.6, 1.8, 1], [COL.forestDark, 0, 0, 1], ['#b4d898', -0.9, -1, 0.5]]) {
+      ctx.fillStyle = col; ctx.beginPath();
+      for (const [x, y, r] of trees) { ctx.moveTo(x + dx + r * k, y + dy); ctx.arc(x + dx, y + dy, r * k, 0, Math.PI * 2); }
+      ctx.fill();
+    }
     // swamp tufts
     ctx.strokeStyle = '#6f9ab0'; ctx.lineWidth = 1; ctx.globalAlpha = 0.8;
     ctx.beginPath();
@@ -469,14 +489,45 @@ const Terrain = (() => {
       ctx.fillStyle = '#333'; ctx.fillText(Data.DEPOSIT_NAMES[d.type] || d.type, 0, 9);
       ctx.restore();
     }
+    // 0.7c: houses, ruins, walls and wrecks
+    for (const p of props) {
+      if (p.x < px - 80 || p.x > px + pw + 80 || p.y < py - 80 || p.y > py + ph + 80) continue;
+      ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.a); drawProp(ctx, p); ctx.restore();
+    }
     ctx.restore();
+  }
+  function drawProp(ctx, p) {
+    const w = p.w, h = p.h, s = Math.abs(Math.round(p.x * 7 + p.y * 3)) % 97;   // a fixed variation per prop
+    ctx.lineJoin = 'round';
+    if (p.code === 1) {   // house: a tiled roof with a ridge and a shadow
+      ctx.fillStyle = 'rgba(40,30,20,0.25)'; ctx.fillRect(-w / 2 + 2, -h / 2 + 2, w, h);
+      ctx.fillStyle = s % 3 ? '#b0705a' : '#9a8670'; ctx.strokeStyle = '#4e3a2c'; ctx.lineWidth = 1;
+      ctx.fillRect(-w / 2, -h / 2, w, h); ctx.strokeRect(-w / 2, -h / 2, w, h);
+      ctx.beginPath(); ctx.moveTo(-w / 2, 0); ctx.lineTo(w / 2, 0); ctx.stroke();
+      ctx.fillStyle = 'rgba(255,255,255,0.18)'; ctx.fillRect(-w / 2, -h / 2, w, h / 2);
+    } else if (p.code === 2) {   // ruin: broken walls around rubble
+      ctx.fillStyle = 'rgba(120,112,100,0.35)'; ctx.fillRect(-w / 2, -h / 2, w, h);
+      ctx.fillStyle = '#7d776d'; const t = 2.6;
+      ctx.fillRect(-w / 2, -h / 2, w * (0.5 + (s % 4) * 0.12), t); ctx.fillRect(-w / 2, -h / 2, t, h * (0.6 + (s % 3) * 0.15));
+      ctx.fillRect(w / 2 - t, h / 2 - h * 0.45, t, h * 0.45); ctx.fillRect(w / 2 - w * 0.3, h / 2 - t, w * 0.3, t);
+      ctx.fillStyle = '#6a645b'; for (let n = 0; n < 6; n++) { ctx.beginPath(); ctx.arc(((s * (n + 3)) % 17) / 17 * w * 0.7 - w * 0.35, ((s * (n + 7)) % 13) / 13 * h * 0.7 - h * 0.35, 1.2 + (n % 3) * 0.5, 0, Math.PI * 2); ctx.fill(); }
+    } else if (p.code === 3) {   // stone wall
+      ctx.fillStyle = '#8c877c'; ctx.strokeStyle = '#55524b'; ctx.lineWidth = 0.8;
+      ctx.fillRect(-w / 2, -h / 2, w, h); ctx.strokeRect(-w / 2, -h / 2, w, h);
+      ctx.beginPath(); for (let x = -w / 2 + 4; x < w / 2; x += 4) { ctx.moveTo(x, -h / 2); ctx.lineTo(x, h / 2); } ctx.stroke();
+    } else {   // wreck: a burnt-out vehicle
+      ctx.fillStyle = 'rgba(30,30,30,0.25)'; ctx.fillRect(-w / 2 + 1.5, -h / 2 + 1.5, w, h);
+      ctx.fillStyle = '#4b4a45'; ctx.strokeStyle = '#2a2926'; ctx.lineWidth = 1; ctx.fillRect(-w / 2, -h / 2, w, h); ctx.strokeRect(-w / 2, -h / 2, w, h);
+      ctx.fillStyle = '#7a4a2e'; ctx.fillRect(-w * 0.15, -h / 2 + 1, w * 0.4, h - 2);
+      ctx.fillStyle = '#2a2926'; ctx.fillRect(w * 0.28, -h / 2 + 1.5, w * 0.12, h - 3);
+    }
   }
 
   const api = {
     CELL, T_OPEN, T_FOREST, T_WATER, T_SWAMP, COL, LOS_TOLERANCE, TILE,
     create, toJSON, fromJSON,
     get W() { return W; }, get H() { return H; }, get height() { return height; }, get type() { return type; }, get road() { return road; }, get slope() { return slope; },
-    get deposits() { return deposits; }, get roads() { return roads; }, get roadWidth() { return roadR; }, set roadWidth(v) { roadR = v; }, drawView, get overview() { return getOverview(); }, onTileDrawn: null, rasterizeRoads, eraseRoads, addRoad, removeRoad,
+    get deposits() { return deposits; }, get props() { return props; }, get prop() { return prop; }, addProp, get roads() { return roads; }, get roadWidth() { return roadR; }, set roadWidth(v) { roadR = v; }, drawView, get overview() { return getOverview(); }, onTileDrawn: null, rasterizeRoads, eraseRoads, addRoad, removeRoad,
     idx, inb, cellI, cellJ, cellIdxAt, cx, cy, hAt, gradAt, typeAt, roadAt, slopeAt,
     cellPassable, terrainFactor, slopeFactor, moveFactor, edgeCost, passableAt, straightPassable, setBlocked, setPathMult, setBlockVeh, get blocked() { return blocked; }, get pathMult() { return pathMult; }, get blockVeh() { return blockVeh; },
     los, coverAt, ridgeCover, forestCellsNear, depositNear, areaOk,

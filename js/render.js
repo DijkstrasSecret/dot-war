@@ -75,8 +75,41 @@ const Render = (() => {
     }
     ctx.restore();
   }
+  // 0.7c: a station's rails run straight to the nearest map edge.
+  function railOf(b) {
+    if (b.rail) return b.rail;
+    const mw = Terrain.W * Terrain.CELL, mh = Terrain.H * Terrain.CELL, opts = [[0, b.y, b.x], [mw, b.y, mw - b.x], [b.x, 0, b.y], [b.x, mh, mh - b.y]].sort((a, c) => a[2] - c[2]);
+    return (b.rail = { x: opts[0][0], y: opts[0][1] });
+  }
+  // 0.7c: buff sites show the capture circle and bar; the Airdrop Zone is a marked field, the station has rails.
+  function drawSite(b) {
+    const col = Data.PLAYER_COLORS[b.owner], r = Data.SITES.capture.r + b.size * 0.5;
+    if (b.def.site === 'station') {
+      const e = railOf(b), L = Math.hypot(e.x - b.x, e.y - b.y) || 1, nx = -(e.y - b.y) / L * 3, ny = (e.x - b.x) / L * 3;
+      ctx.strokeStyle = '#6b5a48'; ctx.lineWidth = 1.2; ctx.beginPath();
+      for (const s of [-1, 1]) { ctx.moveTo(b.x + nx * s, b.y + ny * s); ctx.lineTo(e.x + nx * s, e.y + ny * s); }
+      ctx.stroke(); ctx.strokeStyle = 'rgba(107,90,72,0.6)'; ctx.lineWidth = 1.6; ctx.beginPath();
+      for (let d = 0; d < L; d += 6) { const x = b.x + (e.x - b.x) * d / L, y = b.y + (e.y - b.y) * d / L; ctx.moveTo(x - nx * 1.6, y - ny * 1.6); ctx.lineTo(x + nx * 1.6, y + ny * 1.6); }
+      ctx.stroke();
+    }
+    ctx.save(); ctx.globalAlpha = 0.55; ctx.strokeStyle = col; ctx.lineWidth = 1.2; ctx.setLineDash([6, 5]);
+    ctx.beginPath(); ctx.arc(b.x, b.y, r, 0, Math.PI * 2); ctx.stroke(); ctx.restore();
+    if (b.def.flat) {
+      ctx.fillStyle = 'rgba(246,243,230,0.6)'; ctx.strokeStyle = col; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.arc(b.x, b.y, b.w / 2, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+      ctx.strokeStyle = '#e8c640'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(b.x - 10, b.y - 10); ctx.lineTo(b.x + 10, b.y + 10); ctx.moveTo(b.x + 10, b.y - 10); ctx.lineTo(b.x - 10, b.y + 10); ctx.stroke();
+    }
+    const c = b.cap;
+    if (c && c.p > 0 && c.by) {
+      const w = Math.max(40, b.w), y = b.y - b.h / 2 - 14;
+      ctx.fillStyle = 'rgba(0,0,0,0.6)'; ctx.fillRect(b.x - w / 2, y, w, 5);
+      ctx.fillStyle = Data.PLAYER_COLORS[c.by]; ctx.fillRect(b.x - w / 2, y, w * Math.min(1, c.p), 5);
+    }
+  }
   function drawBuilding(b, selected) {
     const col = Data.PLAYER_COLORS[b.owner];
+    if (b.def.site) drawSite(b);
+    if (b.def.flat) { if (cam.zoom >= 0.9) { ctx.font = '9px "Segoe UI", Arial, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'top'; ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(246,243,230,0.9)'; ctx.strokeText(b.def.name, b.x, b.y + b.h / 2 + 3); ctx.fillStyle = '#222'; ctx.fillText(b.def.name, b.x, b.y + b.h / 2 + 3); } return; }
     ctx.save(); ctx.translate(b.x, b.y);
     const x0 = -b.w / 2, y0 = -b.h / 2;
     ctx.fillStyle = b.built ? '#2a2a2e' : 'rgba(42,42,46,0.35)'; ctx.fillRect(x0, y0, b.w, b.h);
@@ -104,7 +137,7 @@ const Render = (() => {
       if (b.upgrading) { ctx.fillStyle = 'rgba(0,0,0,0.5)'; ctx.fillRect(x0 + 4, b.h / 2 - 7, b.w - 8, 3); ctx.fillStyle = '#ffd257'; ctx.fillRect(x0 + 4, b.h / 2 - 7, (b.w - 8) * b.upgrading.t / b.upgrading.total, 3); }
     }
     const hp = b.hp / b.maxHp;
-    if (hp < 1 || selected) {
+    if ((hp < 1 || selected) && !b.def.invulnerable) {
       ctx.fillStyle = 'rgba(0,0,0,0.6)'; ctx.fillRect(x0, y0 - 7, b.w, 4);
       ctx.fillStyle = hp > 0.5 ? '#5ad65a' : hp > 0.25 ? '#e6c229' : '#d64545'; ctx.fillRect(x0, y0 - 7, b.w * hp, 4);
     }
@@ -160,6 +193,17 @@ const Render = (() => {
       ctx.strokeStyle = '#c33'; ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(e.x, e.y, e.r * t * 0.6, 0, Math.PI * 2); ctx.stroke(); ctx.globalAlpha = 1;
     } else if (e.kind === 'ping') {   // Intelligence: a raid leaving the enemy base
       for (let k = 0; k < 2; k++) { const f = (t * 3 + k * 0.5) % 1; ctx.globalAlpha = (1 - f) * 0.8; ctx.strokeStyle = '#ff5a3a'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(e.x, e.y, 20 + f * 60, 0, Math.PI * 2); ctx.stroke(); }
+      ctx.globalAlpha = 1;
+    } else if (e.kind === 'drop') {   // 0.7c: a supply crate under a parachute
+      const f = Math.min(1, t * 1.6), y = e.y - 90 * (1 - f), a = t > 0.7 ? (1 - t) / 0.3 : 1;
+      ctx.globalAlpha = a;
+      if (f < 1) { ctx.fillStyle = '#f2efe4'; ctx.strokeStyle = '#555'; ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(e.x, y - 16, 11, Math.PI, 0); ctx.fill(); ctx.stroke(); ctx.beginPath(); ctx.moveTo(e.x - 11, y - 16); ctx.lineTo(e.x - 3, y - 3); ctx.moveTo(e.x + 11, y - 16); ctx.lineTo(e.x + 3, y - 3); ctx.stroke(); }
+      ctx.fillStyle = '#8a6a3a'; ctx.fillRect(e.x - 4, y - 4, 8, 7); ctx.globalAlpha = 1;
+    } else if (e.kind === 'train') {   // 0.7c: a freight train rolls in along the rails
+      const b = G.buildingById.get(e.id); if (!b) return; const r = railOf(b), f = Math.min(1, t / 0.7), L = Math.hypot(r.x - b.x, r.y - b.y) || 1;
+      const ux = (b.x - r.x) / L, uy = (b.y - r.y) / L, hx = b.x - ux * 600 * (1 - f), hy = b.y - uy * 600 * (1 - f);
+      ctx.globalAlpha = t > 0.85 ? (1 - t) / 0.15 : 1;
+      for (let n = 0; n < 5; n++) { const x = hx - ux * n * 13, y = hy - uy * n * 13; ctx.save(); ctx.translate(x, y); ctx.rotate(Math.atan2(uy, ux)); ctx.fillStyle = n ? '#5a4a3a' : '#2a2a2a'; ctx.fillRect(-6, -3.5, 12, 7); ctx.restore(); }
       ctx.globalAlpha = 1;
     } else if (e.kind === 'marker') {
       ctx.globalAlpha = 1 - t; ctx.strokeStyle = e.color; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(e.x, e.y, 4 + 10 * t, 0, Math.PI * 2); ctx.stroke(); ctx.globalAlpha = 1;

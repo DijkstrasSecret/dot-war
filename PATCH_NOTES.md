@@ -5,6 +5,26 @@ each change live in `DESIGN_DECISIONS.md`.
 
 ---
 
+## 0.7c: Villages, buff sites and citadels (1 October 2026)
+
+- **Buff sites:** 8 places on every map are worth holding: an Airdrop Zone (supply drops), a Train
+  Station (freight trains bring metal for your Workers or Trucks to carry home), two Radio Masts (wide
+  sight and warnings when enemy troops approach your HQ), two Fuel Dumps (oil and refuelling) and two
+  Field Hospital Ruins (healing). Stand there with soldiers and no enemy for 20 seconds to take one.
+  Some are guarded.
+- **Citadels:** one or two big neutral fortresses on hills near the middle. Bullets can't reach the men
+  inside, so clear them out with grenades or mortar fire, then move in. A citadel belongs to whoever is
+  inside.
+- **Villages and civilians:** hamlets and towns with villagers who stroll about and run from fighting.
+  Nobody shoots at them on purpose.
+- **Ruins, walls and wrecks** across the map give cover like a trench or a barricade (and soldiers
+  under fire use them when they take cover). Vehicles can't drive through them.
+- **Trees** in the forests.
+- **Neutral guards patrol** near home, go back if drawn more than 150 m away, and heal when left alone.
+- **The enemy captures sites too**, sending a team sized to beat the guards.
+- **Modern uniforms** for soldiers trained after an R&D Lab and 5 Tier III researches.
+- **Balance Lab:** a new "Map detail" section checks each of these.
+
 ## 0.7b.1: Sharper mortar blast (1 October 2026)
 
 - **A mortar's direct hit is deadlier, its edge much weaker:** 65 damage at the centre (was 50), about

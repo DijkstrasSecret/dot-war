@@ -36,6 +36,34 @@ Victory: destroy the enemy Headquarters. Defeat: lose yours. The sandbox map has
   neutral guards; roads laid along gentle ground from base to base and out to every deposit, with
   bridges where they cross rivers, 14 m wide (they were 9). Every deposit and the enemy HQ are checked
   reachable on foot from the player's base; if not, a road is laid to them.
+- **Map detail (patch 0.7c):**
+  - 3–5 hamlets (4–6 houses, 6–10 civilians) and 1–2 towns near the middle (8–12 houses along two
+    crossing streets, 15–25 civilians), on levelled ground away from rivers, joined to the roads.
+  - About 25 ruin clusters, 30 stone walls (30–80 m) and 20 wrecks beside the roads.
+  - Houses and ruins give **×0.6** hit chance, walls and wrecks **×0.7**, and blasts ×0.85, as forest
+    edges do. Vehicles can't cross them; infantry cross houses and ruins at ×0.7 speed, walls and
+    wrecks at ×0.8. They don't block sight.
+  - Forests are drawn with tree crowns (looks only).
+- **Buff sites (patch 0.7c):** 8 per map, at least 1.5 km from both bases, half of them with 3 neutral
+  guards. Armed soldiers of one side alone within 60 m capture a site in 20 s (any other side's
+  soldiers there, neutral guards included, stop it; the other side's progress empties first; with
+  nobody there the bar drains in 40 s). A site stays its owner's until captured, and it can't be
+  damaged or targeted.
+
+  | Site | For the holder |
+  | --- | --- |
+  | Airdrop Zone (1) | a supply drop every 3 min: 40 wood, 60 metal, 15 sulfur |
+  | Train Station (1) | a train brings 150 metal every 4 min into its stock (at most 450); Workers or Trucks carry it home like a mine's output (4 places); the enemy commander gets it directly |
+  | Radio Mast (2) | 600 m of sight; a warning and minimap ping when 3+ enemy soldiers are within 1.5 km of your HQ (at most once a minute) |
+  | Fuel Dump (2) | +0.15 oil/s; refuels your vehicles within 60 m like a Depot |
+  | Field Hospital Ruins (2) | your infantry within 120 m heal 1 HP/s |
+
+- **Citadels (patch 0.7c):** 1–2 neutral fortresses (64 × 64 m) on the hills nearest the middle of the
+  line between the bases. They can't be destroyed. Room for 10 soldiers, 2 Machine Gunners and 2 Mortar
+  Crews; 10 m of height, occupants shoot ×1.15 accurately, 300 m of sight. They start with 6 Riflemen
+  and 2 Machine Gunners inside and 4 Riflemen outside. Bullets can't reach the occupants: shells and
+  grenades do, for 30% damage and full stress, and Riflemen throw grenades at an occupied citadel as at
+  a Bunker. An empty citadel is anyone's, and it belongs to whoever moves in.
 - Contour lines every 10 m, bold index contours every 50 m.
 - Terrain types per cell: open, forest, water, swamp. Roads are polylines rasterised onto cells;
   a road across water is a bridge. Buildings block the cells under them.
@@ -423,7 +451,20 @@ Rifleman: about 42 s on Highland Pass, 47 s on Western Ridge, 44 s on Southern R
 Hard is the original tuning for size and income. Difficulty also picks how many of the map's listed
 garrison units spawn; the garrison is placed, not trained, so it can hold Machine Gunners and
 Mortars from the start. Neutral guards (creeps) hold deposits and hills in small groups of three to
-five and fight anyone who comes close.
+five and fight anyone who comes close. From patch 0.7c, groups that guard no site or citadel walk
+together to a random spot within 120 m of home every 60–120 s; any guard more than 150 m from home
+walks back even mid-fight, and neutral soldiers heal 1 HP/s once nobody has shot at them for 20 s.
+
+Every 5 min, with at least 10 soldiers, the enemy commander sends a team to capture the nearest buff
+site within 4 km of its HQ that it doesn't hold: 2 soldiers per guard there plus 2 (4 to 10), keeping
+4 at home. They stand there until it is taken, and a soldier who can't get there gives up after 4 tries.
+
+**Civilians (patch 0.7c)** are their own side (owner 3). Nobody targets them, though blasts can hurt
+them, and they don't count as kills. They stroll around their village; when a shot is fired or a shell
+bursts within 150 m they run 250 m away from it, wait 30 s and walk home. They take no orders.
+
+**Kit (patch 0.7c):** soldiers trained once a side owns an R&D Lab and has 2 Tier III researches wear
+Cold War uniforms, and at 5 Tier III Modern ones (looks only).
 
 ## 9. Controls (`DESIGN_DECISIONS.md` section 9, extended through 0.6)
 

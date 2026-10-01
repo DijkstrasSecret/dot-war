@@ -185,12 +185,12 @@ const AI = (() => {
       if (G.time - st.lastDefend > 6) {
         st.lastDefend = G.time;
         let cx = 0, cy = 0; for (const t of threats) { cx += t.x; cy += t.y; } cx /= threats.length; cy /= threats.length;
-        const defenders = fit.filter(u => !u.raiding && !u.inside && (!u.order || (u.order.type === 'hold' && !inTrench(u)) || u.order.type === 'move'));
+        const defenders = fit.filter(u => !u.raiding && !u.siteJob && !u.inside && (!u.order || (u.order.type === 'hold' && !inTrench(u)) || u.order.type === 'move'));
         if (defenders.length) Game.orderMove(defenders, cx, cy, 'attackmove');
       }
     } else {
       for (const u of fit) {
-        if (u.raiding || u.order || u.inside || dist(u.x, u.y, hq.x, hq.y) < 240 || G.time - (u.homeT || -99) < 20) continue;
+        if (u.raiding || u.siteJob || u.order || u.inside || dist(u.x, u.y, hq.x, hq.y) < 240 || G.time - (u.homeT || -99) < 20) continue;
         u.homeT = G.time; Game.orderMove([u], hq.x + (R() - 0.5) * 160, hq.y + 70 + (R() - 0.5) * 100, 'move');
       }
     }
@@ -202,10 +202,38 @@ const AI = (() => {
       // Raids escalate, and a clear numbers advantage commits the whole army (Data.AI_RAIDS).
       const allIn = fit.length >= X.allInRatio * Math.max(X.minEnemy, st.seen.size);
       const frac = allIn ? 1 : Math.min(X.raidFracMax, D.raidFrac + st.raids * X.raidGrow);
-      const raiders = fit.filter(u => !u.raiding && !u.inside && !(u.order && u.order.type === 'dig')).slice(0, Math.max(3, Math.ceil(fit.length * frac)));
+      const raiders = fit.filter(u => !u.raiding && !u.siteJob && !u.inside && !(u.order && u.order.type === 'dig')).slice(0, Math.max(3, Math.ceil(fit.length * frac)));
       if (targetHq && raiders.length) { st.raids++; for (const u of raiders) u.raiding = true; Game.orderMove(raiders, targetHq.x, targetHq.y, 'attackmove'); Game.raidLaunched(pid, raiders); }
     }
     for (const u of mine) if (u.raiding && !u.order && !u.target) { u.raiding = false; Game.orderMove([u], hq.x, hq.y + 70, 'move'); }
+    takeSites(pid, st, hq, fit, mine);
+  }
+  // 0.7c (DD "Patch 0.7c"): now and then a few soldiers go to capture the nearest buff site it doesn't hold
+  // and stand there until it is theirs. The full siege AI comes in 0.7d.
+  function takeSites(pid, st, hq, fit, mine) {
+    const AS = Data.AI_SITES;
+    st.siteT = (st.siteT == null ? AS.every : st.siteT) - 1;
+    if (st.siteT <= 0) {
+      st.siteT = AS.every;
+      // The team grows with the guards there: 2 per guard plus 2 (at most 10), and 4 soldiers stay home.
+      const free = fit.filter(u => !u.raiding && !u.siteJob && !u.inside && !(u.order && u.order.type === 'dig'));
+      const need = b => Math.min(AS.maxSize, Math.max(AS.size, 2 + 2 * G.units.filter(g => g.owner !== pid && !g.dead && g.stats.weapon && !g.def.civilian && dist(g.x, g.y, b.x, b.y) < 150).length));
+      const site = fit.length >= AS.minArmy && G.buildings.filter(b => b.def.site && !b.dead && b.owner !== pid && dist(b.x, b.y, hq.x, hq.y) <= AS.reach && !mine.some(u => u.siteJob === b.id) && need(b) <= free.length - AS.keepHome).sort((a, b) => dist(a.x, a.y, hq.x, hq.y) - dist(b.x, b.y, hq.x, hq.y))[0];
+      if (site) {
+        const team = free.slice(0, need(site));
+        for (const u of team) { u.siteJob = site.id; u.siteTries = 0; }
+        if (team.length) Game.orderMove(team, site.x, site.y + site.h / 2 + 30, 'attackmove');
+      }
+    }
+    for (const u of mine) {
+      if (!u.siteJob) continue; const s = G.buildingById.get(u.siteJob);
+      if (!s || s.dead || s.owner === pid) { u.siteJob = null; if (!u.order) Game.orderMove([u], hq.x, hq.y + 70, 'move'); }
+      else if (!u.order && !u.target && dist(u.x, u.y, s.x, s.y) > Data.SITES.capture.r * 0.7) {
+        u.siteTries = (u.siteTries || 0) + 1;
+        if (u.siteTries > 4) { u.siteJob = null; u.siteTries = 0; continue; }   // can't get there: give up
+        Game.orderMove([u], s.x, s.y + s.h / 2 + 20, 'attackmove');
+      }
+    }
   }
 
   return { update, reset, params, get st() { return sides[2]; }, get sides() { return sides; } };

@@ -325,7 +325,7 @@ const UI = (() => {
   function buildingPanel(b) {
     const own = b.owner === 1; const p = G.players[1];
     content.appendChild(card({ icon: b.def.icon, iconBg: '#2a2a2e', name: b.def.name, cost: Data.PLAYER_NAMES[b.owner], desc: b.def.desc }));
-    const hp = bar('#5ad65a'); content.appendChild(el('div', 'small', 'Health')); content.appendChild(hp);
+    const hp = bar('#5ad65a'); if (!b.def.invulnerable) { content.appendChild(el('div', 'small', 'Health')); content.appendChild(hp); }   // 0.7c: sites and citadels can't be damaged
     let prog = null;
     if (!b.built) { prog = bar('#5a78c8'); content.appendChild(el('div', 'small', 'Construction')); content.appendChild(prog); }
     const status = el('div', 'small'); status.style.margin = '6px 0'; content.appendChild(status);
@@ -402,9 +402,17 @@ const UI = (() => {
       hp.fill.style.width = (b.hp / b.maxHp * 100) + '%';
       if (prog) prog.fill.style.width = (b.progress * 100) + '%';
       let s = '';
-      if (b.def.harvest && b.built && b.owner === 1) { const k = b.def.harvest === 'wood' ? 'wood' : b.depositType, d = G.buildingById.get(b.drop); s += 'Stock ' + Math.floor((k && b.stock[k]) || 0) + '/' + Data.LOGISTICS.stockCap + '. Drop-off: ' + (d ? d.def.name + (d.type === 'depot' && !d.connected ? ' (line cut)' : '') : 'none') + '. '; }
+      if (b.def.harvest && b.built && b.owner === 1) { const k = b.def.harvest === 'wood' ? 'wood' : b.depositType, d = G.buildingById.get(b.drop); s += 'Stock ' + Math.floor((k && b.stock[k]) || 0) + '/' + (b.def.site === 'station' ? Data.SITES.station.cap : Data.LOGISTICS.stockCap) + '. Drop-off: ' + (d ? d.def.name + (d.type === 'depot' && !d.connected ? ' (line cut)' : '') : 'none') + '. '; }
       if (b.type === 'depot' && b.built && b.owner === 1) { const par = G.buildingById.get(b.parent), wait = Object.entries(b.stock).filter(([, v]) => v >= 1); s += 'Supply line ' + (par ? 'to the ' + (par.type === 'hq' ? 'HQ' : 'Depot at ' + Math.round(par.x) + ',' + Math.round(par.y)) : '…') + ': ' + (b.connected ? 'open' : 'CUT, enemies on the line') + '. ' + (wait.length ? 'Waiting here: ' + wait.map(([k, v]) => Math.floor(v) + ' ' + k).join(', ') + '. ' : ''); }
-      if (b.def.harvest && b.built) s += 'Rate ' + Game.harvestRate(b).toFixed(1) + ' ' + (b.def.harvest === 'wood' ? 'wood' : b.depositType || '?') + '/s, labour ' + Game.activeWorkers(b) + ', slots ' + b.workers.length + '/' + Game.maxWorkers(b) + '. ';
+      if (b.def.site) {   // 0.7c: who holds it and how the capture stands
+        const c = b.cap, ST = Data.SITES, left = b.def.site === 'airdrop' ? ST.airdrop.every : b.def.site === 'station' ? ST.station.every : 0;
+        s += (b.owner === 0 ? 'Neutral. ' : b.owner === 1 ? 'Yours. ' : 'Held by the enemy. ');
+        if (c && c.p > 0 && c.by) s += (c.by === 1 ? 'Capturing' : 'The enemy is capturing') + ': ' + Math.round(c.p * 100) + '%. ';
+        else if (b.owner !== 1) s += 'Capture: keep soldiers within ' + ST.capture.r + ' m, with no enemy there, for ' + ST.capture.time + ' s. ';
+        if (left && b.owner === 1) s += 'Next ' + (b.def.site === 'airdrop' ? 'drop' : 'train') + ' in ' + Math.ceil(left - (b.siteT || 0)) + ' s. ';
+      }
+      if (b.def.citadel) s += (b.owner === 0 ? 'Neutral garrison. ' : b.owner === 1 ? 'Yours. ' : 'Held by the enemy. ') + 'Empty, it is anyone\'s: clear it with grenades or mortar fire and move in. ';
+      if (b.def.harvest && b.built && !b.def.site) s += 'Rate ' + Game.harvestRate(b).toFixed(1) + ' ' + (b.def.harvest === 'wood' ? 'wood' : b.depositType || '?') + '/s, labour ' + Game.activeWorkers(b) + ', slots ' + b.workers.length + '/' + Game.maxWorkers(b) + '. ';
       if (b.queue.length) s += 'Training ' + Data.UNITS[b.queue[0].type].name + ' (' + Math.ceil(b.queue[0].total - b.queue[0].t) + ' s).';
       status.textContent = s;
       if (qrow) b.queue.forEach((q, i) => { const qe = qrow.children[i]; if (qe) qe.prog.style.width = (q.t / q.total * 100) + '%'; });
