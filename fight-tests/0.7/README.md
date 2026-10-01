@@ -234,6 +234,20 @@ route untouched on all 7 (`data/siege.json`).
 | 20 grenadiers assault a Citadel (6 Riflemen + 2 MG inside) | 48 / 52 / 0, 19 s | new |
 | 6 Riflemen + 1 Mortar against a Citadel | 100 / 0 / 0, 58 s | new |
 | 6 Riflemen + 2 Mortars against a Citadel | 100 / 0 / 0, 25 s | new |
+## After the tests: citadel shells (patch 0.7d.1, Kaan's decision)
+
+A shell now reaches 1–2 of the men inside, at 20% (grenades unchanged). 100 runs each, 10 min limit:
+
+| Attackers (citadel: 6 Riflemen + 2 MG inside) | 0.7 (everyone, 30%) | 0.7d.1 (1–2 men, 20%) |
+| --- | --- | --- |
+| 6 Riflemen + 1 Mortar Crew | 100%, 58 s | 99%, 7.8 min |
+| 6 Riflemen + 2 Mortar Crews | 100%, 25 s | 100%, 3.9 min |
+| 6 Riflemen + 3 Mortar Crews | 100%, 14 s | 100%, 2.5 min |
+| 8 grenadiers + 2 Mortar Crews | — | 100%, 4.0 min |
+
+Tried on the way (50 runs, 5 min limit): 1–2 men at 30% let 3 Mortar Crews win in 1.7 min; at 15%,
+2 Mortar Crews won only half the time within 5 min; at 10% even 3 rarely did.
+
 ## Notes on the new fights
 
 - `l-buddy` ends in a stalemate 83% of the time, and that is real behaviour: once the Snipers on

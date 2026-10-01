@@ -1312,6 +1312,14 @@ by the Balance Lab):
 | Raid size | The current escalation stays (DD L: +10% of the army per raid, up to 90%, all-in at twice your seen soldiers). A new raid joins the one still out. |
 | Stuck on a slope (found in 0.7c) | A soldier whose route crosses a slope the cell rules allow but whose step is refused (the enemy's mountain) scrambles across at 0.3× speed after 2 s stuck, instead of standing there forever. |
 
+
+### Patch 0.7d.1: citadel shells (Kaan, 1 October 2026, after the 0.7 tests)
+
+| Topic | Decision |
+| --- | --- |
+| Shells at a citadel | Kaan: "a shell only reaches 1–2 men", and less than 30% damage if it still falls quickly. A shell (not a grenade) that bursts at a citadel hurts **1 or 2** of the men inside, picked at random, at **20%** of its damage (was: everyone inside at 30%). Grenades still reach everyone inside at 30%. |
+| Why 20% | With 1–2 men at 30%, 3 Mortar Crews still emptied a citadel (6 Riflemen + 2 MG) in 1.7 min. At 20%: 1 Mortar Crew takes about 7.8 min, 2 take 3.9 min, 3 take 2.5 min, 8 grenadiers + 2 Mortar Crews 4 min (fight-tests/0.7, 100 runs each). |
+
 ---
 
 ## Still open

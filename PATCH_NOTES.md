@@ -5,6 +5,12 @@ each change live in `DESIGN_DECISIONS.md`.
 
 ---
 
+## 0.7d.1: Citadels hold out longer (1 October 2026)
+
+- **A mortar shell now hurts only 1 or 2 of the men inside a citadel**, for less damage (20% instead
+  of 30%). Mortars are still the way to crack one, but it takes a real effort: one Mortar Crew needs
+  about 8 minutes, two about 4, three about 2½ (it used to be seconds). Grenades are unchanged.
+
 ## 0.7d: Siege raids (1 October 2026)
 
 - **Enemy raids now lay siege:** a raid first knocks out the Scout Towers and Bunkers it knows about

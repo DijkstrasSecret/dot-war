@@ -125,7 +125,7 @@ const Data = {
     ruinhosp: { name: 'Field Hospital Ruins', w: 40, h: 32, hp: 1000, icon: 'hospital', site: 'ruinhosp', invulnerable: true, heal: { rate: 1, range: 120 }, cost: {}, buildTime: 0, vision: 120,
       desc: 'Hold it and your infantry within 120 m heal 1 HP/s.' },
     citadel: { name: 'Citadel', w: 64, h: 64, hp: 1000, icon: 'citadel', citadel: true, invulnerable: true, cost: {}, buildTime: 0, vision: 300,
-      garrison: { cap: 10, heavy: 2, mg: 2, height: 10, acc: 1.15, grenadeReach: true },
+      garrison: { cap: 10, heavy: 2, mg: 2, height: 10, acc: 1.15, grenadeReach: true, shell: { reach: [1, 2], dmg: 0.2 } },   // Kaan, 0.7d.1: a shell reaches 1-2 men inside, at 20% (30% still fell in under 2 min to 3 mortars)
       desc: 'A neutral fortress. Clear out its garrison and move in: it belongs to whoever is inside. Shells and grenades reach the occupants.' },
     hospital: { name: 'Field Hospital', w: 48, h: 40, hp: 500, icon: 'hospital', cost: { wood: 80, metal: 40 }, buildTime: 35, vision: 120, requires: 'hospital',
       heal: { rate: 1.5, range: 120 }, desc: 'Heals all your infantry within 120 m at 1.5 HP/s.' },

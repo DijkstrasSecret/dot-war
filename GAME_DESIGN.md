@@ -61,9 +61,11 @@ Victory: destroy the enemy Headquarters. Defeat: lose yours. The sandbox map has
 - **Citadels (patch 0.7c):** 1–2 neutral fortresses (64 × 64 m) on the hills nearest the middle of the
   line between the bases. They can't be destroyed. Room for 10 soldiers, 2 Machine Gunners and 2 Mortar
   Crews; 10 m of height, occupants shoot ×1.15 accurately, 300 m of sight. They start with 6 Riflemen
-  and 2 Machine Gunners inside and 4 Riflemen outside. Bullets can't reach the occupants: shells and
-  grenades do, for 30% damage and full stress, and Riflemen throw grenades at an occupied citadel as at
-  a Bunker. An empty citadel is anyone's, and it belongs to whoever moves in.
+  and 2 Machine Gunners inside and 4 Riflemen outside. Bullets can't reach the occupants. A grenade
+  reaches all of them for 30% damage and full stress (Riflemen throw at an occupied citadel as at a
+  Bunker); a shell reaches only 1 or 2 of them, at random, for 20% (patch 0.7d.1). Against 6 Riflemen
+  and 2 Machine Gunners inside, 1 Mortar Crew needs about 8 min, 2 about 4 min, 3 about 2.5 min; it
+  takes about 20 grenadiers alone for an even chance. An empty citadel is anyone's, and it belongs to whoever moves in.
 - Contour lines every 10 m, bold index contours every 50 m.
 - Terrain types per cell: open, forest, water, swamp. Roads are polylines rasterised onto cells;
   a road across water is a bridge. Buildings block the cells under them.
