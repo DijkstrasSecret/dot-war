@@ -10,21 +10,23 @@ const Theatre = (() => {
 
   // A whole AI-versus-AI match (LabTests.aiMatch) dressed as a run, so the same page plays it.
   function matchRun(seed, diff) {
-    const m = LabTests.aiMatch({ seed, difficulty: diff, maxMinutes: +(q.get('mins') || 90) });
+    const map = q.get('map') || 'highland';   // 0.7: map=random follows a match on a 13 km generated map
+    const m = LabTests.aiMatch({ seed, difficulty: diff, maxMinutes: +(q.get('mins') || 90), map });
     const army = pid => G.units.filter(u => u.owner === pid && !u.dead && !u.def.labour);
     const hq = pid => G.buildings.find(b => b.owner === pid && b.type === 'hq');
-    const r = { scenario: { title: 'AI v AI · Highland Pass · ' + diff, group: 'Whole match, sped up', ground: 'map' }, match: true, result: null, A: [], B: [],
+    const r = { scenario: { title: 'AI v AI · ' + (map === 'random' ? '13 km random map' : 'Highland Pass') + ' · ' + diff, group: 'Whole match, sped up', ground: 'map' }, match: true, result: null, A: [], B: [],
       get aliveA() { return army(1).length; }, get aliveB() { return army(2).length; },
       get labelA() { const h = hq(1); return 'army, HQ ' + (h && !h.dead ? Math.round(h.hp / h.maxHp * 100) + '%' : 'lost'); },
       get labelB() { const h = hq(2); return 'army, HQ ' + (h && !h.dead ? Math.round(h.hp / h.maxHp * 100) + '%' : 'lost'); },
       step(n) { if (r.result) return r.result; const res = m.step(n); if (res) r.result = { winner: res.winner, time: G.time, lostA: G.stats[1].lost, lostB: G.stats[2].lost, bunkerFell: false }; return r.result; },
-      // Follow the fighting: everyone with a target, else the units on the move, else the whole map.
+      // Follow the busiest spot: the biggest fight, else the biggest group on the move, else a base.
+      // 0.7: on a 13 km map "everyone" is spread over kilometres, so it picks one cluster, not the average.
       bounds() {
-        let us = G.units.filter(u => !u.dead && !u.inside && u.target && !u.def.labour);
-        if (us.length < 2) us = G.units.filter(u => !u.dead && !u.inside && u.order && u.order.type === 'attackmove');
-        if (!us.length) { us = G.units.filter(u => !u.dead && !u.inside && !u.def.labour); let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity; for (const u of us) { x0 = Math.min(x0, u.x); y0 = Math.min(y0, u.y); x1 = Math.max(x1, u.x); y1 = Math.max(y1, u.y); } return us.length ? { x0, y0, x1, y1, wide: true } : null; }   // quiet: both armies
-        const cx = us.reduce((a, u) => a + u.x, 0) / us.length, cy = us.reduce((a, u) => a + u.y, 0) / us.length;
-        us = us.filter(u => Util.dist(u.x, u.y, cx, cy) < 450);   // the biggest cluster, roughly
+        const soldiers = G.units.filter(u => !u.dead && !u.inside && !u.def.labour && (u.owner === 1 || u.owner === 2));
+        const cluster = list => { let best = null, bn = 0; for (const u of list) { let n = 0; for (const v of list) if (Math.abs(v.x - u.x) < 400 && Math.abs(v.y - u.y) < 400) n++; if (n > bn) { bn = n; best = u; } } return best ? list.filter(v => Util.dist(v.x, v.y, best.x, best.y) < 450) : []; };
+        let us = cluster(soldiers.filter(u => u.target));
+        if (us.length < 2) us = cluster(soldiers.filter(u => u.order && (u.order.type === 'attackmove' || u.order.type === 'move')));
+        if (us.length < 2) { const h = G.buildings.find(b => b.type === 'hq' && !b.dead && b.hp < b.maxHp) || G.buildings.find(b => b.type === 'hq' && b.owner === 2 && !b.dead); if (h) return { x0: h.x - 250, y0: h.y - 250, x1: h.x + 250, y1: h.y + 250, wide: true }; }
         let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
         for (const u of us) { x0 = Math.min(x0, u.x); y0 = Math.min(y0, u.y); x1 = Math.max(x1, u.x); y1 = Math.max(y1, u.y); }
         return x0 === Infinity ? null : { x0, y0, x1, y1 };
@@ -66,6 +68,7 @@ const Theatre = (() => {
     const pad = 90, bw = b.x1 - b.x0 + pad * 2, bh = b.y1 - b.y0 + pad * 2 + 120;
     const z = Util.clamp(Math.min(Render.w / bw, Render.h / bh), run.match ? (b.wide ? 0.3 : 0.55) : 0.8, run.match ? 1.6 : 2.6);
     const cx = (b.x0 + b.x1) / 2, cy = (b.y0 + b.y1) / 2 - 20, cam = Render.cam;
+    if (Util.dist(cam.x + Render.w / 2 / cam.zoom, cam.y + Render.h / 2 / cam.zoom, cx, cy) > 1500) snap = true;   // a jump across a big map: cut, don't pan over empty ground
     const k = snap ? 1 : 0.06;
     cam.zoom += (z - cam.zoom) * k;
     const tx = cx - Render.w / 2 / cam.zoom, ty = cy - Render.h / 2 / cam.zoom;

@@ -1,0 +1,92 @@
+[
+ {
+  "seed": 1,
+  "checks": [
+   {
+    "name": "Siege raid: the tower first, then the weakest outpost ahead, then the HQ",
+    "pass": true,
+    "detail": "targets: tower → barracks → hq"
+   },
+   {
+    "name": "Siege raid: an outpost off the line between the bases is ignored",
+    "pass": true,
+    "detail": "the far tower is untouched"
+   }
+  ]
+ },
+ {
+  "seed": 2,
+  "checks": [
+   {
+    "name": "Siege raid: the tower first, then the weakest outpost ahead, then the HQ",
+    "pass": true,
+    "detail": "targets: tower → barracks → hq"
+   },
+   {
+    "name": "Siege raid: an outpost off the line between the bases is ignored",
+    "pass": true,
+    "detail": "the far tower is untouched"
+   }
+  ]
+ },
+ {
+  "seed": 4,
+  "checks": [
+   {
+    "name": "Siege raid: the tower first, then the weakest outpost ahead, then the HQ",
+    "pass": true,
+    "detail": "targets: tower → barracks → hq"
+   },
+   {
+    "name": "Siege raid: an outpost off the line between the bases is ignored",
+    "pass": true,
+    "detail": "the far tower is untouched"
+   }
+  ]
+ },
+ {
+  "seed": 5,
+  "checks": [
+   {
+    "name": "Siege raid: the tower first, then the weakest outpost ahead, then the HQ",
+    "pass": true,
+    "detail": "targets: tower → barracks → hq"
+   },
+   {
+    "name": "Siege raid: an outpost off the line between the bases is ignored",
+    "pass": true,
+    "detail": "the far tower is untouched"
+   }
+  ]
+ },
+ {
+  "seed": 6,
+  "checks": [
+   {
+    "name": "Siege raid: the tower first, then the weakest outpost ahead, then the HQ",
+    "pass": true,
+    "detail": "targets: tower → barracks → hq"
+   },
+   {
+    "name": "Siege raid: an outpost off the line between the bases is ignored",
+    "pass": true,
+    "detail": "the far tower is untouched"
+   }
+  ]
+ },
+ {
+  "seed": 7,
+  "checks": [
+   {
+    "name": "Siege raid: the tower first, then the weakest outpost ahead, then the HQ",
+    "pass": true,
+    "detail": "targets: tower → barracks → hq"
+   },
+   {
+    "name": "Siege raid: an outpost off the line between the bases is ignored",
+    "pass": true,
+    "detail": "the far tower is untouched"
+   }
+  ]
+ }
+]

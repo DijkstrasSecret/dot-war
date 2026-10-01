@@ -112,6 +112,14 @@ Riflemen: 6 Riflemen v 3 Mortar Crews 20% → 48% (section 1 above had Riflemen 
 where they get inside the minimum range; the recorded fights start farther out), equal-cost
 Riflemen v Mortars 43% → 80%. The mortar mirror stays even, and trenches still beat mortars.
 
+## Patch 0.7 (all of it) against this baseline
+
+The meta snapshot at 100 runs on the finished 0.7 (details and the big-map tests in `fight-tests/0.7`):
+Riflemen v Mortars 63% → 80% (the sharper blast of 0.7b.1); the MG mirror stops stalling (70% draws →
+none); Riflemen v MG still 0% but over in 22 s (37 s); Machine Gunners v Snipers 67% → 51%; the hill
+74% → 65% and the forest 86% → 81% for the defender; the squadron 62% → 63%; the idle player's HQ falls
+at 7.7 min on Normal (9.3). Economy identical. All three Balance Lab targets green.
+
 ## What 0.6 did to the things we watched
 
 - Night hurt Mortars most, as expected (Riflemen beat them 100% at night), but not Snipers: they still

@@ -153,8 +153,9 @@ const LabTests = (() => {
   // the AI (resources, a Barracks and an Ordnance Works near its HQ, the difficulty's garrison) in
   // place of the normal start. The map is not symmetric, so the results are also a map check.
   // Runs in slices so a page can show progress; call step() until it returns a result.
-  function aiMatch({ seed = 1, difficulty = 'normal', maxMinutes = 90 } = {}) {
-    const spec = Sim.survey({ map: 'highland', difficulty, seed });
+  // map: 'highland' (default, comparable with earlier patches) or 'random' (a 13 km generated map, 0.7).
+  function aiMatch({ seed = 1, difficulty = 'normal', maxMinutes = 90, map = 'highland' } = {}) {
+    const spec = Sim.survey({ map, difficulty, seed });
     for (const u of G.units) if (u.owner === 1) u.dead = true;
     G.units = G.units.filter(u => !u.dead);
     Object.assign(G.players[1].res, G.players[2].res);

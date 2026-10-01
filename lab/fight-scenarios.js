@@ -69,6 +69,21 @@ const FightScenarios = (() => {
     S('rain-rif-mor', 'Night and weather', 'Riflemen v Mortar Crews in rain', [['rifle', 6]], [['mortar', 3]], { env: { weather: 'rain' } }),
     S('snow-flat-hold', 'Night and weather', '5 v 5 Riflemen, red holding, in snow', [['rifle', 5]], [['rifle', 5]], { defend: true, env: { weather: 'snow' } }),
     S('x-mortar-nest', 'Special situations', '3 Mortars + 3 Riflemen against an MG nest', [['rifle', 3], ['mortar', 3]], [['rifle', 2], ['hmg', 2]], { gap: 320, defend: true }),
+    // Patch 0.7: cover from ruins, walls and houses, citadels, and the living infantry of 0.7b.
+    S('p-ruins-hold', 'Map detail and living infantry (0.7)', '5 v 5 Riflemen, red holding in ruins', [['rifle', 5]], [['rifle', 5]], { defend: true, ground: 'ruins' }),
+    S('p-ruins-7v5', 'Map detail and living infantry (0.7)', '7 Riflemen attack 5 in ruins', [['rifle', 7]], [['rifle', 5]], { defend: true, ground: 'ruins' }),
+    S('p-wall-hold', 'Map detail and living infantry (0.7)', '5 v 5 Riflemen, red behind a stone wall', [['rifle', 5]], [['rifle', 5]], { defend: true, ground: 'wall' }),
+    S('p-village', 'Map detail and living infantry (0.7)', '8 Riflemen attack 6 holding a village (with civilians)', [['rifle', 8]], [['rifle', 6]], { defend: true, ground: 'village' }),
+    S('p-citadel8', 'Map detail and living infantry (0.7)', '8 grenadiers assault a Citadel (6 Riflemen + 2 MG inside)', [['rifle', 8]], [['rifle', 6], ['hmg', 2]], { defend: true, gap: 200, fort: 'citadel', grenadesA: true }),
+    S('p-citadel12', 'Map detail and living infantry (0.7)', '12 grenadiers assault a Citadel (6 Riflemen + 2 MG inside)', [['rifle', 12]], [['rifle', 6], ['hmg', 2]], { defend: true, gap: 200, fort: 'citadel', grenadesA: true }),
+    S('p-citadel16', 'Map detail and living infantry (0.7)', '16 grenadiers assault a Citadel (6 Riflemen + 2 MG inside)', [['rifle', 16]], [['rifle', 6], ['hmg', 2]], { defend: true, gap: 200, fort: 'citadel', grenadesA: true }),
+    S('p-citadel20', 'Map detail and living infantry (0.7)', '20 grenadiers assault a Citadel (6 Riflemen + 2 MG inside)', [['rifle', 20]], [['rifle', 6], ['hmg', 2]], { defend: true, gap: 200, fort: 'citadel', grenadesA: true }),
+    S('p-citadel-mortar1', 'Map detail and living infantry (0.7)', '6 Riflemen + 1 Mortar against a Citadel', [['rifle', 6], ['mortar', 1]], [['rifle', 6], ['hmg', 2]], { defend: true, gap: 300, fort: 'citadel', maxTime: 300 }),
+    S('p-citadel-mortar2', 'Map detail and living infantry (0.7)', '6 Riflemen + 2 Mortars against a Citadel', [['rifle', 6], ['mortar', 2]], [['rifle', 6], ['hmg', 2]], { defend: true, gap: 300, fort: 'citadel', maxTime: 300 }),
+    S('p-citadel-mortar', 'Map detail and living infantry (0.7)', '6 Riflemen + 3 Mortars against a Citadel', [['rifle', 6], ['mortar', 3]], [['rifle', 6], ['hmg', 2]], { defend: true, gap: 300, fort: 'citadel', maxTime: 300 }),
+    S('l-shelled', 'Map detail and living infantry (0.7)', '3 Mortars + a spotting Sniper shell 8 idle Riflemen', [['mortar', 3], ['sniper', 1]], [['rifle', 8]], { gap: 220, idleB: true, holdA: true }),
+    S('l-medic-hold', 'Map detail and living infantry (0.7)', '6 Riflemen attack 5 Riflemen + a Medic holding', [['rifle', 6]], [['rifle', 5], ['medic', 1]], { defend: true }),
+    S('l-buddy', 'Map detail and living infantry (0.7)', '3 Snipers on Defend against 6 idle Riflemen spread 40 m', [['sniper', 3]], [['rifle', 6]], { gap: 220, idleB: true, holdA: true, spreadB: 40 }),
   ];
   const byId = {}; for (const s of LIST) byId[s.id] = s;
 
@@ -84,6 +99,11 @@ const FightScenarios = (() => {
       if (ground === 'forestDeep' && x > BX - 60 && x < BX + 140) type[k] = Terrain.T_FOREST;
     }
     Terrain.recomputeDerived();
+    // 0.7c props where red stands: ruins (broken buildings), a stone wall in front, or village houses
+    // (red's front row stands at x = BX, 14 m apart along y; the props sit right under it)
+    if (ground === 'ruins') for (let n = 0; n < 3; n++) { Terrain.addProp(2, BX + 4, MIDY - 30 + n * 30, 18, 28, 0); Terrain.addProp(2, BX + 40, MIDY - 40 + n * 40, 20, 16, 0.4); }
+    if (ground === 'wall') Terrain.addProp(3, BX + 4, MIDY, 2.5, 120, 0);
+    if (ground === 'village') for (let n = 0; n < 3; n++) { Terrain.addProp(1, BX + 4, MIDY - 30 + n * 30, 16, 26, 0); Terrain.addProp(1, BX + 46, MIDY - 45 + n * 45, 18, 13, 0.2); }
     Path.init(); Fog.init(); AI.reset([]);
   }
   const plural = (t, n) => { const nm = Data.UNITS[t].name; return n + ' ' + (n === 1 ? nm : nm.endsWith('man') ? nm.slice(0, -3) + 'men' : nm + 's'); };
@@ -101,6 +121,8 @@ const FightScenarios = (() => {
     let bunker = null;
     if (s.fort === 'trench') for (const sg of Game._dbg.planLine(2, 'trench', [[BX, MIDY - 80], [BX, MIDY + 80]])) Game._dbg.finishSeg(sg);
     if (s.fort === 'bunker') bunker = Game.addBuilding('bunker', 2, BX + 20, MIDY, true);
+    if (s.fort === 'citadel') bunker = Game.addBuilding('citadel', 2, BX + 40, MIDY, true);   // 0.7c: can't be destroyed, so red holds while anyone is inside
+    if (s.ground === 'village') for (let n = 0; n < 8; n++) { const c = Game.spawnUnit('civilian', Data.CIVILIANS.owner, BX + 20 + (n % 4) * 14, MIDY - 40 + Math.floor(n / 4) * 80); c.spawn = { x: BX + 40, y: MIDY }; }
     const place = (comp, owner, x0, dir) => {
       const out = [];
       for (const [t, n] of comp) for (let i = 0; i < n; i++) {
@@ -136,12 +158,13 @@ const FightScenarios = (() => {
         Game.orderMove([u], t.x, t.y, 'attackmove');
       }
     };
+    if (s.fort === 'citadel') Game.orderBombard(A.filter(u => u.type === 'mortar'), bunker.x, bunker.y);   // mortars shell the Citadel itself (they never target a building)
     if (s.grenadesA) for (const u of A) orderNade(u);   // grenadiers are sent to throw from the start, as the Balance Lab's fort test does
     const maxTicks = Math.round(s.maxTime / STEP);
     const run = {
       scenario: s, seed, A, B, bunker, result: null,
       get aliveA() { return alive(A); }, get aliveB() { return held() ? alive(B) : 0; },
-      labelA: label(s.A), labelB: label(s.B) + (s.fort === 'bunker' ? ' in a Bunker' : s.fort === 'trench' ? ' in a trench' : ''),
+      labelA: label(s.A), labelB: label(s.B) + (s.fort === 'bunker' ? ' in a Bunker' : s.fort === 'citadel' ? ' in a Citadel' : s.fort === 'trench' ? ' in a trench' : ''),
       step(n = 1) {
         if (run.result) return run.result;
         for (let i = 0; i < n; i++) {

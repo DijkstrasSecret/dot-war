@@ -1,0 +1,3113 @@
+{
+ "aivai": [
+  {
+   "job": {
+    "kind": "aivai",
+    "difficulty": "normal",
+    "seed": 1,
+    "mins": 75
+   },
+   "winner": 1,
+   "minutes": 65.48,
+   "kills": [
+    54,
+    78
+   ],
+   "timeline": [
+    {
+     "min": 5,
+     "army": [
+      13,
+      13
+     ],
+     "lost": [
+      0,
+      0
+     ],
+     "sites": {
+      "0": 10
+     },
+     "ms": 14506
+    },
+    {
+     "min": 10,
+     "army": [
+      15,
+      16
+     ],
+     "lost": [
+      0,
+      1
+     ],
+     "sites": {
+      "0": 9,
+      "2": 1
+     },
+     "ms": 37821
+    },
+    {
+     "min": 15,
+     "army": [
+      17,
+      18
+     ],
+     "lost": [
+      0,
+      7
+     ],
+     "sites": {
+      "0": 8,
+      "2": 2
+     },
+     "ms": 78957
+    },
+    {
+     "min": 20,
+     "army": [
+      14,
+      20
+     ],
+     "lost": [
+      6,
+      11
+     ],
+     "sites": {
+      "0": 8,
+      "2": 2
+     },
+     "ms": 149635
+    },
+    {
+     "min": 25,
+     "army": [
+      24,
+      23
+     ],
+     "lost": [
+      10,
+      11
+     ],
+     "sites": {
+      "0": 8,
+      "2": 2
+     },
+     "ms": 216951
+    },
+    {
+     "min": 30,
+     "army": [
+      25,
+      24
+     ],
+     "lost": [
+      13,
+      19
+     ],
+     "sites": {
+      "0": 8,
+      "2": 2
+     },
+     "ms": 273488
+    },
+    {
+     "min": 35,
+     "army": [
+      29,
+      28
+     ],
+     "lost": [
+      21,
+      26
+     ],
+     "sites": {
+      "0": 8,
+      "2": 2
+     },
+     "ms": 326722
+    },
+    {
+     "min": 40,
+     "army": [
+      31,
+      30
+     ],
+     "lost": [
+      23,
+      30
+     ],
+     "sites": {
+      "0": 8,
+      "2": 2
+     },
+     "ms": 383483
+    },
+    {
+     "min": 45,
+     "army": [
+      33,
+      35
+     ],
+     "lost": [
+      41,
+      37
+     ],
+     "sites": {
+      "0": 8,
+      "2": 2
+     },
+     "ms": 433937
+    },
+    {
+     "min": 50,
+     "army": [
+      35,
+      37
+     ],
+     "lost": [
+      42,
+      38
+     ],
+     "sites": {
+      "0": 8,
+      "2": 2
+     },
+     "ms": 494868
+    },
+    {
+     "min": 55,
+     "army": [
+      38,
+      39
+     ],
+     "lost": [
+      62,
+      45
+     ],
+     "sites": {
+      "0": 8,
+      "2": 2
+     },
+     "ms": 546373
+    },
+    {
+     "min": 60,
+     "army": [
+      39,
+      40
+     ],
+     "lost": [
+      64,
+      50
+     ],
+     "sites": {
+      "0": 8,
+      "2": 2
+     },
+     "ms": 606100
+    },
+    {
+     "min": 65,
+     "army": [
+      42,
+      41
+     ],
+     "lost": [
+      76,
+      64
+     ],
+     "sites": {
+      "0": 8,
+      "2": 2
+     },
+     "ms": 690426
+    }
+   ],
+   "lost": [
+    77,
+    66
+   ],
+   "civiliansLost": 0,
+   "neutralLost": 6,
+   "sitesEnd": {
+    "0": 8,
+    "2": 2
+   },
+   "computeS": 698.54
+  },
+  {
+   "job": {
+    "kind": "aivai",
+    "difficulty": "hard",
+    "seed": 2,
+    "mins": 75
+   },
+   "winner": 0,
+   "minutes": 75,
+   "kills": [
+    156,
+    181
+   ],
+   "timeline": [
+    {
+     "min": 5,
+     "army": [
+      16,
+      16
+     ],
+     "lost": [
+      0,
+      0
+     ],
+     "sites": {
+      "0": 9
+     },
+     "ms": 13503
+    },
+    {
+     "min": 10,
+     "army": [
+      19,
+      18
+     ],
+     "lost": [
+      1,
+      0
+     ],
+     "sites": {
+      "0": 7,
+      "1": 1,
+      "2": 1
+     },
+     "ms": 79591
+    },
+    {
+     "min": 15,
+     "army": [
+      16,
+      22
+     ],
+     "lost": [
+      13,
+      10
+     ],
+     "sites": {
+      "0": 7,
+      "1": 1,
+      "2": 1
+     },
+     "ms": 150983
+    },
+    {
+     "min": 20,
+     "army": [
+      23,
+      24
+     ],
+     "lost": [
+      19,
+      14
+     ],
+     "sites": {
+      "0": 7,
+      "1": 1,
+      "2": 1
+     },
+     "ms": 234331
+    },
+    {
+     "min": 25,
+     "army": [
+      27,
+      26
+     ],
+     "lost": [
+      26,
+      24
+     ],
+     "sites": {
+      "0": 7,
+      "1": 1,
+      "2": 1
+     },
+     "ms": 302330
+    },
+    {
+     "min": 30,
+     "army": [
+      27,
+      27
+     ],
+     "lost": [
+      38,
+      38
+     ],
+     "sites": {
+      "0": 7,
+      "1": 1,
+      "2": 1
+     },
+     "ms": 371446
+    },
+    {
+     "min": 35,
+     "army": [
+      32,
+      31
+     ],
+     "lost": [
+      57,
+      48
+     ],
+     "sites": {
+      "0": 7,
+      "1": 1,
+      "2": 1
+     },
+     "ms": 464062
+    },
+    {
+     "min": 40,
+     "army": [
+      32,
+      32
+     ],
+     "lost": [
+      65,
+      62
+     ],
+     "sites": {
+      "0": 7,
+      "1": 1,
+      "2": 1
+     },
+     "ms": 549792
+    },
+    {
+     "min": 45,
+     "army": [
+      36,
+      32
+     ],
+     "lost": [
+      73,
+      96
+     ],
+     "sites": {
+      "0": 7,
+      "1": 1,
+      "2": 1
+     },
+     "ms": 601986
+    },
+    {
+     "min": 50,
+     "army": [
+      28,
+      38
+     ],
+     "lost": [
+      90,
+      111
+     ],
+     "sites": {
+      "0": 7,
+      "1": 1,
+      "2": 1
+     },
+     "ms": 661887
+    },
+    {
+     "min": 55,
+     "army": [
+      38,
+      37
+     ],
+     "lost": [
+      110,
+      118
+     ],
+     "sites": {
+      "0": 7,
+      "1": 1,
+      "2": 1
+     },
+     "ms": 759067
+    },
+    {
+     "min": 60,
+     "army": [
+      41,
+      43
+     ],
+     "lost": [
+      133,
+      127
+     ],
+     "sites": {
+      "0": 7,
+      "1": 1,
+      "2": 1
+     },
+     "ms": 837314
+    },
+    {
+     "min": 65,
+     "army": [
+      47,
+      40
+     ],
+     "lost": [
+      137,
+      144
+     ],
+     "sites": {
+      "0": 7,
+      "1": 1,
+      "2": 1
+     },
+     "ms": 910383
+    },
+    {
+     "min": 70,
+     "army": [
+      40,
+      42
+     ],
+     "lost": [
+      159,
+      158
+     ],
+     "sites": {
+      "0": 7,
+      "1": 1,
+      "2": 1
+     },
+     "ms": 975747
+    }
+   ],
+   "lost": [
+    187,
+    165
+   ],
+   "civiliansLost": 0,
+   "neutralLost": 18,
+   "sitesEnd": {
+    "0": 7,
+    "1": 1,
+    "2": 1
+   },
+   "computeS": 1035.03
+  },
+  {
+   "job": {
+    "kind": "aivai",
+    "difficulty": "hard",
+    "seed": 1,
+    "mins": 75
+   },
+   "winner": 0,
+   "minutes": 75,
+   "kills": [
+    110,
+    119
+   ],
+   "timeline": [
+    {
+     "min": 5,
+     "army": [
+      16,
+      16
+     ],
+     "lost": [
+      0,
+      0
+     ],
+     "sites": {
+      "0": 10
+     },
+     "ms": 15198
+    },
+    {
+     "min": 10,
+     "army": [
+      18,
+      18
+     ],
+     "lost": [
+      0,
+      0
+     ],
+     "sites": {
+      "0": 9,
+      "2": 1
+     },
+     "ms": 47346
+    },
+    {
+     "min": 15,
+     "army": [
+      20,
+      20
+     ],
+     "lost": [
+      3,
+      7
+     ],
+     "sites": {
+      "0": 9,
+      "2": 1
+     },
+     "ms": 105132
+    },
+    {
+     "min": 20,
+     "army": [
+      22,
+      23
+     ],
+     "lost": [
+      18,
+      13
+     ],
+     "sites": {
+      "0": 9,
+      "2": 1
+     },
+     "ms": 200095
+    },
+    {
+     "min": 25,
+     "army": [
+      26,
+      28
+     ],
+     "lost": [
+      20,
+      17
+     ],
+     "sites": {
+      "0": 9,
+      "2": 1
+     },
+     "ms": 297110
+    },
+    {
+     "min": 30,
+     "army": [
+      28,
+      28
+     ],
+     "lost": [
+      36,
+      24
+     ],
+     "sites": {
+      "0": 9,
+      "2": 1
+     },
+     "ms": 348660
+    },
+    {
+     "min": 35,
+     "army": [
+      30,
+      30
+     ],
+     "lost": [
+      37,
+      30
+     ],
+     "sites": {
+      "0": 8,
+      "2": 2
+     },
+     "ms": 426007
+    },
+    {
+     "min": 40,
+     "army": [
+      32,
+      32
+     ],
+     "lost": [
+      52,
+      43
+     ],
+     "sites": {
+      "0": 8,
+      "2": 2
+     },
+     "ms": 498044
+    },
+    {
+     "min": 45,
+     "army": [
+      38,
+      38
+     ],
+     "lost": [
+      52,
+      43
+     ],
+     "sites": {
+      "0": 8,
+      "2": 2
+     },
+     "ms": 565267
+    },
+    {
+     "min": 50,
+     "army": [
+      40,
+      39
+     ],
+     "lost": [
+      62,
+      53
+     ],
+     "sites": {
+      "0": 8,
+      "2": 2
+     },
+     "ms": 650417
+    },
+    {
+     "min": 55,
+     "army": [
+      40,
+      41
+     ],
+     "lost": [
+      65,
+      54
+     ],
+     "sites": {
+      "0": 8,
+      "2": 2
+     },
+     "ms": 720456
+    },
+    {
+     "min": 60,
+     "army": [
+      40,
+      14
+     ],
+     "lost": [
+      82,
+      99
+     ],
+     "sites": {
+      "0": 8,
+      "2": 2
+     },
+     "ms": 784833
+    },
+    {
+     "min": 65,
+     "army": [
+      46,
+      47
+     ],
+     "lost": [
+      83,
+      101
+     ],
+     "sites": {
+      "0": 8,
+      "2": 2
+     },
+     "ms": 869926
+    },
+    {
+     "min": 70,
+     "army": [
+      50,
+      48
+     ],
+     "lost": [
+      115,
+      116
+     ],
+     "sites": {
+      "0": 8,
+      "2": 2
+     },
+     "ms": 979396
+    }
+   ],
+   "lost": [
+    116,
+    118
+   ],
+   "civiliansLost": 0,
+   "neutralLost": 16,
+   "sitesEnd": {
+    "0": 8,
+    "2": 2
+   },
+   "computeS": 1071.77
+  },
+  {
+   "job": {
+    "kind": "aivai",
+    "difficulty": "hard",
+    "seed": 3,
+    "mins": 75
+   },
+   "winner": 0,
+   "minutes": 75,
+   "kills": [
+    147,
+    189
+   ],
+   "timeline": [
+    {
+     "min": 5,
+     "army": [
+      16,
+      16
+     ],
+     "lost": [
+      0,
+      0
+     ],
+     "sites": {
+      "0": 10
+     },
+     "ms": 13160
+    },
+    {
+     "min": 10,
+     "army": [
+      18,
+      19
+     ],
+     "lost": [
+      0,
+      1
+     ],
+     "sites": {
+      "0": 9,
+      "2": 1
+     },
+     "ms": 57166
+    },
+    {
+     "min": 15,
+     "army": [
+      21,
+      22
+     ],
+     "lost": [
+      1,
+      1
+     ],
+     "sites": {
+      "0": 9,
+      "2": 1
+     },
+     "ms": 125634
+    },
+    {
+     "min": 20,
+     "army": [
+      22,
+      23
+     ],
+     "lost": [
+      16,
+      10
+     ],
+     "sites": {
+      "0": 9,
+      "2": 1
+     },
+     "ms": 248383
+    },
+    {
+     "min": 25,
+     "army": [
+      28,
+      27
+     ],
+     "lost": [
+      24,
+      12
+     ],
+     "sites": {
+      "0": 9,
+      "2": 1
+     },
+     "ms": 341804
+    },
+    {
+     "min": 30,
+     "army": [
+      29,
+      28
+     ],
+     "lost": [
+      29,
+      21
+     ],
+     "sites": {
+      "0": 8,
+      "2": 2
+     },
+     "ms": 408024
+    },
+    {
+     "min": 35,
+     "army": [
+      30,
+      31
+     ],
+     "lost": [
+      44,
+      37
+     ],
+     "sites": {
+      "0": 8,
+      "2": 2
+     },
+     "ms": 502084
+    },
+    {
+     "min": 40,
+     "army": [
+      33,
+      32
+     ],
+     "lost": [
+      47,
+      46
+     ],
+     "sites": {
+      "0": 8,
+      "2": 2
+     },
+     "ms": 598272
+    },
+    {
+     "min": 45,
+     "army": [
+      36,
+      35
+     ],
+     "lost": [
+      60,
+      59
+     ],
+     "sites": {
+      "0": 8,
+      "2": 2
+     },
+     "ms": 702385
+    },
+    {
+     "min": 50,
+     "army": [
+      38,
+      38
+     ],
+     "lost": [
+      83,
+      81
+     ],
+     "sites": {
+      "0": 8,
+      "2": 2
+     },
+     "ms": 805927
+    },
+    {
+     "min": 55,
+     "army": [
+      40,
+      41
+     ],
+     "lost": [
+      90,
+      82
+     ],
+     "sites": {
+      "0": 7,
+      "2": 3
+     },
+     "ms": 868628
+    },
+    {
+     "min": 60,
+     "army": [
+      41,
+      43
+     ],
+     "lost": [
+      95,
+      86
+     ],
+     "sites": {
+      "0": 7,
+      "2": 3
+     },
+     "ms": 969955
+    },
+    {
+     "min": 65,
+     "army": [
+      46,
+      46
+     ],
+     "lost": [
+      132,
+      113
+     ],
+     "sites": {
+      "0": 7,
+      "2": 3
+     },
+     "ms": 1107391
+    },
+    {
+     "min": 70,
+     "army": [
+      40,
+      50
+     ],
+     "lost": [
+      152,
+      130
+     ],
+     "sites": {
+      "0": 7,
+      "2": 3
+     },
+     "ms": 1208899
+    }
+   ],
+   "lost": [
+    175,
+    157
+   ],
+   "civiliansLost": 0,
+   "neutralLost": 31,
+   "sitesEnd": {
+    "0": 7,
+    "2": 3
+   },
+   "computeS": 1281.28
+  },
+  {
+   "job": {
+    "kind": "aivai",
+    "difficulty": "normal",
+    "seed": 2,
+    "mins": 75
+   },
+   "winner": 0,
+   "minutes": 75,
+   "kills": [
+    121,
+    135
+   ],
+   "timeline": [
+    {
+     "min": 5,
+     "army": [
+      13,
+      13
+     ],
+     "lost": [
+      0,
+      0
+     ],
+     "sites": {
+      "0": 9
+     },
+     "ms": 14650
+    },
+    {
+     "min": 10,
+     "army": [
+      15,
+      15
+     ],
+     "lost": [
+      0,
+      0
+     ],
+     "sites": {
+      "0": 7,
+      "1": 1,
+      "2": 1
+     },
+     "ms": 58421
+    },
+    {
+     "min": 15,
+     "army": [
+      18,
+      18
+     ],
+     "lost": [
+      3,
+      1
+     ],
+     "sites": {
+      "0": 7,
+      "1": 1,
+      "2": 1
+     },
+     "ms": 102774
+    },
+    {
+     "min": 20,
+     "army": [
+      20,
+      21
+     ],
+     "lost": [
+      16,
+      13
+     ],
+     "sites": {
+      "0": 7,
+      "1": 1,
+      "2": 1
+     },
+     "ms": 148814
+    },
+    {
+     "min": 25,
+     "army": [
+      24,
+      25
+     ],
+     "lost": [
+      21,
+      26
+     ],
+     "sites": {
+      "0": 7,
+      "1": 1,
+      "2": 1
+     },
+     "ms": 215086
+    },
+    {
+     "min": 30,
+     "army": [
+      25,
+      25
+     ],
+     "lost": [
+      37,
+      32
+     ],
+     "sites": {
+      "0": 7,
+      "1": 1,
+      "2": 1
+     },
+     "ms": 265543
+    },
+    {
+     "min": 35,
+     "army": [
+      27,
+      27
+     ],
+     "lost": [
+      49,
+      41
+     ],
+     "sites": {
+      "0": 7,
+      "1": 1,
+      "2": 1
+     },
+     "ms": 338279
+    },
+    {
+     "min": 40,
+     "army": [
+      29,
+      30
+     ],
+     "lost": [
+      53,
+      44
+     ],
+     "sites": {
+      "0": 7,
+      "1": 1,
+      "2": 1
+     },
+     "ms": 372823
+    },
+    {
+     "min": 45,
+     "army": [
+      33,
+      33
+     ],
+     "lost": [
+      74,
+      66
+     ],
+     "sites": {
+      "0": 7,
+      "1": 1,
+      "2": 1
+     },
+     "ms": 417425
+    },
+    {
+     "min": 50,
+     "army": [
+      37,
+      36
+     ],
+     "lost": [
+      76,
+      66
+     ],
+     "sites": {
+      "0": 7,
+      "1": 1,
+      "2": 1
+     },
+     "ms": 450455
+    },
+    {
+     "min": 55,
+     "army": [
+      37,
+      37
+     ],
+     "lost": [
+      82,
+      82
+     ],
+     "sites": {
+      "0": 7,
+      "1": 1,
+      "2": 1
+     },
+     "ms": 541589
+    },
+    {
+     "min": 60,
+     "army": [
+      39,
+      40
+     ],
+     "lost": [
+      86,
+      88
+     ],
+     "sites": {
+      "0": 7,
+      "1": 1,
+      "2": 1
+     },
+     "ms": 591523
+    },
+    {
+     "min": 65,
+     "army": [
+      44,
+      44
+     ],
+     "lost": [
+      90,
+      102
+     ],
+     "sites": {
+      "0": 7,
+      "1": 1,
+      "2": 1
+     },
+     "ms": 652571
+    },
+    {
+     "min": 70,
+     "army": [
+      41,
+      41
+     ],
+     "lost": [
+      116,
+      120
+     ],
+     "sites": {
+      "0": 7,
+      "1": 1,
+      "2": 1
+     },
+     "ms": 717897
+    }
+   ],
+   "lost": [
+    135,
+    126
+   ],
+   "civiliansLost": 0,
+   "neutralLost": 16,
+   "sitesEnd": {
+    "0": 7,
+    "1": 1,
+    "2": 1
+   },
+   "computeS": 794.05
+  },
+  {
+   "job": {
+    "kind": "aivai",
+    "difficulty": "normal",
+    "seed": 3,
+    "mins": 75
+   },
+   "winner": 0,
+   "minutes": 75,
+   "kills": [
+    116,
+    165
+   ],
+   "timeline": [
+    {
+     "min": 5,
+     "army": [
+      13,
+      13
+     ],
+     "lost": [
+      0,
+      0
+     ],
+     "sites": {
+      "0": 10
+     },
+     "ms": 13205
+    },
+    {
+     "min": 10,
+     "army": [
+      15,
+      15
+     ],
+     "lost": [
+      0,
+      0
+     ],
+     "sites": {
+      "0": 9,
+      "2": 1
+     },
+     "ms": 35984
+    },
+    {
+     "min": 15,
+     "army": [
+      17,
+      18
+     ],
+     "lost": [
+      0,
+      1
+     ],
+     "sites": {
+      "0": 8,
+      "2": 2
+     },
+     "ms": 72929
+    },
+    {
+     "min": 20,
+     "army": [
+      20,
+      20
+     ],
+     "lost": [
+      9,
+      2
+     ],
+     "sites": {
+      "0": 8,
+      "2": 2
+     },
+     "ms": 126178
+    },
+    {
+     "min": 25,
+     "army": [
+      23,
+      23
+     ],
+     "lost": [
+      16,
+      5
+     ],
+     "sites": {
+      "0": 8,
+      "2": 2
+     },
+     "ms": 218896
+    },
+    {
+     "min": 30,
+     "army": [
+      25,
+      25
+     ],
+     "lost": [
+      26,
+      9
+     ],
+     "sites": {
+      "0": 7,
+      "2": 3
+     },
+     "ms": 282718
+    },
+    {
+     "min": 35,
+     "army": [
+      28,
+      27
+     ],
+     "lost": [
+      33,
+      19
+     ],
+     "sites": {
+      "0": 7,
+      "2": 3
+     },
+     "ms": 360534
+    },
+    {
+     "min": 40,
+     "army": [
+      30,
+      29
+     ],
+     "lost": [
+      54,
+      31
+     ],
+     "sites": {
+      "0": 7,
+      "2": 3
+     },
+     "ms": 425155
+    },
+    {
+     "min": 45,
+     "army": [
+      35,
+      33
+     ],
+     "lost": [
+      55,
+      39
+     ],
+     "sites": {
+      "0": 7,
+      "2": 3
+     },
+     "ms": 507008
+    },
+    {
+     "min": 50,
+     "army": [
+      32,
+      32
+     ],
+     "lost": [
+      84,
+      57
+     ],
+     "sites": {
+      "0": 7,
+      "2": 3
+     },
+     "ms": 593731
+    },
+    {
+     "min": 55,
+     "army": [
+      38,
+      38
+     ],
+     "lost": [
+      93,
+      60
+     ],
+     "sites": {
+      "0": 7,
+      "2": 3
+     },
+     "ms": 660452
+    },
+    {
+     "min": 60,
+     "army": [
+      36,
+      29
+     ],
+     "lost": [
+      118,
+      86
+     ],
+     "sites": {
+      "0": 7,
+      "2": 3
+     },
+     "ms": 733146
+    },
+    {
+     "min": 65,
+     "army": [
+      44,
+      45
+     ],
+     "lost": [
+      120,
+      89
+     ],
+     "sites": {
+      "0": 7,
+      "2": 3
+     },
+     "ms": 825858
+    },
+    {
+     "min": 70,
+     "army": [
+      27,
+      24
+     ],
+     "lost": [
+      148,
+      119
+     ],
+     "sites": {
+      "0": 7,
+      "2": 3
+     },
+     "ms": 918181
+    }
+   ],
+   "lost": [
+    149,
+    124
+   ],
+   "civiliansLost": 0,
+   "neutralLost": 21,
+   "sitesEnd": {
+    "0": 7,
+    "2": 3
+   },
+   "computeS": 993.05
+  }
+ ],
+ "pressure": [
+  {
+   "job": {
+    "kind": "pressure",
+    "difficulty": "easy",
+    "seed": 1,
+    "mins": 45
+   },
+   "first": 19.8,
+   "hqDead": 22.72,
+   "timeline": [
+    {
+     "min": 5,
+     "army": 10,
+     "sites": {
+      "0": 10
+     }
+    },
+    {
+     "min": 10,
+     "army": 10,
+     "sites": {
+      "0": 9,
+      "2": 1
+     }
+    },
+    {
+     "min": 15,
+     "army": 12,
+     "sites": {
+      "0": 9,
+      "2": 1
+     }
+    },
+    {
+     "min": 20,
+     "army": 13,
+     "sites": {
+      "0": 9,
+      "2": 1
+     }
+    }
+   ],
+   "civiliansLost": 0,
+   "computeS": 64.53
+  },
+  {
+   "job": {
+    "kind": "pressure",
+    "difficulty": "easy",
+    "seed": 2,
+    "mins": 45
+   },
+   "first": 18.75,
+   "hqDead": 22.65,
+   "timeline": [
+    {
+     "min": 5,
+     "army": 10,
+     "sites": {
+      "0": 9
+     }
+    },
+    {
+     "min": 10,
+     "army": 10,
+     "sites": {
+      "0": 9
+     }
+    },
+    {
+     "min": 15,
+     "army": 12,
+     "sites": {
+      "0": 9
+     }
+    },
+    {
+     "min": 20,
+     "army": 14,
+     "sites": {
+      "0": 9
+     }
+    }
+   ],
+   "civiliansLost": 0,
+   "computeS": 57.34
+  },
+  {
+   "job": {
+    "kind": "pressure",
+    "difficulty": "easy",
+    "seed": 3,
+    "mins": 45
+   },
+   "first": 19.9,
+   "hqDead": 22.92,
+   "timeline": [
+    {
+     "min": 5,
+     "army": 10,
+     "sites": {
+      "0": 10
+     }
+    },
+    {
+     "min": 10,
+     "army": 10,
+     "sites": {
+      "0": 10
+     }
+    },
+    {
+     "min": 15,
+     "army": 12,
+     "sites": {
+      "0": 10
+     }
+    },
+    {
+     "min": 20,
+     "army": 12,
+     "sites": {
+      "0": 10
+     }
+    }
+   ],
+   "civiliansLost": 0,
+   "computeS": 65.06
+  },
+  {
+   "job": {
+    "kind": "pressure",
+    "difficulty": "easy",
+    "seed": 4,
+    "mins": 45
+   },
+   "first": 16.68,
+   "hqDead": 23.9,
+   "timeline": [
+    {
+     "min": 5,
+     "army": 10,
+     "sites": {
+      "0": 9
+     }
+    },
+    {
+     "min": 10,
+     "army": 10,
+     "sites": {
+      "0": 9
+     }
+    },
+    {
+     "min": 15,
+     "army": 12,
+     "sites": {
+      "0": 9
+     }
+    },
+    {
+     "min": 20,
+     "army": 12,
+     "sites": {
+      "0": 9
+     }
+    }
+   ],
+   "civiliansLost": 0,
+   "computeS": 49.43
+  },
+  {
+   "job": {
+    "kind": "pressure",
+    "difficulty": "normal",
+    "seed": 1,
+    "mins": 45
+   },
+   "first": 16.52,
+   "hqDead": 20.98,
+   "timeline": [
+    {
+     "min": 5,
+     "army": 13,
+     "sites": {
+      "0": 10
+     }
+    },
+    {
+     "min": 10,
+     "army": 16,
+     "sites": {
+      "0": 9,
+      "2": 1
+     }
+    },
+    {
+     "min": 15,
+     "army": 17,
+     "sites": {
+      "0": 8,
+      "2": 2
+     }
+    },
+    {
+     "min": 20,
+     "army": 20,
+     "sites": {
+      "0": 8,
+      "2": 2
+     }
+    }
+   ],
+   "civiliansLost": 0,
+   "computeS": 77.11
+  },
+  {
+   "job": {
+    "kind": "pressure",
+    "difficulty": "normal",
+    "seed": 2,
+    "mins": 45
+   },
+   "first": 15.03,
+   "hqDead": 17.62,
+   "timeline": [
+    {
+     "min": 5,
+     "army": 13,
+     "sites": {
+      "0": 9
+     }
+    },
+    {
+     "min": 10,
+     "army": 16,
+     "sites": {
+      "0": 8,
+      "2": 1
+     }
+    },
+    {
+     "min": 15,
+     "army": 18,
+     "sites": {
+      "0": 8,
+      "2": 1
+     }
+    }
+   ],
+   "civiliansLost": 0,
+   "computeS": 71.85
+  },
+  {
+   "job": {
+    "kind": "pressure",
+    "difficulty": "normal",
+    "seed": 4,
+    "mins": 45
+   },
+   "first": 13.57,
+   "hqDead": 15.43,
+   "timeline": [
+    {
+     "min": 5,
+     "army": 13,
+     "sites": {
+      "0": 9
+     }
+    },
+    {
+     "min": 10,
+     "army": 15,
+     "sites": {
+      "0": 8,
+      "2": 1
+     }
+    },
+    {
+     "min": 15,
+     "army": 18,
+     "sites": {
+      "0": 8,
+      "2": 1
+     }
+    }
+   ],
+   "civiliansLost": 0,
+   "computeS": 54.31
+  },
+  {
+   "job": {
+    "kind": "pressure",
+    "difficulty": "normal",
+    "seed": 3,
+    "mins": 45
+   },
+   "first": 16.85,
+   "hqDead": 28.52,
+   "timeline": [
+    {
+     "min": 5,
+     "army": 13,
+     "sites": {
+      "0": 10
+     }
+    },
+    {
+     "min": 10,
+     "army": 16,
+     "sites": {
+      "0": 9,
+      "2": 1
+     }
+    },
+    {
+     "min": 15,
+     "army": 17,
+     "sites": {
+      "0": 9,
+      "2": 1
+     }
+    },
+    {
+     "min": 20,
+     "army": 19,
+     "sites": {
+      "0": 9,
+      "2": 1
+     }
+    },
+    {
+     "min": 25,
+     "army": 25,
+     "sites": {
+      "0": 8,
+      "2": 2
+     }
+    }
+   ],
+   "civiliansLost": 0,
+   "computeS": 139.95
+  },
+  {
+   "job": {
+    "kind": "pressure",
+    "difficulty": "hard",
+    "seed": 1,
+    "mins": 45
+   },
+   "first": 14.18,
+   "hqDead": 17.1,
+   "timeline": [
+    {
+     "min": 5,
+     "army": 16,
+     "sites": {
+      "0": 10
+     }
+    },
+    {
+     "min": 10,
+     "army": 18,
+     "sites": {
+      "0": 9,
+      "2": 1
+     }
+    },
+    {
+     "min": 15,
+     "army": 22,
+     "sites": {
+      "0": 9,
+      "2": 1
+     }
+    }
+   ],
+   "civiliansLost": 0,
+   "computeS": 72.02
+  },
+  {
+   "job": {
+    "kind": "pressure",
+    "difficulty": "hard",
+    "seed": 4,
+    "mins": 45
+   },
+   "first": 12.02,
+   "hqDead": 13.85,
+   "timeline": [
+    {
+     "min": 5,
+     "army": 16,
+     "sites": {
+      "0": 9
+     }
+    },
+    {
+     "min": 10,
+     "army": 18,
+     "sites": {
+      "0": 8,
+      "2": 1
+     }
+    }
+   ],
+   "civiliansLost": 0,
+   "computeS": 57.1
+  },
+  {
+   "job": {
+    "kind": "pressure",
+    "difficulty": "hard",
+    "seed": 2,
+    "mins": 45
+   },
+   "first": 13.03,
+   "hqDead": 15.6,
+   "timeline": [
+    {
+     "min": 5,
+     "army": 16,
+     "sites": {
+      "0": 9
+     }
+    },
+    {
+     "min": 10,
+     "army": 19,
+     "sites": {
+      "0": 8,
+      "2": 1
+     }
+    },
+    {
+     "min": 15,
+     "army": 20,
+     "sites": {
+      "0": 8,
+      "2": 1
+     }
+    }
+   ],
+   "civiliansLost": 0,
+   "computeS": 71.08
+  },
+  {
+   "job": {
+    "kind": "pressure",
+    "difficulty": "hard",
+    "seed": 3,
+    "mins": 45
+   },
+   "first": 14.53,
+   "hqDead": 17.42,
+   "timeline": [
+    {
+     "min": 5,
+     "army": 16,
+     "sites": {
+      "0": 10
+     }
+    },
+    {
+     "min": 10,
+     "army": 18,
+     "sites": {
+      "0": 9,
+      "2": 1
+     }
+    },
+    {
+     "min": 15,
+     "army": 21,
+     "sites": {
+      "0": 9,
+      "2": 1
+     }
+    }
+   ],
+   "civiliansLost": 0,
+   "computeS": 86.69
+  }
+ ],
+ "checks": [
+  {
+   "job": {
+    "kind": "checks",
+    "seed": 1
+   },
+   "behaviour": [
+    {
+     "name": "Wounded fall back behind the healthy ones",
+     "pass": true,
+     "detail": "22 m further from the enemy than the others (want > 12)"
+    },
+    {
+     "name": "Wounded walk to a Medic within 300 m and return healed",
+     "pass": true,
+     "detail": "reached the Medic, health 100%, 13 m from his post"
+    },
+    {
+     "name": "Soldiers keep a personal gap (12 m outside a squadron)",
+     "pass": true,
+     "detail": "closest pair 14.0 m"
+    },
+    {
+     "name": "After a nearby shell the gap grows x1.5",
+     "pass": true,
+     "detail": "closest pair 18.0 m"
+    },
+    {
+     "name": "A soldier moves up to help a teammate under fire",
+     "pass": true,
+     "detail": "210 m → 153 m from the shooter (his range 170 m)"
+    },
+    {
+     "name": "Under fire, a soldier steps into nearby cover",
+     "pass": true,
+     "detail": "now at x = 297 (forest from x = 290)"
+    },
+    {
+     "name": "A soldier drawn away walks back to his post when it is quiet",
+     "pass": true,
+     "detail": "6 m from his post"
+    },
+    {
+     "name": "In a squadron the wounded take the rear rank",
+     "pass": true,
+     "detail": "wounded offset -50 m, others from -25 m"
+    }
+   ],
+   "map": [
+    {
+     "name": "Soldiers alone at a buff site capture it in about 20 s",
+     "pass": true,
+     "detail": "captured after 20.3 s"
+    },
+    {
+     "name": "With an enemy soldier there, nobody captures it",
+     "pass": true,
+     "detail": "owner after 30 s: Neutral"
+    },
+    {
+     "name": "An Airdrop Zone drops supplies every 3 minutes",
+     "pass": true,
+     "detail": "+60 metal in 241 s"
+    },
+    {
+     "name": "A freight train fills the station's stock every 4 minutes",
+     "pass": true,
+     "detail": "stock 150 metal"
+    },
+    {
+     "name": "An empty Citadel belongs to whoever moves in",
+     "pass": true,
+     "detail": "owner You, the Rifleman is inside"
+    },
+    {
+     "name": "Nobody targets civilians",
+     "pass": true,
+     "detail": "health 25/25"
+    },
+    {
+     "name": "Civilians run from a firefight",
+     "pass": true,
+     "detail": "ran 253 m"
+    },
+    {
+     "name": "Ruins and walls give cover",
+     "pass": true,
+     "detail": "ruin ×0.6, wall ×0.7"
+    },
+    {
+     "name": "A neutral guard more than 150 m from home walks back",
+     "pass": true,
+     "detail": "7 m from home"
+    },
+    {
+     "name": "Modern kit after an R&D Lab and 5 Tier III researches",
+     "pass": true,
+     "detail": "kit: modern (5 Tier III)"
+    },
+    {
+     "name": "Siege raid: the tower first, then the weakest outpost ahead, then the HQ",
+     "pass": true,
+     "detail": "targets: tower → barracks → hq"
+    },
+    {
+     "name": "Siege raid: an outpost off the line between the bases is ignored",
+     "pass": true,
+     "detail": "the far tower is untouched"
+    }
+   ],
+   "computeS": 23.54
+  },
+  {
+   "job": {
+    "kind": "checks",
+    "seed": 2
+   },
+   "behaviour": [
+    {
+     "name": "Wounded fall back behind the healthy ones",
+     "pass": true,
+     "detail": "22 m further from the enemy than the others (want > 12)"
+    },
+    {
+     "name": "Wounded walk to a Medic within 300 m and return healed",
+     "pass": true,
+     "detail": "reached the Medic, health 100%, 13 m from his post"
+    },
+    {
+     "name": "Soldiers keep a personal gap (12 m outside a squadron)",
+     "pass": true,
+     "detail": "closest pair 14.0 m"
+    },
+    {
+     "name": "After a nearby shell the gap grows x1.5",
+     "pass": true,
+     "detail": "closest pair 18.0 m"
+    },
+    {
+     "name": "A soldier moves up to help a teammate under fire",
+     "pass": true,
+     "detail": "210 m → 162 m from the shooter (his range 170 m)"
+    },
+    {
+     "name": "Under fire, a soldier steps into nearby cover",
+     "pass": true,
+     "detail": "now at x = 296 (forest from x = 290)"
+    },
+    {
+     "name": "A soldier drawn away walks back to his post when it is quiet",
+     "pass": true,
+     "detail": "6 m from his post"
+    },
+    {
+     "name": "In a squadron the wounded take the rear rank",
+     "pass": true,
+     "detail": "wounded offset -50 m, others from -25 m"
+    }
+   ],
+   "map": [
+    {
+     "name": "Soldiers alone at a buff site capture it in about 20 s",
+     "pass": true,
+     "detail": "captured after 19.9 s"
+    },
+    {
+     "name": "With an enemy soldier there, nobody captures it",
+     "pass": true,
+     "detail": "owner after 30 s: Neutral"
+    },
+    {
+     "name": "An Airdrop Zone drops supplies every 3 minutes",
+     "pass": true,
+     "detail": "+60 metal in 241 s"
+    },
+    {
+     "name": "A freight train fills the station's stock every 4 minutes",
+     "pass": true,
+     "detail": "stock 150 metal"
+    },
+    {
+     "name": "An empty Citadel belongs to whoever moves in",
+     "pass": true,
+     "detail": "owner You, the Rifleman is inside"
+    },
+    {
+     "name": "Nobody targets civilians",
+     "pass": true,
+     "detail": "health 25/25"
+    },
+    {
+     "name": "Civilians run from a firefight",
+     "pass": true,
+     "detail": "ran 253 m"
+    },
+    {
+     "name": "Ruins and walls give cover",
+     "pass": true,
+     "detail": "ruin ×0.6, wall ×0.7"
+    },
+    {
+     "name": "A neutral guard more than 150 m from home walks back",
+     "pass": true,
+     "detail": "7 m from home"
+    },
+    {
+     "name": "Modern kit after an R&D Lab and 5 Tier III researches",
+     "pass": true,
+     "detail": "kit: modern (5 Tier III)"
+    },
+    {
+     "name": "Siege raid: the tower first, then the weakest outpost ahead, then the HQ",
+     "pass": true,
+     "detail": "targets: tower → barracks → hq"
+    },
+    {
+     "name": "Siege raid: an outpost off the line between the bases is ignored",
+     "pass": true,
+     "detail": "the far tower is untouched"
+    }
+   ],
+   "computeS": 23.57
+  },
+  {
+   "job": {
+    "kind": "checks",
+    "seed": 3
+   },
+   "behaviour": [
+    {
+     "name": "Wounded fall back behind the healthy ones",
+     "pass": true,
+     "detail": "22 m further from the enemy than the others (want > 12)"
+    },
+    {
+     "name": "Wounded walk to a Medic within 300 m and return healed",
+     "pass": true,
+     "detail": "reached the Medic, health 100%, 13 m from his post"
+    },
+    {
+     "name": "Soldiers keep a personal gap (12 m outside a squadron)",
+     "pass": true,
+     "detail": "closest pair 14.0 m"
+    },
+    {
+     "name": "After a nearby shell the gap grows x1.5",
+     "pass": true,
+     "detail": "closest pair 18.0 m"
+    },
+    {
+     "name": "A soldier moves up to help a teammate under fire",
+     "pass": true,
+     "detail": "210 m → 167 m from the shooter (his range 170 m)"
+    },
+    {
+     "name": "Under fire, a soldier steps into nearby cover",
+     "pass": true,
+     "detail": "now at x = 294 (forest from x = 290)"
+    },
+    {
+     "name": "A soldier drawn away walks back to his post when it is quiet",
+     "pass": true,
+     "detail": "6 m from his post"
+    },
+    {
+     "name": "In a squadron the wounded take the rear rank",
+     "pass": true,
+     "detail": "wounded offset -50 m, others from -25 m"
+    }
+   ],
+   "map": [
+    {
+     "name": "Soldiers alone at a buff site capture it in about 20 s",
+     "pass": true,
+     "detail": "captured after 20.0 s"
+    },
+    {
+     "name": "With an enemy soldier there, nobody captures it",
+     "pass": true,
+     "detail": "owner after 30 s: Neutral"
+    },
+    {
+     "name": "An Airdrop Zone drops supplies every 3 minutes",
+     "pass": true,
+     "detail": "+60 metal in 241 s"
+    },
+    {
+     "name": "A freight train fills the station's stock every 4 minutes",
+     "pass": true,
+     "detail": "stock 150 metal"
+    },
+    {
+     "name": "An empty Citadel belongs to whoever moves in",
+     "pass": true,
+     "detail": "owner You, the Rifleman is inside"
+    },
+    {
+     "name": "Nobody targets civilians",
+     "pass": true,
+     "detail": "health 25/25"
+    },
+    {
+     "name": "Civilians run from a firefight",
+     "pass": true,
+     "detail": "ran 253 m"
+    },
+    {
+     "name": "Ruins and walls give cover",
+     "pass": true,
+     "detail": "ruin ×0.6, wall ×0.7"
+    },
+    {
+     "name": "A neutral guard more than 150 m from home walks back",
+     "pass": true,
+     "detail": "7 m from home"
+    },
+    {
+     "name": "Modern kit after an R&D Lab and 5 Tier III researches",
+     "pass": true,
+     "detail": "kit: modern (5 Tier III)"
+    },
+    {
+     "name": "Siege raid: the tower first, then the weakest outpost ahead, then the HQ",
+     "pass": true,
+     "detail": "targets: tower → barracks → hq"
+    },
+    {
+     "name": "Siege raid: an outpost off the line between the bases is ignored",
+     "pass": true,
+     "detail": "the far tower is untouched"
+    }
+   ],
+   "computeS": 24.19
+  },
+  {
+   "job": {
+    "kind": "checks",
+    "seed": 5
+   },
+   "behaviour": [
+    {
+     "name": "Wounded fall back behind the healthy ones",
+     "pass": true,
+     "detail": "22 m further from the enemy than the others (want > 12)"
+    },
+    {
+     "name": "Wounded walk to a Medic within 300 m and return healed",
+     "pass": true,
+     "detail": "reached the Medic, health 100%, 13 m from his post"
+    },
+    {
+     "name": "Soldiers keep a personal gap (12 m outside a squadron)",
+     "pass": true,
+     "detail": "closest pair 14.0 m"
+    },
+    {
+     "name": "After a nearby shell the gap grows x1.5",
+     "pass": true,
+     "detail": "closest pair 18.0 m"
+    },
+    {
+     "name": "A soldier moves up to help a teammate under fire",
+     "pass": true,
+     "detail": "210 m → 157 m from the shooter (his range 170 m)"
+    },
+    {
+     "name": "Under fire, a soldier steps into nearby cover",
+     "pass": true,
+     "detail": "now at x = 296 (forest from x = 290)"
+    },
+    {
+     "name": "A soldier drawn away walks back to his post when it is quiet",
+     "pass": true,
+     "detail": "6 m from his post"
+    },
+    {
+     "name": "In a squadron the wounded take the rear rank",
+     "pass": true,
+     "detail": "wounded offset -50 m, others from -25 m"
+    }
+   ],
+   "map": [
+    {
+     "name": "Soldiers alone at a buff site capture it in about 20 s",
+     "pass": true,
+     "detail": "captured after 19.9 s"
+    },
+    {
+     "name": "With an enemy soldier there, nobody captures it",
+     "pass": true,
+     "detail": "owner after 30 s: Neutral"
+    },
+    {
+     "name": "An Airdrop Zone drops supplies every 3 minutes",
+     "pass": true,
+     "detail": "+60 metal in 241 s"
+    },
+    {
+     "name": "A freight train fills the station's stock every 4 minutes",
+     "pass": true,
+     "detail": "stock 150 metal"
+    },
+    {
+     "name": "An empty Citadel belongs to whoever moves in",
+     "pass": true,
+     "detail": "owner You, the Rifleman is inside"
+    },
+    {
+     "name": "Nobody targets civilians",
+     "pass": true,
+     "detail": "health 25/25"
+    },
+    {
+     "name": "Civilians run from a firefight",
+     "pass": true,
+     "detail": "ran 253 m"
+    },
+    {
+     "name": "Ruins and walls give cover",
+     "pass": true,
+     "detail": "ruin ×0.6, wall ×0.7"
+    },
+    {
+     "name": "A neutral guard more than 150 m from home walks back",
+     "pass": true,
+     "detail": "7 m from home"
+    },
+    {
+     "name": "Modern kit after an R&D Lab and 5 Tier III researches",
+     "pass": true,
+     "detail": "kit: modern (5 Tier III)"
+    },
+    {
+     "name": "Siege raid: the tower first, then the weakest outpost ahead, then the HQ",
+     "pass": true,
+     "detail": "targets: tower → barracks → hq"
+    },
+    {
+     "name": "Siege raid: an outpost off the line between the bases is ignored",
+     "pass": true,
+     "detail": "the far tower is untouched"
+    }
+   ],
+   "computeS": 24.57
+  },
+  {
+   "job": {
+    "kind": "checks",
+    "seed": 4
+   },
+   "behaviour": [
+    {
+     "name": "Wounded fall back behind the healthy ones",
+     "pass": true,
+     "detail": "22 m further from the enemy than the others (want > 12)"
+    },
+    {
+     "name": "Wounded walk to a Medic within 300 m and return healed",
+     "pass": true,
+     "detail": "reached the Medic, health 100%, 13 m from his post"
+    },
+    {
+     "name": "Soldiers keep a personal gap (12 m outside a squadron)",
+     "pass": true,
+     "detail": "closest pair 14.0 m"
+    },
+    {
+     "name": "After a nearby shell the gap grows x1.5",
+     "pass": true,
+     "detail": "closest pair 18.0 m"
+    },
+    {
+     "name": "A soldier moves up to help a teammate under fire",
+     "pass": true,
+     "detail": "210 m → 165 m from the shooter (his range 170 m)"
+    },
+    {
+     "name": "Under fire, a soldier steps into nearby cover",
+     "pass": true,
+     "detail": "now at x = 295 (forest from x = 290)"
+    },
+    {
+     "name": "A soldier drawn away walks back to his post when it is quiet",
+     "pass": true,
+     "detail": "6 m from his post"
+    },
+    {
+     "name": "In a squadron the wounded take the rear rank",
+     "pass": true,
+     "detail": "wounded offset -50 m, others from -25 m"
+    }
+   ],
+   "map": [
+    {
+     "name": "Soldiers alone at a buff site capture it in about 20 s",
+     "pass": true,
+     "detail": "captured after 19.8 s"
+    },
+    {
+     "name": "With an enemy soldier there, nobody captures it",
+     "pass": true,
+     "detail": "owner after 30 s: Neutral"
+    },
+    {
+     "name": "An Airdrop Zone drops supplies every 3 minutes",
+     "pass": true,
+     "detail": "+60 metal in 241 s"
+    },
+    {
+     "name": "A freight train fills the station's stock every 4 minutes",
+     "pass": true,
+     "detail": "stock 150 metal"
+    },
+    {
+     "name": "An empty Citadel belongs to whoever moves in",
+     "pass": true,
+     "detail": "owner You, the Rifleman is inside"
+    },
+    {
+     "name": "Nobody targets civilians",
+     "pass": true,
+     "detail": "health 25/25"
+    },
+    {
+     "name": "Civilians run from a firefight",
+     "pass": true,
+     "detail": "ran 253 m"
+    },
+    {
+     "name": "Ruins and walls give cover",
+     "pass": true,
+     "detail": "ruin ×0.6, wall ×0.7"
+    },
+    {
+     "name": "A neutral guard more than 150 m from home walks back",
+     "pass": true,
+     "detail": "7 m from home"
+    },
+    {
+     "name": "Modern kit after an R&D Lab and 5 Tier III researches",
+     "pass": true,
+     "detail": "kit: modern (5 Tier III)"
+    },
+    {
+     "name": "Siege raid: the tower first, then the weakest outpost ahead, then the HQ",
+     "pass": true,
+     "detail": "targets: tower → barracks → hq"
+    },
+    {
+     "name": "Siege raid: an outpost off the line between the bases is ignored",
+     "pass": true,
+     "detail": "the far tower is untouched"
+    }
+   ],
+   "computeS": 24.95
+  },
+  {
+   "job": {
+    "kind": "checks",
+    "seed": 6
+   },
+   "behaviour": [
+    {
+     "name": "Wounded fall back behind the healthy ones",
+     "pass": true,
+     "detail": "22 m further from the enemy than the others (want > 12)"
+    },
+    {
+     "name": "Wounded walk to a Medic within 300 m and return healed",
+     "pass": true,
+     "detail": "reached the Medic, health 100%, 13 m from his post"
+    },
+    {
+     "name": "Soldiers keep a personal gap (12 m outside a squadron)",
+     "pass": true,
+     "detail": "closest pair 14.0 m"
+    },
+    {
+     "name": "After a nearby shell the gap grows x1.5",
+     "pass": true,
+     "detail": "closest pair 18.0 m"
+    },
+    {
+     "name": "A soldier moves up to help a teammate under fire",
+     "pass": true,
+     "detail": "210 m → 169 m from the shooter (his range 170 m)"
+    },
+    {
+     "name": "Under fire, a soldier steps into nearby cover",
+     "pass": true,
+     "detail": "now at x = 292 (forest from x = 290)"
+    },
+    {
+     "name": "A soldier drawn away walks back to his post when it is quiet",
+     "pass": true,
+     "detail": "6 m from his post"
+    },
+    {
+     "name": "In a squadron the wounded take the rear rank",
+     "pass": true,
+     "detail": "wounded offset -50 m, others from -25 m"
+    }
+   ],
+   "map": [
+    {
+     "name": "Soldiers alone at a buff site capture it in about 20 s",
+     "pass": true,
+     "detail": "captured after 19.8 s"
+    },
+    {
+     "name": "With an enemy soldier there, nobody captures it",
+     "pass": true,
+     "detail": "owner after 30 s: Neutral"
+    },
+    {
+     "name": "An Airdrop Zone drops supplies every 3 minutes",
+     "pass": true,
+     "detail": "+60 metal in 241 s"
+    },
+    {
+     "name": "A freight train fills the station's stock every 4 minutes",
+     "pass": true,
+     "detail": "stock 150 metal"
+    },
+    {
+     "name": "An empty Citadel belongs to whoever moves in",
+     "pass": true,
+     "detail": "owner You, the Rifleman is inside"
+    },
+    {
+     "name": "Nobody targets civilians",
+     "pass": true,
+     "detail": "health 25/25"
+    },
+    {
+     "name": "Civilians run from a firefight",
+     "pass": true,
+     "detail": "ran 253 m"
+    },
+    {
+     "name": "Ruins and walls give cover",
+     "pass": true,
+     "detail": "ruin ×0.6, wall ×0.7"
+    },
+    {
+     "name": "A neutral guard more than 150 m from home walks back",
+     "pass": true,
+     "detail": "7 m from home"
+    },
+    {
+     "name": "Modern kit after an R&D Lab and 5 Tier III researches",
+     "pass": true,
+     "detail": "kit: modern (5 Tier III)"
+    },
+    {
+     "name": "Siege raid: the tower first, then the weakest outpost ahead, then the HQ",
+     "pass": true,
+     "detail": "targets: tower → barracks → hq"
+    },
+    {
+     "name": "Siege raid: an outpost off the line between the bases is ignored",
+     "pass": true,
+     "detail": "the far tower is untouched"
+    }
+   ],
+   "computeS": 26.73
+  },
+  {
+   "job": {
+    "kind": "checks",
+    "seed": 8
+   },
+   "behaviour": [
+    {
+     "name": "Wounded fall back behind the healthy ones",
+     "pass": true,
+     "detail": "22 m further from the enemy than the others (want > 12)"
+    },
+    {
+     "name": "Wounded walk to a Medic within 300 m and return healed",
+     "pass": true,
+     "detail": "reached the Medic, health 100%, 13 m from his post"
+    },
+    {
+     "name": "Soldiers keep a personal gap (12 m outside a squadron)",
+     "pass": true,
+     "detail": "closest pair 14.0 m"
+    },
+    {
+     "name": "After a nearby shell the gap grows x1.5",
+     "pass": true,
+     "detail": "closest pair 18.0 m"
+    },
+    {
+     "name": "A soldier moves up to help a teammate under fire",
+     "pass": true,
+     "detail": "210 m → 157 m from the shooter (his range 170 m)"
+    },
+    {
+     "name": "Under fire, a soldier steps into nearby cover",
+     "pass": true,
+     "detail": "now at x = 294 (forest from x = 290)"
+    },
+    {
+     "name": "A soldier drawn away walks back to his post when it is quiet",
+     "pass": true,
+     "detail": "6 m from his post"
+    },
+    {
+     "name": "In a squadron the wounded take the rear rank",
+     "pass": true,
+     "detail": "wounded offset -50 m, others from -25 m"
+    }
+   ],
+   "map": [
+    {
+     "name": "Soldiers alone at a buff site capture it in about 20 s",
+     "pass": true,
+     "detail": "captured after 20.3 s"
+    },
+    {
+     "name": "With an enemy soldier there, nobody captures it",
+     "pass": true,
+     "detail": "owner after 30 s: Neutral"
+    },
+    {
+     "name": "An Airdrop Zone drops supplies every 3 minutes",
+     "pass": true,
+     "detail": "+60 metal in 241 s"
+    },
+    {
+     "name": "A freight train fills the station's stock every 4 minutes",
+     "pass": true,
+     "detail": "stock 150 metal"
+    },
+    {
+     "name": "An empty Citadel belongs to whoever moves in",
+     "pass": true,
+     "detail": "owner You, the Rifleman is inside"
+    },
+    {
+     "name": "Nobody targets civilians",
+     "pass": true,
+     "detail": "health 25/25"
+    },
+    {
+     "name": "Civilians run from a firefight",
+     "pass": true,
+     "detail": "ran 253 m"
+    },
+    {
+     "name": "Ruins and walls give cover",
+     "pass": true,
+     "detail": "ruin ×0.6, wall ×0.7"
+    },
+    {
+     "name": "A neutral guard more than 150 m from home walks back",
+     "pass": true,
+     "detail": "7 m from home"
+    },
+    {
+     "name": "Modern kit after an R&D Lab and 5 Tier III researches",
+     "pass": true,
+     "detail": "kit: modern (5 Tier III)"
+    },
+    {
+     "name": "Siege raid: the tower first, then the weakest outpost ahead, then the HQ",
+     "pass": true,
+     "detail": "targets: tower → barracks → hq"
+    },
+    {
+     "name": "Siege raid: an outpost off the line between the bases is ignored",
+     "pass": true,
+     "detail": "the far tower is untouched"
+    }
+   ],
+   "computeS": 24.71
+  },
+  {
+   "job": {
+    "kind": "checks",
+    "seed": 7
+   },
+   "behaviour": [
+    {
+     "name": "Wounded fall back behind the healthy ones",
+     "pass": true,
+     "detail": "22 m further from the enemy than the others (want > 12)"
+    },
+    {
+     "name": "Wounded walk to a Medic within 300 m and return healed",
+     "pass": true,
+     "detail": "reached the Medic, health 100%, 13 m from his post"
+    },
+    {
+     "name": "Soldiers keep a personal gap (12 m outside a squadron)",
+     "pass": true,
+     "detail": "closest pair 14.0 m"
+    },
+    {
+     "name": "After a nearby shell the gap grows x1.5",
+     "pass": true,
+     "detail": "closest pair 18.0 m"
+    },
+    {
+     "name": "A soldier moves up to help a teammate under fire",
+     "pass": true,
+     "detail": "210 m → 162 m from the shooter (his range 170 m)"
+    },
+    {
+     "name": "Under fire, a soldier steps into nearby cover",
+     "pass": true,
+     "detail": "now at x = 295 (forest from x = 290)"
+    },
+    {
+     "name": "A soldier drawn away walks back to his post when it is quiet",
+     "pass": true,
+     "detail": "6 m from his post"
+    },
+    {
+     "name": "In a squadron the wounded take the rear rank",
+     "pass": true,
+     "detail": "wounded offset -50 m, others from -25 m"
+    }
+   ],
+   "map": [
+    {
+     "name": "Soldiers alone at a buff site capture it in about 20 s",
+     "pass": true,
+     "detail": "captured after 20.3 s"
+    },
+    {
+     "name": "With an enemy soldier there, nobody captures it",
+     "pass": true,
+     "detail": "owner after 30 s: Neutral"
+    },
+    {
+     "name": "An Airdrop Zone drops supplies every 3 minutes",
+     "pass": true,
+     "detail": "+60 metal in 241 s"
+    },
+    {
+     "name": "A freight train fills the station's stock every 4 minutes",
+     "pass": true,
+     "detail": "stock 150 metal"
+    },
+    {
+     "name": "An empty Citadel belongs to whoever moves in",
+     "pass": true,
+     "detail": "owner You, the Rifleman is inside"
+    },
+    {
+     "name": "Nobody targets civilians",
+     "pass": true,
+     "detail": "health 25/25"
+    },
+    {
+     "name": "Civilians run from a firefight",
+     "pass": true,
+     "detail": "ran 253 m"
+    },
+    {
+     "name": "Ruins and walls give cover",
+     "pass": true,
+     "detail": "ruin ×0.6, wall ×0.7"
+    },
+    {
+     "name": "A neutral guard more than 150 m from home walks back",
+     "pass": true,
+     "detail": "7 m from home"
+    },
+    {
+     "name": "Modern kit after an R&D Lab and 5 Tier III researches",
+     "pass": true,
+     "detail": "kit: modern (5 Tier III)"
+    },
+    {
+     "name": "Siege raid: the tower first, then the weakest outpost ahead, then the HQ",
+     "pass": true,
+     "detail": "targets: tower → barracks → hq"
+    },
+    {
+     "name": "Siege raid: an outpost off the line between the bases is ignored",
+     "pass": true,
+     "detail": "the far tower is untouched"
+    }
+   ],
+   "computeS": 26.14
+  },
+  {
+   "job": {
+    "kind": "checks",
+    "seed": 9
+   },
+   "behaviour": [
+    {
+     "name": "Wounded fall back behind the healthy ones",
+     "pass": true,
+     "detail": "22 m further from the enemy than the others (want > 12)"
+    },
+    {
+     "name": "Wounded walk to a Medic within 300 m and return healed",
+     "pass": true,
+     "detail": "reached the Medic, health 100%, 13 m from his post"
+    },
+    {
+     "name": "Soldiers keep a personal gap (12 m outside a squadron)",
+     "pass": true,
+     "detail": "closest pair 14.0 m"
+    },
+    {
+     "name": "After a nearby shell the gap grows x1.5",
+     "pass": true,
+     "detail": "closest pair 18.0 m"
+    },
+    {
+     "name": "A soldier moves up to help a teammate under fire",
+     "pass": true,
+     "detail": "210 m → 158 m from the shooter (his range 170 m)"
+    },
+    {
+     "name": "Under fire, a soldier steps into nearby cover",
+     "pass": true,
+     "detail": "now at x = 292 (forest from x = 290)"
+    },
+    {
+     "name": "A soldier drawn away walks back to his post when it is quiet",
+     "pass": true,
+     "detail": "6 m from his post"
+    },
+    {
+     "name": "In a squadron the wounded take the rear rank",
+     "pass": true,
+     "detail": "wounded offset -50 m, others from -25 m"
+    }
+   ],
+   "map": [
+    {
+     "name": "Soldiers alone at a buff site capture it in about 20 s",
+     "pass": true,
+     "detail": "captured after 20.1 s"
+    },
+    {
+     "name": "With an enemy soldier there, nobody captures it",
+     "pass": true,
+     "detail": "owner after 30 s: Neutral"
+    },
+    {
+     "name": "An Airdrop Zone drops supplies every 3 minutes",
+     "pass": true,
+     "detail": "+60 metal in 241 s"
+    },
+    {
+     "name": "A freight train fills the station's stock every 4 minutes",
+     "pass": true,
+     "detail": "stock 150 metal"
+    },
+    {
+     "name": "An empty Citadel belongs to whoever moves in",
+     "pass": true,
+     "detail": "owner You, the Rifleman is inside"
+    },
+    {
+     "name": "Nobody targets civilians",
+     "pass": true,
+     "detail": "health 25/25"
+    },
+    {
+     "name": "Civilians run from a firefight",
+     "pass": true,
+     "detail": "ran 253 m"
+    },
+    {
+     "name": "Ruins and walls give cover",
+     "pass": true,
+     "detail": "ruin ×0.6, wall ×0.7"
+    },
+    {
+     "name": "A neutral guard more than 150 m from home walks back",
+     "pass": true,
+     "detail": "7 m from home"
+    },
+    {
+     "name": "Modern kit after an R&D Lab and 5 Tier III researches",
+     "pass": true,
+     "detail": "kit: modern (5 Tier III)"
+    },
+    {
+     "name": "Siege raid: the tower first, then the weakest outpost ahead, then the HQ",
+     "pass": true,
+     "detail": "targets: tower → barracks → hq"
+    },
+    {
+     "name": "Siege raid: an outpost off the line between the bases is ignored",
+     "pass": true,
+     "detail": "the far tower is untouched"
+    }
+   ],
+   "computeS": 24.45
+  },
+  {
+   "job": {
+    "kind": "checks",
+    "seed": 10
+   },
+   "behaviour": [
+    {
+     "name": "Wounded fall back behind the healthy ones",
+     "pass": true,
+     "detail": "22 m further from the enemy than the others (want > 12)"
+    },
+    {
+     "name": "Wounded walk to a Medic within 300 m and return healed",
+     "pass": true,
+     "detail": "reached the Medic, health 100%, 13 m from his post"
+    },
+    {
+     "name": "Soldiers keep a personal gap (12 m outside a squadron)",
+     "pass": true,
+     "detail": "closest pair 14.0 m"
+    },
+    {
+     "name": "After a nearby shell the gap grows x1.5",
+     "pass": true,
+     "detail": "closest pair 18.0 m"
+    },
+    {
+     "name": "A soldier moves up to help a teammate under fire",
+     "pass": true,
+     "detail": "210 m → 165 m from the shooter (his range 170 m)"
+    },
+    {
+     "name": "Under fire, a soldier steps into nearby cover",
+     "pass": true,
+     "detail": "now at x = 291 (forest from x = 290)"
+    },
+    {
+     "name": "A soldier drawn away walks back to his post when it is quiet",
+     "pass": true,
+     "detail": "6 m from his post"
+    },
+    {
+     "name": "In a squadron the wounded take the rear rank",
+     "pass": true,
+     "detail": "wounded offset -50 m, others from -25 m"
+    }
+   ],
+   "map": [
+    {
+     "name": "Soldiers alone at a buff site capture it in about 20 s",
+     "pass": true,
+     "detail": "captured after 20.3 s"
+    },
+    {
+     "name": "With an enemy soldier there, nobody captures it",
+     "pass": true,
+     "detail": "owner after 30 s: Neutral"
+    },
+    {
+     "name": "An Airdrop Zone drops supplies every 3 minutes",
+     "pass": true,
+     "detail": "+60 metal in 241 s"
+    },
+    {
+     "name": "A freight train fills the station's stock every 4 minutes",
+     "pass": true,
+     "detail": "stock 150 metal"
+    },
+    {
+     "name": "An empty Citadel belongs to whoever moves in",
+     "pass": true,
+     "detail": "owner You, the Rifleman is inside"
+    },
+    {
+     "name": "Nobody targets civilians",
+     "pass": true,
+     "detail": "health 25/25"
+    },
+    {
+     "name": "Civilians run from a firefight",
+     "pass": true,
+     "detail": "ran 250 m"
+    },
+    {
+     "name": "Ruins and walls give cover",
+     "pass": true,
+     "detail": "ruin ×0.6, wall ×0.7"
+    },
+    {
+     "name": "A neutral guard more than 150 m from home walks back",
+     "pass": true,
+     "detail": "7 m from home"
+    },
+    {
+     "name": "Modern kit after an R&D Lab and 5 Tier III researches",
+     "pass": true,
+     "detail": "kit: modern (5 Tier III)"
+    },
+    {
+     "name": "Siege raid: the tower first, then the weakest outpost ahead, then the HQ",
+     "pass": true,
+     "detail": "targets: tower → barracks → hq"
+    },
+    {
+     "name": "Siege raid: an outpost off the line between the bases is ignored",
+     "pass": true,
+     "detail": "the far tower is untouched"
+    }
+   ],
+   "computeS": 24.94
+  }
+ ]
+}

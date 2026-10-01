@@ -1,0 +1,520 @@
+{
+ "build": "0.7",
+ "duels": [
+  {
+   "a": "rifle",
+   "nA": 6,
+   "b": "rifle",
+   "nB": 6,
+   "winA": 43,
+   "winB": 57,
+   "draw": 0,
+   "time": 18.04,
+   "survA": 1.92,
+   "survB": 2.52
+  },
+  {
+   "a": "rifle",
+   "nA": 6,
+   "b": "hmg",
+   "nB": 6,
+   "winA": 0,
+   "winB": 100,
+   "draw": 0,
+   "time": 21.71,
+   "survA": 0,
+   "survB": 5.91
+  },
+  {
+   "a": "rifle",
+   "nA": 6,
+   "b": "sniper",
+   "nB": 6,
+   "winA": 5,
+   "winB": 95,
+   "draw": 0,
+   "time": 12.56,
+   "survA": 0.22,
+   "survB": 4.74
+  },
+  {
+   "a": "rifle",
+   "nA": 6,
+   "b": "mortar",
+   "nB": 3,
+   "winA": 80,
+   "winB": 20,
+   "draw": 0,
+   "time": 12.78,
+   "survA": 3.38,
+   "survB": 0.36
+  },
+  {
+   "a": "hmg",
+   "nA": 6,
+   "b": "hmg",
+   "nB": 6,
+   "winA": 41,
+   "winB": 59,
+   "draw": 0,
+   "time": 61.44,
+   "survA": 1.95,
+   "survB": 2.79
+  },
+  {
+   "a": "hmg",
+   "nA": 6,
+   "b": "sniper",
+   "nB": 6,
+   "winA": 51,
+   "winB": 49,
+   "draw": 0,
+   "time": 13.34,
+   "survA": 2.25,
+   "survB": 2.48
+  },
+  {
+   "a": "hmg",
+   "nA": 6,
+   "b": "mortar",
+   "nB": 3,
+   "winA": 99,
+   "winB": 1,
+   "draw": 0,
+   "time": 16.54,
+   "survA": 5.68,
+   "survB": 0.02
+  },
+  {
+   "a": "sniper",
+   "nA": 6,
+   "b": "sniper",
+   "nB": 6,
+   "winA": 58,
+   "winB": 42,
+   "draw": 0,
+   "time": 6.41,
+   "survA": 1.79,
+   "survB": 1.3
+  },
+  {
+   "a": "sniper",
+   "nA": 6,
+   "b": "mortar",
+   "nB": 3,
+   "winA": 98,
+   "winB": 2,
+   "draw": 0,
+   "time": 4.72,
+   "survA": 5.28,
+   "survB": 0.03
+  },
+  {
+   "a": "mortar",
+   "nA": 3,
+   "b": "mortar",
+   "nB": 3,
+   "winA": 60,
+   "winB": 39,
+   "draw": 1,
+   "time": 9.35,
+   "survA": 1.17,
+   "survB": 0.63
+  }
+ ],
+ "terrain": [
+  {
+   "label": "5 v 5 Riflemen, flat",
+   "runs": 100,
+   "winA": 52,
+   "winB": 48,
+   "draw": 0,
+   "avgTime": 16.83,
+   "avgSurvivorsA": 1.87,
+   "avgSurvivorsB": 1.67,
+   "avgPin": 5.98,
+   "pinnedRuns": 80
+  },
+  {
+   "label": "B 30 m higher",
+   "runs": 100,
+   "winA": 35,
+   "winB": 65,
+   "draw": 0,
+   "avgTime": 16.87,
+   "avgSurvivorsA": 1.2,
+   "avgSurvivorsB": 2.23,
+   "avgPin": 5.41,
+   "pinnedRuns": 86
+  },
+  {
+   "label": "B in forest",
+   "runs": 100,
+   "winA": 19,
+   "winB": 81,
+   "draw": 0,
+   "avgTime": 17.78,
+   "avgSurvivorsA": 0.66,
+   "avgSurvivorsB": 3.42,
+   "avgPin": 5.74,
+   "pinnedRuns": 74
+  },
+  {
+   "label": "6 v 6, A as a squadron",
+   "runs": 100,
+   "winA": 63,
+   "winB": 37,
+   "draw": 0,
+   "avgTime": 16.66,
+   "avgSurvivorsA": 2.66,
+   "avgSurvivorsB": 1.71,
+   "avgPin": 5.34,
+   "pinnedRuns": 91
+  },
+  {
+   "label": "MG pins a Rifleman",
+   "runs": 100,
+   "winA": 0,
+   "winB": 5,
+   "draw": 95,
+   "avgTime": 5.15,
+   "avgSurvivorsA": 0.95,
+   "avgSurvivorsB": 1,
+   "avgPin": 4.89,
+   "pinnedRuns": 95
+  }
+ ],
+ "forts": [
+  {
+   "label": "8 Riflemen v 5 in the open",
+   "runs": 100,
+   "winA": 100,
+   "winB": 0,
+   "draw": 0,
+   "avgTime": 16.46,
+   "avgSurvivorsA": 6.56,
+   "avgSurvivorsB": 0,
+   "avgGrenades": 0
+  },
+  {
+   "label": "8 v 5 in a trench",
+   "runs": 100,
+   "winA": 63,
+   "winB": 37,
+   "draw": 0,
+   "avgTime": 24.96,
+   "avgSurvivorsA": 2.8,
+   "avgSurvivorsB": 1.22,
+   "avgGrenades": 0
+  },
+  {
+   "label": "8 with grenades v 5 in a trench",
+   "runs": 100,
+   "winA": 98,
+   "winB": 2,
+   "draw": 0,
+   "avgTime": 8.71,
+   "avgSurvivorsA": 6.66,
+   "avgSurvivorsB": 0.05,
+   "avgGrenades": 8
+  },
+  {
+   "label": "8 grenadiers v full Bunker (5 inside)",
+   "runs": 100,
+   "winA": 75,
+   "winB": 25,
+   "draw": 0,
+   "avgTime": 16.37,
+   "avgSurvivorsA": 3.53,
+   "avgSurvivorsB": 0.97,
+   "avgGrenades": 6.66
+  },
+  {
+   "label": "10 grenadiers v full Bunker (5 inside)",
+   "runs": 100,
+   "winA": 100,
+   "winB": 0,
+   "draw": 0,
+   "avgTime": 6.37,
+   "avgSurvivorsA": 7.4,
+   "avgSurvivorsB": 0,
+   "avgGrenades": 7.64
+  }
+ ],
+ "economy": {
+  "tier2Min": 1.47,
+  "at5": {
+   "t": 300,
+   "wood": 853.07,
+   "metal": 373.55,
+   "sulfur": 0,
+   "workers": 8
+  },
+  "at10": {
+   "t": 600,
+   "wood": 1563.58,
+   "metal": 772.02,
+   "sulfur": 0,
+   "workers": 8
+  },
+  "at15": {
+   "t": 900,
+   "wood": 2283.37,
+   "metal": 1169.56,
+   "sulfur": 0,
+   "workers": 8
+  },
+  "at20": {
+   "t": 1200,
+   "wood": 2997.84,
+   "metal": 1565.94,
+   "sulfur": 0,
+   "workers": 8
+  }
+ },
+ "ai": [
+  {
+   "seed": 1,
+   "difficulty": "easy",
+   "firstContactMin": 9.44,
+   "hqFellMin": 12.76,
+   "raids": 1,
+   "log": [
+    {
+     "min": 0,
+     "aiArmy": 6,
+     "playerUnits": 10,
+     "hqHp": 1500,
+     "kills": 0,
+     "lost": 0
+    },
+    {
+     "min": 1,
+     "aiArmy": 8,
+     "playerUnits": 10,
+     "hqHp": 1500,
+     "kills": 0,
+     "lost": 0
+    },
+    {
+     "min": 2,
+     "aiArmy": 8,
+     "playerUnits": 10,
+     "hqHp": 1500,
+     "kills": 0,
+     "lost": 0
+    },
+    {
+     "min": 3,
+     "aiArmy": 8,
+     "playerUnits": 10,
+     "hqHp": 1500,
+     "kills": 0,
+     "lost": 0
+    },
+    {
+     "min": 4,
+     "aiArmy": 8,
+     "playerUnits": 10,
+     "hqHp": 1500,
+     "kills": 0,
+     "lost": 0
+    },
+    {
+     "min": 5,
+     "aiArmy": 10,
+     "playerUnits": 10,
+     "hqHp": 1500,
+     "kills": 0,
+     "lost": 0
+    },
+    {
+     "min": 6,
+     "aiArmy": 10,
+     "playerUnits": 10,
+     "hqHp": 1500,
+     "kills": 0,
+     "lost": 0
+    },
+    {
+     "min": 7,
+     "aiArmy": 10,
+     "playerUnits": 10,
+     "hqHp": 1500,
+     "kills": 0,
+     "lost": 0
+    },
+    {
+     "min": 8,
+     "aiArmy": 10,
+     "playerUnits": 10,
+     "hqHp": 1500,
+     "kills": 0,
+     "lost": 0
+    },
+    {
+     "min": 9,
+     "aiArmy": 10,
+     "playerUnits": 10,
+     "hqHp": 1500,
+     "kills": 0,
+     "lost": 0
+    },
+    {
+     "min": 10,
+     "aiArmy": 10,
+     "playerUnits": 6,
+     "hqHp": 1414,
+     "kills": 0,
+     "lost": 4
+    },
+    {
+     "min": 11,
+     "aiArmy": 11,
+     "playerUnits": 4,
+     "hqHp": 983,
+     "kills": 1,
+     "lost": 6
+    },
+    {
+     "min": 12,
+     "aiArmy": 11,
+     "playerUnits": 4,
+     "hqHp": 425,
+     "kills": 1,
+     "lost": 6
+    }
+   ]
+  },
+  {
+   "seed": 1,
+   "difficulty": "normal",
+   "firstContactMin": 6.31,
+   "hqFellMin": 7.7,
+   "raids": 1,
+   "log": [
+    {
+     "min": 0,
+     "aiArmy": 9,
+     "playerUnits": 10,
+     "hqHp": 1500,
+     "kills": 0,
+     "lost": 0
+    },
+    {
+     "min": 1,
+     "aiArmy": 11,
+     "playerUnits": 10,
+     "hqHp": 1500,
+     "kills": 0,
+     "lost": 0
+    },
+    {
+     "min": 2,
+     "aiArmy": 11,
+     "playerUnits": 10,
+     "hqHp": 1500,
+     "kills": 0,
+     "lost": 0
+    },
+    {
+     "min": 3,
+     "aiArmy": 11,
+     "playerUnits": 10,
+     "hqHp": 1500,
+     "kills": 0,
+     "lost": 0
+    },
+    {
+     "min": 4,
+     "aiArmy": 11,
+     "playerUnits": 10,
+     "hqHp": 1500,
+     "kills": 0,
+     "lost": 0
+    },
+    {
+     "min": 5,
+     "aiArmy": 13,
+     "playerUnits": 10,
+     "hqHp": 1500,
+     "kills": 0,
+     "lost": 0
+    },
+    {
+     "min": 6,
+     "aiArmy": 13,
+     "playerUnits": 10,
+     "hqHp": 1500,
+     "kills": 0,
+     "lost": 0
+    },
+    {
+     "min": 7,
+     "aiArmy": 14,
+     "playerUnits": 6,
+     "hqHp": 1159,
+     "kills": 1,
+     "lost": 4
+    }
+   ]
+  },
+  {
+   "seed": 1,
+   "difficulty": "hard",
+   "firstContactMin": 4.76,
+   "hqFellMin": 5.81,
+   "raids": 1,
+   "log": [
+    {
+     "min": 0,
+     "aiArmy": 12,
+     "playerUnits": 10,
+     "hqHp": 1500,
+     "kills": 0,
+     "lost": 0
+    },
+    {
+     "min": 1,
+     "aiArmy": 14,
+     "playerUnits": 10,
+     "hqHp": 1500,
+     "kills": 0,
+     "lost": 0
+    },
+    {
+     "min": 2,
+     "aiArmy": 14,
+     "playerUnits": 10,
+     "hqHp": 1500,
+     "kills": 0,
+     "lost": 0
+    },
+    {
+     "min": 3,
+     "aiArmy": 14,
+     "playerUnits": 10,
+     "hqHp": 1500,
+     "kills": 0,
+     "lost": 0
+    },
+    {
+     "min": 4,
+     "aiArmy": 14,
+     "playerUnits": 10,
+     "hqHp": 1500,
+     "kills": 0,
+     "lost": 0
+    },
+    {
+     "min": 5,
+     "aiArmy": 16,
+     "playerUnits": 9,
+     "hqHp": 1500,
+     "kills": 0,
+     "lost": 1
+    }
+   ]
+  }
+ ]
+}
