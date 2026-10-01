@@ -5,6 +5,16 @@ each change live in `DESIGN_DECISIONS.md`.
 
 ---
 
+## 0.7d: Siege raids (1 October 2026)
+
+- **Enemy raids now lay siege:** a raid first knocks out the Scout Towers and Bunkers it knows about
+  on its way, then your weakest outpost between it and your HQ (a camp, a Depot, a site you hold), and
+  only then marches on the HQ. Outposts far off its route are left alone, and when you meet it with a
+  strong force it stops and fights instead of moving on.
+- **No more soldiers stuck on slopes:** soldiers whose path crossed a steep bit of the enemy's
+  mountain used to stand there forever; now they scramble across slowly.
+- **Balance Lab:** two siege checks in the "Map detail" section.
+
 ## 0.7c: Villages, buff sites and citadels (1 October 2026)
 
 - **Buff sites:** 8 places on every map are worth holding: an Airdrop Zone (supply drops), a Train

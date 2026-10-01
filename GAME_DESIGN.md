@@ -455,6 +455,15 @@ five and fight anyone who comes close. From patch 0.7c, groups that guard no sit
 together to a random spot within 120 m of home every 60–120 s; any guard more than 150 m from home
 walks back even mid-fight, and neutral soldiers heal 1 HP/s once nobody has shot at them for 20 s.
 
+**Siege raids (patch 0.7d, DD Q24).** A raid doesn't just walk at your HQ. The commander remembers
+every building of yours it has seen (and always knows your HQ). It counts as outposts your buildings
+other than the HQ and the buff sites you hold, but only those within 2 km of your HQ or within 1.2 km
+of the line between the two HQs; the rest, and citadels, it ignores. The raid takes the nearest known
+Scout Tower or Bunker first; then, if no large threat is near (your soldiers in sight within 500 m
+fewer than 80% of the raiders), the weakest known outpost that is closer to your HQ than the raid is
+(health + 150 per soldier of yours within 200 m; a held site is taken back by standing on it); then
+your HQ. While a large threat is near, it fights it where it stands. A new raid joins the one still out.
+
 Every 5 min, with at least 10 soldiers, the enemy commander sends a team to capture the nearest buff
 site within 4 km of its HQ that it doesn't hold: 2 soldiers per guard there plus 2 (4 to 10), keeping
 4 at home. They stand there until it is taken, and a soldier who can't get there gives up after 4 tries.

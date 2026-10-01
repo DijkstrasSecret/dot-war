@@ -1271,6 +1271,12 @@ const Game = (() => {
       if (a === 0) u.stuck = Math.max(0, u.stuck - dt);
       return a === 0 && step >= d - 0.01;
     }
+    // 0.7d: the route crosses a slope the cell rules allow but the local grade refuses (the enemy's
+    // mountain): after 2 s stuck, scramble straight on at 0.3x speed if the ground ahead is passable.
+    if (u.stuck > 2) {
+      const step = Math.min(d, u.stats.speed * speedMult * 0.3 * dt), nx = u.x + dx * step, ny = u.y + dy * step;
+      if (Terrain.passableAt(nx, ny, u.cls)) { u.x = nx; u.y = ny; u.moving = true; u.stuck -= dt * 0.5; return step >= d - 0.01; }
+    }
     u.stuck += dt; return false;
   }
   // Step to nearby cover: forest, higher ground and (0.7b) the owner's own trench. With `cells` (0.7b,

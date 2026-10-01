@@ -301,6 +301,9 @@ const Data = {
   // comes in 0.7): each raid sends raidGrow more of the army than the last, up to raidFracMax; once
   // the army is allInRatio times the enemy soldiers seen in the last `memory` seconds, everyone goes.
   AI_RAIDS: { raidGrow: 0.1, raidFracMax: 0.9, allInRatio: 2, memory: 120, minEnemy: 3 },
+  // Patch 0.7d, siege raids (DD Q24, "Patch 0.7d"; values proposed): towers first, then the weakest
+  // outpost towards the HQ, then the HQ. Outposts count only near the HQ or the line between the bases.
+  AI_SIEGE: { nearHq: 2000, corridor: 1200, threatR: 500, threatShare: 0.8, defenderWeight: 150, defenderR: 200 },
 
   // Patch 0.5d, a smarter enemy (DESIGN_DECISIONS "Patch 0.5d", all proposed). Research times are game
   // seconds on Normal, scaled by DIFFICULTY.researchMult; harassment by DIFFICULTY.harassEvery.

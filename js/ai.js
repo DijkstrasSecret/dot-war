@@ -203,11 +203,62 @@ const AI = (() => {
       const allIn = fit.length >= X.allInRatio * Math.max(X.minEnemy, st.seen.size);
       const frac = allIn ? 1 : Math.min(X.raidFracMax, D.raidFrac + st.raids * X.raidGrow);
       const raiders = fit.filter(u => !u.raiding && !u.siteJob && !u.inside && !(u.order && u.order.type === 'dig')).slice(0, Math.max(3, Math.ceil(fit.length * frac)));
-      if (targetHq && raiders.length) { st.raids++; for (const u of raiders) u.raiding = true; Game.orderMove(raiders, targetHq.x, targetHq.y, 'attackmove'); Game.raidLaunched(pid, raiders); }
+      if (targetHq && raiders.length) {   // 0.7d: a siege raid (Q24); a new one joins the raid still out
+        st.raids++; for (const u of raiders) { u.raiding = true; u.sieging = true; }
+        st.siege = st.siege || { ids: [], target: null, stage: 'tower' }; st.siege.ids.push(...raiders.map(u => u.id));
+        Game.raidLaunched(pid, raiders); siegeTarget(pid, st, hq, true);
+      }
     }
-    for (const u of mine) if (u.raiding && !u.order && !u.target) { u.raiding = false; Game.orderMove([u], hq.x, hq.y + 70, 'move'); }
+    if (st.siege) siegeTarget(pid, st, hq, false);
+    for (const u of mine) if (u.raiding && !u.sieging && !u.order && !u.target) { u.raiding = false; Game.orderMove([u], hq.x, hq.y + 70, 'move'); }
     takeSites(pid, st, hq, fit, mine);
   }
+  // ---- 0.7d: siege raids (DD Q24, "Patch 0.7d") ----
+  // Remember the enemy buildings this side has seen (and the HQ, which everyone knows).
+  function rememberBuildings(pid, st) {
+    st.known = st.known || new Set();
+    for (const b of G.buildings) if (b.owner === enemyOf(pid) && !b.dead && (b.type === 'hq' || Fog.visible(pid, b.x, b.y))) st.known.add(b.id);
+  }
+  // Is an outpost related to the main base: near the enemy HQ, or near the line from our HQ to theirs?
+  function related(b, hq, ehq) {
+    const S = Data.AI_SIEGE; if (dist(b.x, b.y, ehq.x, ehq.y) <= S.nearHq) return true;
+    const dx = ehq.x - hq.x, dy = ehq.y - hq.y, t = Math.max(0, Math.min(1, ((b.x - hq.x) * dx + (b.y - hq.y) * dy) / (dx * dx + dy * dy || 1)));
+    return dist(b.x, b.y, hq.x + dx * t, hq.y + dy * t) <= S.corridor;
+  }
+  // Each think: drop the dead, and when the target is done (or none), pick the next one: towers, then
+  // the weakest outpost towards the HQ (only with no large threat near), then the HQ.
+  function siegeTarget(pid, st, hq, fresh) {
+    const S = Data.AI_SIEGE, sg = st.siege, E = enemyOf(pid), ehq = hqOf(E);
+    rememberBuildings(pid, st);
+    const all = sg.ids.map(id => G.unitById.get(id)).filter(u => u && !u.dead);
+    for (const u of all) if (u.aiRecover) u.sieging = false;   // gone home to heal: out of the raid
+    const us = all.filter(u => u.sieging);
+    sg.ids = us.map(u => u.id);
+    if (!us.length || !ehq) { for (const u of us) u.sieging = false; st.siege = null; return; }
+    let cx = 0, cy = 0; for (const u of us) { cx += u.x; cy += u.y; } cx /= us.length; cy /= us.length;
+    const foes = G.units.filter(e => e.owner === E && !e.dead && !e.inside && e.stats.weapon && !e.def.labour && Fog.visible(pid, e.x, e.y) && dist(e.x, e.y, cx, cy) < S.threatR);
+    const threat = foes.length >= us.length * S.threatShare;
+    const t = sg.target && G.buildingById.get(sg.target);
+    const done = !t || t.dead || t.owner !== E;
+    if (threat && !fresh) {   // fight it where it stands, don't move on
+      if (G.time - (sg.fightT || -99) > 6) { sg.fightT = G.time; let fx = 0, fy = 0; for (const e of foes) { fx += e.x; fy += e.y; } Game.orderMove(us.filter(u => !u.target), fx / foes.length, fy / foes.length, 'attackmove'); }
+      return;
+    }
+    if (!done && !fresh) { const idle = us.filter(u => !u.order && !u.target); if (idle.length) Game.orderMove(idle, t.x, t.y + t.h / 2 + 10, 'attackmove'); return; }
+    const outposts = G.buildings.filter(b => st.known.has(b.id) && b.owner === E && !b.dead && b.type !== 'hq' && !b.def.citadel && related(b, hq, ehq));
+    const defenders = b => G.units.filter(e => e.owner === E && !e.dead && e.stats.weapon && !e.def.labour && dist(e.x, e.y, b.x, b.y) < S.defenderR).length;
+    let next = null, stage = 'hq';
+    const towers = outposts.filter(b => b.def.tower || b.type === 'bunker');
+    if (towers.length) { stage = 'tower'; next = towers.sort((a, b) => dist(a.x, a.y, cx, cy) - dist(b.x, b.y, cx, cy) || a.id - b.id)[0]; }
+    else {
+      const ahead = outposts.filter(b => dist(b.x, b.y, ehq.x, ehq.y) < dist(cx, cy, ehq.x, ehq.y));
+      if (ahead.length) { stage = 'outpost'; next = ahead.map(b => [b, (b.def.invulnerable ? 0 : b.hp) + S.defenderWeight * defenders(b)]).sort((a, b) => a[1] - b[1] || a[0].id - b[0].id)[0][0]; }
+    }
+    if (!next) next = ehq;
+    sg.target = next.id; sg.stage = stage;
+    Game.orderMove(us, next.x, next.y + next.h / 2 + 10, 'attackmove');
+  }
+
   // 0.7c (DD "Patch 0.7c"): now and then a few soldiers go to capture the nearest buff site it doesn't hold
   // and stand there until it is theirs. The full siege AI comes in 0.7d.
   function takeSites(pid, st, hq, fit, mine) {
@@ -236,5 +287,5 @@ const AI = (() => {
     }
   }
 
-  return { update, reset, params, get st() { return sides[2]; }, get sides() { return sides; } };
+  return { update, reset, params, related, get st() { return sides[2]; }, get sides() { return sides; } };
 })();
