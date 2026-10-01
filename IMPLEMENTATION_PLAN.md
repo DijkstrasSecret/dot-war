@@ -332,8 +332,8 @@ generated maps only, Modern kit at an R&D Lab + 5 Tier III.
       (two identical scripted AIs stall; DD section L).
 
 **Done when**
-- [ ] A full match on a big map runs without frame drops on an ordinary laptop.
-- [ ] `GAME_DESIGN.md` updated.
+- [ ] A full match on a big map runs without frame drops on an ordinary laptop. (1 Oct, `fight-tests/0.7`: a 75 min match costs 12–21 min of computing; fine at 1×, may stutter at 4× late on.)
+- [x] `GAME_DESIGN.md` updated.
 
 ---
 
