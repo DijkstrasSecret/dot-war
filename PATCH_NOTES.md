@@ -5,6 +5,28 @@ each change live in `DESIGN_DECISIONS.md`.
 
 ---
 
+## 0.7b: Living infantry (1 October 2026)
+
+Soldiers now look after themselves, so you can give the big orders and leave the small ones to them.
+This works for every soldier, squadron or not, and for the enemy's too. Your own orders always come
+first.
+
+- **Wounded fall back:** a badly hurt soldier walks slowly to just behind his healthier comrades and
+  keeps firing from there. In a squadron he takes the rear rank.
+- **Wounded find the Medic:** with a Medic or Field Hospital within 300 m, a badly hurt soldier walks
+  over, gets patched up and goes back to his place.
+- **They keep apart:** soldiers no longer stand on top of each other, squadron rows are staggered,
+  and when a shell lands nearby the soldiers there spread out for 20 seconds.
+- **They help each other:** when a comrade is shot at and a soldier has nothing to shoot, he moves up
+  until the shooter is in range.
+- **They take cover** under fire (their own trench, forest or higher ground nearby) and **go back to
+  their post** once it is quiet again, so they don't wander off after a chase.
+- **Auto fall-back:** a new squad panel switch. When it's on, the squadron pulls back by itself under
+  fire once it has lost half its men or most are pinned.
+- **Squad blobs:** a see-through blob shows each of your squadrons: clear when selected, faint
+  otherwise.
+- **Balance Lab:** a new "Living infantry" section checks each behaviour in a small staged situation.
+
 ## 0.7a: Big random maps (30 September 2026)
 
 - **Every game is a new 13 km map:** your base in one corner, the enemy stronghold on a plateau in the

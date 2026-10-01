@@ -282,7 +282,21 @@ const Data = {
     coverTime: 4,                                               // fighting withdrawal: the front rank covers this long
     reactHalts: false,                                          // Kaan: 'react' shares the target but does not halt the squad (a halt made squads win ~77%)
     shareRange: 1.0,                                            // take the squad's target only if within this x own nearest enemy's distance
-    defaults: { move: 'slow', spacing: 'loose', contact: 'react' },
+    defaults: { move: 'slow', spacing: 'loose', contact: 'react', autoFall: false },
+    autoFall: { lost: 0.5, pinned: 0.6, recent: 5, cooldown: 60 },   // 0.7b: fall back at half strength or 60% pinned, at most once a minute
+  },
+  // Patch 0.7b, living infantry (DD "Patch 0.7b"; values proposed). Soldiers look after themselves when
+  // they have no player order to carry out.
+  BEHAVIOUR: {
+    every: 0.5,                                        // seconds between a soldier's checks
+    team: 60,                                          // loose soldiers within this distance are a team
+    gap: { tight: 10, loose: 18, alone: 12 }, gapMarching: 0.8,   // personal space; x0.8 while marching on a move order
+    shellSpread: { r: 40, mult: 1.5, time: 20 },       // a shell within 40 m: gap x1.5 for 20 s
+    wounded: { below: 0.4, healthy: 0.6, need: 2, back: 25, speed: 0.6 },
+    support: { recent: 3, range: 0.85, maxWalk: 150 },
+    cover: { cells: 3, every: 8, recent: 5 },
+    post: { quiet: 15, away: 20 },
+    medic: { below: 0.4, reach: 300, healed: 0.8 },
   },
   // Veterancy (DD H1, I; XP values proposed). Each rank stacks on the previous one.
   VETERANCY: {

@@ -1237,6 +1237,39 @@ Built from H2, H3, the vision floor (I) and the agreed answers above (sight rule
 | Check | Every deposit and the enemy HQ must be reachable on foot from the player's base; if one isn't, a road is laid to it. |
 | Dusk and dawn | Vision changes in 10 steps across the 30 s blend (for speed; the look of the darkness still blends smoothly). |
 
+### Patch 0.7b: living infantry (Kaan, 1 October 2026; numbers proposed by Claude, tune in play)
+
+Kaan, after playing 0.7a: "it feels way too micromanagement". Soldiers should look after themselves
+so the player gives the big orders. This patch goes in before the map detail; the old 0.7b (buff
+sites, villages) becomes **0.7c** and the siege AI **0.7d**.
+
+| Topic | Decision |
+| --- | --- |
+| Who | **Every soldier**, the enemy's too. A squad member's team is its squadron; a soldier outside a squadron treats the friendly soldiers outside squadrons within 60 m as its team (the same rule return fire uses). Workers, Medics, Trucks and neutral guards are not included. |
+| When behaviours apply | Only when the soldier is not carrying out a player order: idle, or on an attack-move and already fighting. A plain move, an Attack order, Defend (R), digging, boarding and garrisoning always win. |
+| Wounded fall back | A soldier under 40% health whose team has at least 2 members above 60% walks slowly (×0.6 speed) to about 25 m behind the healthier members, away from the enemy, and keeps firing from there. On an attack-move he stops advancing. In a squadron's formation he takes a place in the rear rank. |
+| Keep apart | Soldiers of one side keep a personal gap: **10 m** in a tight squadron, **18 m** in a loose one, **12 m** outside a squadron; half that while marching on a move order. Formation rows are **staggered** like a checkerboard. When a shell lands within 40 m, the soldiers there spread out to ×1.5 the gap for 20 s. |
+| Help a buddy | If a teammate was shot in the last 3 s and this soldier has nothing to shoot at, he moves (on an attack-move) to 85% of his range from the shooter, if that is no more than 150 m away. Mortar crews don't (they already shell what the team fights). |
+| Take cover | A soldier under fire with no order steps to the best cover within about 36 m (3 cells) at most every 8 s: own trench best, then forest, then higher ground. Arriving after a move works as before. |
+| Hold the post | Where a soldier ends a player's move is his post (Defend sets it too). After being drawn away by return fire, helping a buddy or taking cover, he walks back to it once nothing has shot at him for 15 s. |
+| Wounded go to the Medic | A soldier under 40% health with a friendly Medic or Field Hospital within 300 m, and not already being healed, walks to it; when he is back above 80% he returns to his post (or his squadron). This comes before falling back. |
+| Auto fall-back (squad panel) | A new squad toggle, **off by default**: when the squadron has lost half the members it had at its biggest, or 60% of its members are pinned, while under fire, it makes the fighting withdrawal (as G) by itself, at most once a minute. |
+| Blobs | A see-through blob in the owner's colour joins the members of each squadron: clear for selected squadrons, very faint for the player's other squadrons. Wounded members at the rear show as the blob's tail. Visual only. |
+| Order of priority | Panic > Medic trip > fall back wounded > help a buddy > take cover > hold the post. |
+
+Details filled in while building (Claude, 1 October 2026; they keep the agreed rules working, found
+by the Balance Lab):
+
+| Topic | Detail |
+| --- | --- |
+| Fall-back spot | 25 m back, else 15 or 8 m, whichever is the farthest from which he can still **see and reach** the enemy ("keeps firing from there"); none: he stays. Without this, wounded defenders on a hill stepped behind the crest and stopped firing (the hill duel fell from 74% to 55%). |
+| Picking up the attack-move | A wounded man who stopped advancing resumes his attack-move once falling back no longer applies (no healthy teammates left, or no enemy). Without it, fights ended in stand-offs (loose 6 v 6: 20% draws, 51 s instead of 19 s). For 10 s after falling back he doesn't chase a target out of range. |
+| The wounded don't help a buddy | Otherwise a wounded man walked forward to help, got shot and fell back again, over and over. |
+| Sideways push | A soldier who is firing is pushed apart only sideways along his line, never towards or away from the enemy, so the gap never takes him out of range. A straight push cost squadrons their edge (6 v 6 squadron win 64% → 50%). |
+| Body spacing | Riflemen's bodies already keep their centres about 14 m apart, so the 10 m and 12 m gaps only matter after a shell (×1.5 = 15 and 18 m). The loose 18 m gap works as agreed. |
+| Hold the post | He walks back only when a behaviour (return fire, helping a buddy, taking cover) drew him away, not when the gap pushed him a little. |
+| Effect on mortars | In the recorded fights a shell catches 2.2 soldiers on average instead of 2.3. Mortar shells are 32 m wide and attackers bunch as they walk in, so even 18 / 24 m gaps would only bring it to about 2.0. |
+
 ---
 
 ## Still open

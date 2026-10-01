@@ -57,6 +57,12 @@ const condEnv = c => !c ? null : { night: { dark: 1 }, rain: { weather: 'rain' }
     results.squadVsLoose = sq.winA; drawTargets();
   };
 
+  // ---- living infantry (0.7b) ----
+  $('runBehaviour').onclick = () => {
+    const tb = $('behaviourOut'); tb.innerHTML = '<tr><th>Behaviour</th><th>Result</th><th>Measured</th></tr>';
+    for (const c of LabTests.behaviourChecks()) { const tr = document.createElement('tr'); tr.innerHTML = `<td>${c.name}</td><td class="${c.pass ? 'ok' : 'bad'}">${c.pass ? 'pass' : 'fail'}</td><td>${c.detail}</td>`; tb.appendChild(tr); }
+  };
+
   // ---- fortifications ----
   $('runFort').onclick = async () => {
     const runs = +$('fortRuns').value, nA = +$('fortA').value, nBA = +$('fortBA').value;

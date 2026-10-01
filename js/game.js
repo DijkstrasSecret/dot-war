@@ -16,7 +16,7 @@ const G = {
 
 const Game = (() => {
   const { clamp, dist } = Util;
-  const C = Data.COMBAT, SQ = Data.SQUAD, VET = Data.VETERANCY, DIG = Data.DIG, LINES = Data.LINES, NADE = Data.GRENADE;
+  const C = Data.COMBAT, BH = Data.BEHAVIOUR, SQ = Data.SQUAD, VET = Data.VETERANCY, DIG = Data.DIG, LINES = Data.LINES, NADE = Data.GRENADE;
   const R = () => G.rng();    // simulation stream: anything that can change the outcome
   const V = () => G.vrng();   // visual stream: decals and other looks
 
@@ -237,7 +237,7 @@ const Game = (() => {
   }
   const slotCount = lv => lv.cap + (lv.heavy || 0) + (lv.mg || 0);
   function enterBuilding(u, b) {
-    releaseWork(u); u.queue = []; u.order = null; u.field = null; u.forced = null; u.target = null; u.micro = null; u.flee = 0; u.windup = null;
+    releaseWork(u); u.queue = []; u.order = null; u.field = null; u.forced = null; u.target = null; u.micro = null; u.shift = null; u.flee = 0; u.windup = null;
     u.inside = b.id; u.hBonus = b.slots.height; u.x = b.x; u.y = b.y; u.stress = Math.min(u.stress, 0.3);
     b.garrison.push(u.id);
     G.selection = G.selection.filter(s => s !== u);
@@ -301,14 +301,15 @@ const Game = (() => {
     if (u.dead) return;
     const standing = u.order && ['hold', 'bombard', 'haul', 'work'].includes(u.order.type);   // orders that never finish on their own (Shift replaces them)
     if (queue && !standing && (u.order || u.queue.length)) { u.queue.push(o); return; }
+    if (!o.auto) { u.post = null; u.away = false; u.resume = null; }   // 0.7b: a new player order; the post is set again where it ends
     u.queue = []; applyOrder(u, o);
   }
   function applyOrder(u, o) {
-    releaseWork(u); u.forced = null; u.micro = null; u.stuck = 0; u.field = null; u.order = null; u.windup = null;
+    releaseWork(u); u.forced = null; u.micro = null; u.shift = null; u.stuck = 0; u.field = null; u.order = null; u.windup = null;
     switch (o.kind) {
       case 'move': case 'attackmove': {
         const f = Path.getField(o.x, o.y, u.def.cls, G.time); if (!f) break;
-        u.order = { type: o.kind, x: f.tx, y: f.ty, offx: o.offx || 0, offy: o.offy || 0, arrive: o.arrive || 12, phase: 0, retreat: !!o.retreat, maxSpeed: o.maxSpeed || 0, unload: !!o.unload }; u.field = f;
+        u.order = { type: o.kind, x: f.tx, y: f.ty, offx: o.offx || 0, offy: o.offy || 0, arrive: o.arrive || 12, phase: 0, retreat: !!o.retreat, maxSpeed: o.maxSpeed || 0, unload: !!o.unload, auto: !!o.auto }; u.field = f;
         break;
       }
       case 'attack': {
@@ -321,7 +322,7 @@ const Game = (() => {
         if (u.stats.weapon && u.stats.weapon.indirect) u.order = { type: 'bombard', x: o.x, y: o.y, smoke: !!o.smoke, flare: !!o.flare };
         else applyOrder(u, { kind: 'attackmove', x: o.x, y: o.y, arrive: 20 });
         break;
-      case 'hold': u.order = { type: 'hold', x: u.x, y: u.y, until: o.until || 0 }; break;
+      case 'hold': u.order = { type: 'hold', x: u.x, y: u.y, until: o.until || 0 }; if (!o.until) u.post = { x: u.x, y: u.y }; break;   // 0.7b: Defend sets the post
       case 'garrison': {
         const b = o.building;
         if (!canEnter(u, b)) { if (u.owner === 1 && b && !b.dead) toast(b.def.name + ' cannot take this unit'); break; }
@@ -376,14 +377,14 @@ const Game = (() => {
       if (!queue) for (const r of aboard) { const o = slots.get(r); r.queue = [{ kind: mode, x, y, offx: o[0], offy: o[1], arrive: o[2] }]; }
       if (!queue && !retreat && ferry(s, members, x, y, mode, slots)) continue;
       const maxSpeed = s.move === 'slow' ? Math.min(...members.map(u => u.stats.speed)) : 0;
-      for (const u of members) { const o = slots.get(u); issue(u, { kind: mode, x, y, offx: o[0], offy: o[1], arrive: o[2], retreat, maxSpeed, unload: u === t && aboard.length > 0 }, queue); }
+      for (const u of members) { const o = slots.get(u); issue(u, { kind: mode, x, y, offx: o[0], offy: o[1], arrive: o[2], retreat, maxSpeed, unload: u === t && aboard.length > 0, auto: !!opts.auto }, queue); }
     }
     const n = loose.length; if (!n) return;
     const cols = Math.ceil(Math.sqrt(n)), rows = Math.ceil(n / cols), spacing = 15;
     const arrive = Math.max(12, spacing * Math.sqrt(n) * 0.75);
     loose.forEach((u, i) => {
       const r = Math.floor(i / cols), c = i % cols;
-      issue(u, { kind: mode, x, y, offx: (c - (cols - 1) / 2) * spacing, offy: (r - (rows - 1) / 2) * spacing, arrive, retreat }, queue);
+      issue(u, { kind: mode, x, y, offx: (c - (cols - 1) / 2) * spacing, offy: (r - (rows - 1) / 2) * spacing, arrive, retreat, auto: !!opts.auto }, queue);
     });
   }
   function orderAttack(units, target, queue = false) {
@@ -396,7 +397,7 @@ const Game = (() => {
     for (const u of units) if (!u.dead && isIndirect(u)) issue(u, { kind: 'bombard', x, y }, queue);
     if (direct.length) orderMove(direct, x, y, 'attackmove', queue);
   }
-  function orderStop(units) { for (const u of units) { u.queue = []; releaseWork(u); u.windup = null; u.order = null; u.field = null; u.forced = null; u.micro = null; } }
+  function orderStop(units) { for (const u of units) { u.queue = []; releaseWork(u); u.windup = null; u.order = null; u.field = null; u.forced = null; u.micro = null; u.shift = null; u.healTrip = false; u.resume = null; u.post = { x: u.x, y: u.y }; } }
   function orderHold(units, queue = false) { for (const u of units) issue(u, { kind: 'hold' }, queue); }
   function orderDig(units, line, fill, queue = false) {
     let n = 0; const sg0 = G.segs.find(o => o.line === line), wo = sg0 && LINES[sg0.type].workersOnly;
@@ -643,7 +644,7 @@ const Game = (() => {
     const tx = e.x + Math.cos(ang) * off, ty = e.y + Math.sin(ang) * off;
     G.projectiles.push(new Projectile({ kind: 'bullet', x: u.x, y: u.y, tx, ty, dur: Math.max(0.03, d / w.pspeed), dmg, target: hit ? e : null, shooter: u, owner: u.owner }));
     if (e instanceof Unit) {   // every shot at a unit stresses it, hit or miss
-      const was = e.suppressed; addStress(e, w.suppress); e.lastHitBy = u; alertUnit(e); returnFire(e, u);
+      const was = e.suppressed; addStress(e, w.suppress); e.lastHitBy = u; e.hitT = G.time; alertUnit(e); returnFire(e, u);
       if (!was && e.suppressed) suppressXp(u, e);
       // Neighbours feel part of it; a weapon with suppressArea (the MG, Kaan 0.5c) spreads more, wider.
       const sa = w.suppressArea || { r: 30, share: 0.2 };
@@ -665,13 +666,15 @@ const Game = (() => {
     if (pr.flare) { G.flares.push({ x, y, owner: pr.owner, t: 0 }); return; }   // 0.6: lights a circle, no damage
     if (pr.smoke) { G.smokes.push({ x, y, r: Data.SMOKE.radius, t: 0, dur: Data.SMOKE.time }); G.smokeVer++; return; }   // Smoke Shells: no damage
     G.effects.push({ kind: 'explosion', x, y, r: splash, t: 0, dur: 0.6 });
+    const SS = BH.shellSpread;   // 0.7b: soldiers near the blast spread out for a while
+    for (const e of G.units) if (!e.dead && !e.inside && e.def.cls === 'infantry' && dist(e.x, e.y, x, y) <= SS.r) e.spreadT = G.time + SS.time;
     for (const e of G.units) {
       if (e.dead || e.inside) continue; const d = dist(e.x, e.y, x, y); if (d > splash) continue;
       let m = (0.35 + 0.65 * (1 - d / splash)) * Data.ARMOR_MULT[dtype][e.armor];
       if (Terrain.ridgeCover(x, y, e.x, e.y)) m *= 0.35;
       if (Terrain.coverAt(e.x, e.y) < 1) m *= 0.85;
       const ls = lineAt(e.x, e.y); if (ls && LINES[ls.type].blast) m *= LINES[ls.type].blast;   // Kaan, 0.4.1: a trench halves blast damage
-      const was = e.suppressed; addStress(e, 0.3 * (1 - d / splash) + 0.1); e.lastHitBy = shooter; alertUnit(e); returnFire(e, shooter);
+      const was = e.suppressed; addStress(e, 0.3 * (1 - d / splash) + 0.1); e.lastHitBy = shooter; e.hitT = G.time; alertUnit(e); returnFire(e, shooter);
       if (!was && e.suppressed && shooter && e.owner !== shooter.owner) suppressXp(shooter, e);
       applyDamage(e, dmg * m, shooter);
     }
@@ -697,8 +700,8 @@ const Game = (() => {
     const idle = m => !m.order && !m.inside && !m.dead && m.stats.weapon && m.work == null && m.flee <= 0;
     const group = e.squad && G.squads[e.squad] ? membersOf(G.squads[e.squad]).filter(idle)
       : G.units.filter(m => m.owner === e.owner && !m.squad && idle(m) && dist(m.x, m.y, e.x, e.y) <= Data.RETURN_FIRE.join);   // loose soldiers standing together go together
-    for (const m of group) m.returnT = G.time;
-    orderMove(group, by.x, by.y, 'attackmove');
+    for (const m of group) { m.returnT = G.time; m.away = true; }
+    orderMove(group, by.x, by.y, 'attackmove', false, false, { auto: true });   // 0.7b: they go back to their posts afterwards
   }
   function applyDamage(e, dmg, by) {
     if (e.dead || dmg <= 0) return;
@@ -1066,7 +1069,7 @@ const Game = (() => {
   const seatCost = u => u.def.shape === 'square' ? 2 : 1;
   function seatsFree(t) { let n = 0; for (const id of t.cargo) { const p = G.unitById.get(id); if (p && !p.dead) n += seatCost(p); } return t.def.seats - n; }
   function embark(u, t) {
-    releaseWork(u); u.order = null; u.field = null; u.forced = null; u.target = null; u.micro = null; u.flee = 0;   // the queue stays: it runs after unloading
+    releaseWork(u); u.order = null; u.field = null; u.forced = null; u.target = null; u.micro = null; u.shift = null; u.flee = 0;   // the queue stays: it runs after unloading
     u.inside = t.id; u.x = t.x; u.y = t.y; t.cargo.push(u.id);
     G.selection = G.selection.filter(s => s !== u);
   }
@@ -1174,14 +1177,17 @@ const Game = (() => {
     const face = opts.facing != null ? opts.facing : Math.atan2(y - cy, x - cx);
     const fx = Math.cos(face), fy = Math.sin(face), rx = -fy, ry = fx;
     const perRow = opts.width ? Math.max(1, Math.floor(opts.width / sp) + 1) : Math.max(3, Math.ceil(Math.sqrt(members.length * 2)));
-    const ranks = [1, 2, 0, 3, 4].map(r => members.filter(m => (m.def.role != null ? m.def.role : 1) === r).sort((a, b) => a.id - b.id));
-    const slots = new Map(); let depth = 0;
+    // 0.7b: wounded soldiers take the support places behind the line while the healthy ones are enough.
+    const healthy = members.filter(m => isSoldier(m) && m.hp / m.stats.hp > BH.wounded.healthy).length;
+    const role = m => isSoldier(m) && healthy >= BH.wounded.need && m.hp / m.stats.hp < BH.wounded.below && (m.def.role == null || m.def.role === 1 || m.def.role === 2) ? 0 : m.def.role != null ? m.def.role : 1;
+    const ranks = [1, 2, 0, 3, 4].map(r => members.filter(m => role(m) === r).sort((a, b) => a.id - b.id));
+    const slots = new Map(); let depth = 0, rowN = 0;
     ranks.forEach((rank, ri) => {
       if (!rank.length) return;
       if (ri === 3) depth = Math.min(depth, 0) - SQ.rearDepth;   // mortars stand well behind the line
       for (let i = 0; i < rank.length; i += perRow) {
-        const row = rank.slice(i, i + perRow);
-        row.forEach((m, j) => { const lat = (j - (row.length - 1) / 2) * sp; slots.set(m, [rx * lat + fx * depth, ry * lat + fy * depth, Math.max(12, sp * 1.2)]); });
+        const row = rank.slice(i, i + perRow), stagger = rowN++ % 2 ? sp / 2 : 0;   // 0.7b: checkerboard rows, so one shell can't take a file
+        row.forEach((m, j) => { const lat = (j - (row.length - 1) / 2) * sp + stagger; slots.set(m, [rx * lat + fx * depth, ry * lat + fy * depth, Math.max(12, sp * 1.2)]); });
         depth -= sp;
       }
     });
@@ -1209,6 +1215,16 @@ const Game = (() => {
       s.leader = best.id;
       if (s.target && (s.target.dead || s.target.inside || !ms.some(m => m.target === s.target))) s.target = null;
       if (!s.target) { const counts = new Map(); for (const m of ms) if (m.target && !m.def.obeysWhenSuppressed) counts.set(m.target, (counts.get(m.target) || 0) + 1); let top = 0; for (const [t, c] of counts) if (c > top) { top = c; s.target = t; } }
+      // 0.7b: auto fall-back (squad toggle) at half the biggest strength or with most members pinned, under fire.
+      s.peak = Math.max(s.peak || 0, ms.length);
+      const AF = SQ.autoFall;
+      if (s.autoFall && G.time >= (s.fallT || 0) && ms.some(m => G.time - m.hitT < AF.recent)) {
+        const pinned = ms.filter(m => m.suppressed).length, out = ms.filter(m => !m.inside);
+        if (out.length && (ms.length <= s.peak * AF.lost || pinned >= ms.length * AF.pinned)) {
+          s.fallT = G.time + AF.cooldown; s.peak = ms.length; orderRetreat(out);
+          if (ms[0].owner === 1) toast('Squadron ' + s.id + ' is falling back');
+        }
+      }
       if (s.contact === 'react' && SQ.reactHalts && ms.some(m => m.order && (m.order.type === 'move' || m.order.type === 'attackmove') && !m.order.retreat && m.target && inRange(m, m.target))) {
         for (const m of ms) if (m.order && (m.order.type === 'move' || m.order.type === 'attackmove') && !m.order.retreat && !m.cargo && !m.order.unload) { m.queue = []; applyOrder(m, { kind: 'hold' }); }   // a Truck keeps driving to unload
       }
@@ -1245,14 +1261,18 @@ const Game = (() => {
     }
     u.stuck += dt; return false;
   }
-  function seekCover(u) {
+  // Step to nearby cover: forest, higher ground and (0.7b) the owner's own trench. With `cells` (0.7b,
+  // under fire) it looks 3 cells out and only moves if the spot is clearly better than where he stands.
+  function seekCover(u, cells = 2) {
     const ci = Terrain.cellI(u.x), cj = Terrain.cellJ(u.y); const h0 = Terrain.hAt(u.x, u.y);
-    let best = null, bestS = 0.3;
-    for (let dj = -2; dj <= 2; dj++) for (let di = -2; di <= 2; di++) {
+    const trench = (x, y) => { const sg = lineAt(x, y); return sg && sg.done && sg.type === 'trench' && sg.owner === u.owner ? 1.2 : 0; };
+    const here = cells > 2 ? (Terrain.type[Terrain.idx(ci, cj)] === Terrain.T_FOREST ? 1 : 0) + trench(u.x, u.y) : 0;
+    let best = null, bestS = here + 0.3;
+    for (let dj = -cells; dj <= cells; dj++) for (let di = -cells; di <= cells; di++) {
       if (!di && !dj) continue; const i = ci + di, j = cj + dj; if (!Terrain.inb(i, j)) continue;
       const k = Terrain.idx(i, j); if (!Terrain.cellPassable(k, u.cls)) continue;
       const x = Terrain.cx(i), y = Terrain.cy(j);
-      const s = (Terrain.type[k] === Terrain.T_FOREST ? 1 : 0) + clamp((Terrain.height[k] - h0) / 6, -1, 1) * 0.5 - Math.hypot(di, dj) * 0.12;
+      const s = (Terrain.type[k] === Terrain.T_FOREST ? 1 : 0) + clamp((Terrain.height[k] - h0) / 6, -1, 1) * 0.5 - Math.hypot(di, dj) * 0.12 + (cells > 2 ? trench(x, y) : 0);
       if (s > bestS && Terrain.straightPassable(u.x, u.y, x, y, u.cls)) { bestS = s; best = [x + (R() - 0.5) * 6, y + (R() - 0.5) * 6]; }
     }
     if (best) u.micro = { x: best[0], y: best[1] };
@@ -1268,6 +1288,100 @@ const Game = (() => {
     if (u.stuck > 6) { u.stuck = 0; return true; }
     return false;
   }
+
+  // ---- living infantry (patch 0.7b, DD "Patch 0.7b: living infantry") ----
+  // Soldiers look after themselves when no player order is in the way. Priority: panic (elsewhere) >
+  // Medic trip > fall back wounded > help a buddy > take cover > hold the post.
+  const isSoldier = u => !!(u.stats.weapon && !u.def.labour && u.def.cls === 'infantry' && u.owner !== 0);
+  // Free: idle, on one of these behaviours' own orders, or on an attack-move and already fighting.
+  const freeToAct = u => { const o = u.order; return !o || o.auto || (o.type === 'attackmove' && u.target && inRange(u, u.target)); };
+  // His team: the squadron, or loose friendly soldiers within 60 m.
+  function teamOf(u) {
+    if (u.squad && G.squads[u.squad]) return membersOf(G.squads[u.squad]).filter(m => m !== u && !m.inside && isSoldier(m));
+    const out = [];
+    for (const m of G.units) if (m !== u && !m.dead && !m.inside && !m.squad && m.owner === u.owner && isSoldier(m) && dist(m.x, m.y, u.x, u.y) <= BH.team) out.push(m);
+    return out;
+  }
+  function threatOf(u) {
+    const a = u.lastHitBy; if (a && !a.dead && a.owner !== u.owner && G.time - u.hitT < 10) return a;
+    return u.target && !u.target.dead ? u.target : null;
+  }
+  // The nearest friendly Medic or Field Hospital within reach, with the radius it heals in.
+  function healSource(u) {
+    let best = null, bd = BH.medic.reach;
+    for (const m of G.units) if (m.owner === u.owner && !m.dead && !m.inside && m.def.heal) { const d = dist(m.x, m.y, u.x, u.y); if (d < bd) { bd = d; best = { x: m.x, y: m.y, r: m.def.heal.range }; } }
+    for (const b of G.buildings) if (b.owner === u.owner && !b.dead && b.built && b.type === 'hospital') { const d = dist(b.x, b.y, u.x, u.y); if (d < bd) { bd = d; best = { x: b.x, y: b.y, r: b.def.heal.range }; } }
+    return best;
+  }
+  function goTo(u, x, y, kind) { applyOrder(u, { kind, x, y, arrive: 6, auto: true }); if (kind === 'attackmove') u.away = true; }
+  function backToPost(u) {
+    const c = u.squad && G.squads[u.squad] ? squadCentre(G.squads[u.squad], u) : null;
+    if (c) goTo(u, c[0], c[1], 'move'); else if (u.post) goTo(u, u.post.x, u.post.y, 'move');
+  }
+  function behave(u) {
+    if (u.inside || u.cargo || u.windup || !freeToAct(u)) return;
+    if (!u.order && !u.post) u.post = { x: u.x, y: u.y };   // an idle soldier with no post yet keeps where he stands
+    const hpf = u.hp / u.stats.hp;
+    // Wounded go to the Medic (or Field Hospital), wait there, and go back once healed.
+    if (u.healTrip) {
+      const h = healSource(u);
+      if (hpf >= BH.medic.healed || !h) { u.healTrip = false; if (hpf >= BH.medic.healed) backToPost(u); return; }
+      if (!u.order && dist(u.x, u.y, h.x, h.y) > h.r * 0.8) goTo(u, h.x, h.y, 'move');
+      return;
+    }
+    if (hpf < BH.medic.below) {
+      const h = healSource(u);
+      if (h) { u.healTrip = true; u.queue = []; if (dist(u.x, u.y, h.x, h.y) > h.r * 0.7) goTo(u, h.x, h.y, 'move'); return; }
+    }
+    const team = teamOf(u), t = threatOf(u), W = BH.wounded;
+    const healthy = hpf < W.below ? team.filter(m => m.hp / m.stats.hp > W.healthy) : [];
+    // A wounded man who stopped advancing picks his attack-move up again once falling back no longer applies.
+    if (u.resume && !u.order && !(t && healthy.length >= W.need)) { const r = u.resume; u.resume = null; applyOrder(u, { kind: 'attackmove', x: r.x, y: r.y, arrive: 12 }); return; }
+    // Wounded fall back slowly behind the healthier teammates, away from the enemy, and keep firing.
+    if (hpf < W.below && t) {
+      if (healthy.length >= W.need) {
+        let cx = 0, cy = 0; for (const m of healthy) { cx += m.x; cy += m.y; } cx /= healthy.length; cy /= healthy.length;
+        let dx = cx - t.x, dy = cy - t.y; const l = Math.hypot(dx, dy) || 1; dx /= l; dy /= l;
+        if (dist(u.x, u.y, t.x, t.y) < l + W.back * 0.6) {   // not yet behind the line
+          // The nearest of 25, 15 or 8 m back from which he can still see and reach the enemy (DD: he keeps firing).
+          const reach = Math.min(effRange(u, t.x, t.y), u.stats.vision * envVision(u)) * 0.9, th = t instanceof Building ? 6 : 1.8;   // in reach and in sight
+          for (const k of [1, 0.6, 0.32]) {
+            const px = cx + dx * W.back * k, py = cy + dy * W.back * k;
+            if (dist(px, py, t.x, t.y) > reach || !Terrain.passableAt(px, py, u.cls) || !Terrain.straightPassable(u.x, u.y, px, py, u.cls) || !Terrain.los(px, py, t.x, t.y, 2.2, th)) continue;
+            if (u.order) { if (u.order.type === 'attackmove' && !u.order.auto) u.resume = { x: u.order.x + u.order.offx, y: u.order.y + u.order.offy }; u.order = null; u.field = null; u.queue = []; }   // stop advancing
+            u.shift = { x: px, y: py, spd: W.speed, until: G.time + 8 }; u.post = { x: px, y: py }; u.fellBack = G.time;
+            return;
+          }
+        }
+      }
+    }
+    if (u.order) return;
+    // Help a buddy: a teammate under fire and nothing to shoot here: move to where the shooter is in reach.
+    if (!u.target && !isIndirect(u) && hpf >= BH.wounded.below) {   // the wounded don't go forward again
+      let s = null, sd = Infinity;
+      for (const m of team) { const a = m.lastHitBy; if (a && !a.dead && a.owner !== u.owner && G.time - m.hitT < BH.support.recent) { const d = dist(u.x, u.y, a.x, a.y); if (d < sd) { sd = d; s = a; } } }
+      if (s) {
+        const r = effRange(u, s.x, s.y) * BH.support.range;
+        if (sd > r && sd - r <= BH.support.maxWalk) { const k = r / sd; goTo(u, s.x + (u.x - s.x) * k, s.y + (u.y - s.y) * k, 'attackmove'); return; }
+      }
+    }
+    // Take cover when shot at.
+    if (!u.micro && G.time - u.hitT < BH.cover.recent && G.time >= u.coverT) {
+      u.coverT = G.time + BH.cover.every; seekCover(u, BH.cover.cells);
+      if (u.micro) { u.away = true; return; }
+    }
+    // Hold the post: drawn away by a behaviour, he walks back once nothing has shot at him for a while.
+    if (u.away && !u.micro && !u.shift && u.post && !u.target && G.time - u.hitT > BH.post.quiet && dist(u.x, u.y, u.post.x, u.post.y) > BH.post.away) { goTo(u, u.post.x, u.post.y, 'move'); u.away = false; }
+  }
+  // Personal gap (0.7b): how far a soldier keeps from his own side's soldiers.
+  function gapOf(u) {
+    const s = u.squad && G.squads[u.squad];
+    let g = s ? BH.gap[s.spacing] || BH.gap.loose : BH.gap.alone;
+    if (u.spreadT > G.time) g *= BH.shellSpread.mult;
+    const o = u.order; if (o && (o.type === 'move' || o.type === 'attackmove') && !(u.target && inRange(u, u.target))) g *= BH.gapMarching;
+    return g;
+  }
+  const keepsGap = u => isSoldier(u) && !u.inside && !u.windup && !(u.order && ['dig', 'demolish', 'board', 'garrison', 'grenade', 'work', 'haul'].includes(u.order.type));
 
   function updateUnit(u, dt) {
     // wasMoving: whether the unit moved last tick. Firing happens before this tick's move, so it is
@@ -1311,6 +1425,7 @@ const Game = (() => {
       for (const e of G.units) { if (e.dead || e.inside || e.owner === u.owner || e.owner === 0 && u.owner !== 0) continue; const d = dist(u.x, u.y, e.x, e.y); if (d < nd && canSee(u, e)) { near = e; nd = d; } }
       if (near) { moveToward(u, u.x + (u.x - near.x), u.y + (u.y - near.y), dt, 1); return; }
     }
+    if (isSoldier(u) && (u.behT -= dt) <= 0) { u.behT += BH.every; behave(u); }   // 0.7b
     if (u.def.grenade && u.nadeT <= 0 && !u.windup && G.tick % 10 === u.id % 10 && canThrow(u) && !(u.order && u.order.type === 'grenade')) autoGrenade(u);
     // An idle Medic walks over to the nearest wounded soldier it can see (squadmates first).
     if (u.def.heal && !u.order && !u.micro && G.tick % 30 === u.id % 30 && !u.patient) {
@@ -1324,6 +1439,11 @@ const Game = (() => {
     // DD B: trenches slow enemies and friendly vehicles to x0.4; wire doesn't slow vehicles (barricades block them).
     const lineSlow = !ls ? 1 : u.cargo ? (ls.type === 'trench' ? LINES.trench.slowEnemy : 1) : ls.owner === u.owner ? LINES[ls.type].slowOwn : LINES[ls.type].slowEnemy;
     const spd = Util.stack('speed', u.suppressed && !retreating ? 0.6 : 1, cap(u.order), lineSlow, u.cargo && u.fuel <= 0 ? Data.FUEL.emptySpeed : 1, envSpeed(u));   // 0.6: rain and snow   // Kaan, 0.5b: an empty tank crawls
+    if (u.shift) {   // 0.7b: a short behaviour walk (falling back wounded) pauses the order's movement
+      const sh = u.shift;
+      if (G.time > sh.until || !freeToAct(u)) u.shift = null;
+      else { if (moveToward(u, sh.x, sh.y, dt, spd * sh.spd) || u.stuck > 1) { u.shift = null; u.stuck = 0; } return; }
+    }
     const o = u.order;
     if (o) {
       switch (o.type) {
@@ -1345,7 +1465,7 @@ const Game = (() => {
             if (arrived || u.stuck > 1.5) {
               u.stuck = 0;
               if (o.type === 'work') { u.order = { type: 'haul', stage: 'load', wait: 0, tk: -1 }; u.field = null; }
-              else { if (o.unload) unloadTruck(u); const more = u.queue.length > 0; nextOrder(u); if (!more && !u.cargo) seekCover(u); }
+              else { if (o.unload) unloadTruck(u); if (!o.auto) u.post = { x: u.x, y: u.y }; const more = u.queue.length > 0; nextOrder(u); if (!more && !u.cargo) seekCover(u); }   // 0.7b: a player's move ends at the post
             }
           }
           break;
@@ -1442,7 +1562,7 @@ const Game = (() => {
       }
     } else if (u.micro) {
       if (moveToward(u, u.micro.x, u.micro.y, dt, spd) || u.stuck > 1) { u.micro = null; u.stuck = 0; }
-    } else if (u.target && !inRange(u, u.target) && !isIndirect(u)) {
+    } else if (u.target && !inRange(u, u.target) && !isIndirect(u) && !(G.time - (u.fellBack || -99) < 10)) {   // 0.7b: not straight after falling back wounded
       const t = u.target;
       if (dist(u.x, u.y, t.x, t.y) < u.stats.weapon.range * 1.3 && Terrain.straightPassable(u.x, u.y, t.x, t.y, u.cls)) moveToward(u, t.x, t.y, dt, spd);
     } else if (u.owner === 0 && !u.target && dist(u.x, u.y, u.spawn.x, u.spawn.y) > 90) {
@@ -1450,8 +1570,19 @@ const Game = (() => {
     }
   }
 
-  function separate() {
-    const cs = 24; const grid = new Map();
+  // A gap push: never into impassable ground, never out of the soldier's own trench, and for a soldier
+  // who is firing only sideways along his line, so it never takes him out of range.
+  function nudge(u, dx, dy) {
+    const t = u.target;
+    if (t && !t.dead) { let fx = t.x - u.x, fy = t.y - u.y; const l = Math.hypot(fx, fy) || 1; fx /= l; fy /= l; const k = dx * fx + dy * fy; dx -= k * fx; dy -= k * fy; }
+    const x = u.x + dx, y = u.y + dy; if (!Terrain.passableAt(x, y, u.cls)) return;
+    if (G.segs.length) { const a = lineAt(u.x, u.y); if (a && a.type === 'trench' && a.owner === u.owner && a.done) { const b = lineAt(x, y); if (!b || b.type !== 'trench') return; } }
+    u.x = x; u.y = y;
+  }
+  // Bodies never overlap; 0.7b: soldiers of one side also keep a personal gap (gapOf), pushed apart gently.
+  function separate(dt) {
+    const cs = 28; const grid = new Map();
+    for (const u of G.units) u.gap = !u.dead && keepsGap(u) ? gapOf(u) : 0;
     for (const u of G.units) { if (u.dead || u.inside) continue; const k = ((u.x / cs) | 0) + ',' + ((u.y / cs) | 0); let a = grid.get(k); if (!a) grid.set(k, a = []); a.push(u); }
     for (const u of G.units) {
       if (u.dead || u.inside) continue; const gx = (u.x / cs) | 0, gy = (u.y / cs) | 0;
@@ -1461,6 +1592,13 @@ const Game = (() => {
           if (v.id <= u.id) continue;
           const minD = u.size + v.size + 2; const dx = v.x - u.x, dy = v.y - u.y; const d2 = dx * dx + dy * dy;
           if (d2 < 1e-4) { v.x += 0.7; continue; }
+          if (u.gap && v.gap && u.owner === v.owner) {
+            const gap = (u.gap + v.gap) / 2;
+            if (d2 < gap * gap) {
+              const d = Math.sqrt(d2), push = Math.min((gap - d) * 0.08, Math.min(u.stats.speed, v.stats.speed) * 0.3 * dt), nx = dx / d * push, ny = dy / d * push;
+              nudge(u, -nx, -ny); nudge(v, nx, ny); if (d2 >= minD * minD) continue;   // overlapping bodies also get the hard push below
+            }
+          }
           if (d2 >= minD * minD) continue;
           const d = Math.sqrt(d2); const push = (minD - d) * 0.25; const nx = dx / d * push, ny = dy / d * push;
           if (Terrain.passableAt(u.x - nx, u.y - ny, u.cls)) { u.x -= nx; u.y -= ny; }
@@ -1509,7 +1647,7 @@ const Game = (() => {
       case 'move': orderMove(us, c.x, c.y, c.mode || 'move', q, false, { facing: c.facing, width: c.width }); return true;
       case 'squadSet': return setSquad(c.squad, us);
       case 'squadClear': disband(c.squad); return true;
-      case 'squadToggle': { const s = G.squads[c.squad]; if (s && ['move', 'spacing', 'contact'].includes(c.key)) s[c.key] = c.value; return !!s; }
+      case 'squadToggle': { const s = G.squads[c.squad]; if (s && ['move', 'spacing', 'contact', 'autoFall'].includes(c.key)) s[c.key] = c.value; return !!s; }
       case 'attack': { const t = entById(c.target); if (t && !t.dead) orderAttack(us, t, q); return true; }
       case 'bombard': orderBombard(us, c.x, c.y, q); return true;
       case 'stop': orderStop(us); return true;
@@ -1569,7 +1707,7 @@ const Game = (() => {
     updateEnv(dt); updateResearch(dt); updateBuildings(dt);
     updateSquads(); updateLines(); updateHealing(dt); updateSmokes(dt); updateSignals(dt); updateLogistics(dt); updateVehicles(dt);
     for (const u of G.units) if (!u.dead) updateUnit(u, dt);
-    separate();
+    separate(dt);
     updateProjectiles(dt); updateEffects(dt);
     AI.update(dt);
     Fog.update(dt);
