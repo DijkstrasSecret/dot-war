@@ -405,7 +405,7 @@ section 11.
 | **0.4** | Fortifications and medical (lines, Bunker, HQ garrison, grenades, Medic, Field Hospital) |
 | **0.5** | Vehicles, logistics and the tech tree (Truck, fuel, Workshop, Depot, R&D Lab, Rubber Tapper, Refinery, supply) |
 | **0.6** | Weather and night |
-| **0.7** | Big maps, villages, AI raids, abandoned buildings and props as cover, trees in forests, wider roads |
+| **0.7** | 0.7a big random maps (built) · 0.7b living infantry (built) · 0.7c villages, buff sites, props as cover, trees · 0.7d siege AI |
 | **0.8** | Artillery (Field Gun), armoured car (the blueprint designer was dropped) |
 | Later | AI on player economy, multiplayer, replays, save and load, sound, tutorial, drones |
 
@@ -413,15 +413,15 @@ section 11.
 
 ## 7. Next steps for Kaan
 
-Built and merged: 0.2a, 0.2b, 0.2.1, 0.3, 0.3.1, 0.4, 0.4.1, 0.4.2, 0.5a, 0.5a.1, 0.5a.2, 0.5a.3,
-0.5b and 0.5b.1 (see `PATCH_NOTES.md`, the ticks in `IMPLEMENTATION_PLAN.md` and the "Built in
-patch ..." notes in `DESIGN_DECISIONS.md`). `BALANCE_BASELINE.md` records the balance of 0.5b.1 for
-comparison.
+Built and merged up to 0.7b (see `PATCH_NOTES.md`, the ticks in `IMPLEMENTATION_PLAN.md` and the
+"Patch ..." notes in `DESIGN_DECISIONS.md`). `BALANCE_BASELINE.md` records the balance of 0.5e for
+comparison; recorded fights per patch are in `fight-tests/`.
 
 To do, in order:
-1. Done in 0.5b.2: Trucks at gatherers (HQ refuels, Trucks carry first, tank 120).
-2. Done in 0.5b.2: return fire against Snipers; carriers keep their load.
-4. Patch 0.6: weather and night, with the answers already agreed (sight rule, weather mix, searchlights).
+1. Patch 0.7c: villages and civilians, neutral patrols, buff sites and citadels, ruins and wrecks as
+   cover, trees in forests, Modern kit.
+2. Patch 0.7d: the siege AI (Q24 raid logic).
+3. Patch 0.8: Field Gun and armoured car.
 
 
 ---

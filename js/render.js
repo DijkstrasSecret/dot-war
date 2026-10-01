@@ -236,6 +236,47 @@ const Render = (() => {
     ctx.globalAlpha = 1;
   }
 
+  // 0.7b: a see-through blob joining each squadron's members, clear when selected, faint otherwise.
+  // Drawn on its own canvas so overlaps don't darken: a rim colour first, the fill over it, then the
+  // whole layer laid on the map at one opacity. Members join to their nearest squadmate, so a wounded
+  // man falling back reads as the blob's tail.
+  let blobC = null;
+  function drawSquadBlobs(sel) {
+    const groups = { on: [], off: [] };
+    for (const s of Object.values(G.squads)) {
+      const ms = s.members.map(id => G.unitById.get(id)).filter(u => u && !u.dead && !u.inside && unitVisible(u));
+      if (ms.length < 2 || (!spectator && ms[0].owner !== 1)) continue;
+      groups[ms.some(u => sel.has(u)) ? 'on' : 'off'].push({ s, ms });
+    }
+    if (!groups.on.length && !groups.off.length) return;
+    if (!blobC) blobC = document.createElement('canvas');
+    if (blobC.width !== w || blobC.height !== h) { blobC.width = w; blobC.height = h; }
+    const b = blobC.getContext('2d');
+    // The shape of each blob, grown by `grow` screen pixels: a circle per member and a bar to its nearest squadmate.
+    const shape = (list, grow) => {
+      for (const { s, ms } of list) {
+        const r = Math.max(13, (Data.SQUAD.spacing[s.spacing] || 25) * 0.62) + grow / cam.zoom;
+        b.fillStyle = b.strokeStyle = Data.PLAYER_COLORS[ms[0].owner];
+        for (const u of ms) {
+          b.beginPath(); b.arc(u.x, u.y, r, 0, Math.PI * 2); b.fill();
+          let nb = null, nd = 90; for (const v of ms) { if (v === u) continue; const d = dist(u.x, u.y, v.x, v.y); if (d < nd) { nd = d; nb = v; } }
+          if (nb) { b.lineWidth = r * 1.5; b.beginPath(); b.moveTo(u.x, u.y); b.lineTo(nb.x, nb.y); b.stroke(); }
+        }
+      }
+    };
+    const layer = (fn, alpha) => {
+      b.globalCompositeOperation = 'source-over'; b.setTransform(1, 0, 0, 1, 0, 0); b.clearRect(0, 0, w, h);
+      b.setTransform(cam.zoom, 0, 0, cam.zoom, -cam.x * cam.zoom, -cam.y * cam.zoom); b.lineCap = 'round';
+      fn();
+      ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalAlpha = alpha; ctx.drawImage(blobC, 0, 0); ctx.restore();
+    };
+    for (const [key, fill, rim] of [['off', 0.07, 0.25], ['on', 0.16, 0.75]]) {
+      const list = groups[key]; if (!list.length) continue;
+      layer(() => shape(list, 0), fill);                                                                  // the body
+      layer(() => { shape(list, 1.5); b.globalCompositeOperation = 'destination-out'; shape(list, -1); }, rim);   // the outline only
+    }
+    b.globalCompositeOperation = 'source-over';
+  }
   function draw() {
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.fillStyle = '#d9d4c3'; ctx.fillRect(0, 0, w, h);
@@ -247,6 +288,7 @@ const Render = (() => {
     const sel = new Set(G.selection);
     drawDecals();
     drawSupplyLines();
+    drawSquadBlobs(sel);
     for (const sg of G.segs) if (sg.owner === 1 || sg.seen || spectator) drawSeg(sg);
     for (const b of G.buildings) if (!b.dead && buildingVisible(b)) drawBuilding(b, sel.has(b));
     for (const b of G.buildings) if (!b.dead && b.rally && sel.has(b)) { ctx.strokeStyle = '#fff'; ctx.lineWidth = 1; ctx.setLineDash([3, 3]); ctx.beginPath(); ctx.moveTo(b.x, b.y); ctx.lineTo(b.rally.x, b.rally.y); ctx.stroke(); ctx.setLineDash([]); ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(b.rally.x, b.rally.y, 3, 0, Math.PI * 2); ctx.fill(); }

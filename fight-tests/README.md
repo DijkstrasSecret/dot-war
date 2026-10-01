@@ -10,6 +10,7 @@ Compare a new patch's folder with the previous one to see what a change did.
 
 | Patch | Date | Fights | Headline |
 | --- | --- | --- | --- |
+| [0.7b](0.7b/README.md) | 1 Oct 2026 | 8 behaviour checks, 16 fights × 40 runs against 0.7a, 3 videos | Soldiers look after themselves; head-on fights barely change, the mixed squadron gains |
 | [0.6](0.6/README.md) | 30 Sept 2026 | 47 fights × 40 runs (10 new at night and in weather), 6 AI matches, snapshot, 2 videos | Seeing becomes everything: MGs and Snipers need spotters; night stops mortars |
 | [0.5e](0.5e/README.md) | 30 Sept 2026 | 37 fights × 40 runs, 6 AI matches, Balance Lab snapshot (8 minutes in all) | Faster fog: 31 of 37 fights identical; mortars less dominant at range |
 | [0.5d](0.5d/README.md) | 30 Sept 2026 | enemy behaviour checks, 5 AI matches, 1 video | The enemy falls back to heal, garrisons, digs in, researches and raids supply lines |

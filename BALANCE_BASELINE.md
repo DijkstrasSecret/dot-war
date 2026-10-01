@@ -100,6 +100,12 @@ at 110 m: the Machine Gunner mirror (13/17/70 → 30/57/13, fewer stalemates now
 each other), Machine Gunners v Mortars (100% → 97%) and the mortar mirror (within chance). The bigger
 effects of "only shoot what you can see" show at longer range; see `fight-tests/0.6`.
 
+## Patch 0.7b against this baseline
+
+Living infantry (wounded fall back, personal gaps, helping a buddy) leaves the Balance Lab targets
+here: MG pin 4.9 s (green), hill 65% (green, was 74%), squadron v loose 63% (red, target 55–60%;
+59% in 0.5e). Over 300 runs they come to 68% and 59%. Details in `fight-tests/0.7b`.
+
 ## What 0.6 did to the things we watched
 
 - Night hurt Mortars most, as expected (Riflemen beat them 100% at night), but not Snipers: they still

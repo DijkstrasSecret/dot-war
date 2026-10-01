@@ -237,5 +237,65 @@ const LabTests = (() => {
       ai: ['easy', 'normal', 'hard'].map(d => aiPressure({ seed: 1, difficulty: d, minutes: 30 })) };
   }
 
-  return { buildArena, duel, duels, fort, forts, economy, aiMatch, metaDuels, metaTerrain, metaForts, metaEconomy, aiPressure, aiPressureRun, metaSnapshot };
+  // ---- living infantry checks (patch 0.7b) ----
+  // Small staged situations, one per behaviour; each passes or fails with a measured detail.
+  function behaviourChecks(seed = 1) {
+    const out = [], D = Util.dist, B = Data.BEHAVIOUR;
+    const stage = ground => { Game.init(seed); G.difficulty = 'normal'; G.envOverride = { weather: 'clear', dark: 0 }; buildArena(ground || 'flat'); };
+    const run = (s, each) => { for (let i = 0, n = Math.round(s / STEP); i < n; i++) { if (each) each(); Game.update(STEP); } };
+    const check = (name, pass, detail) => out.push({ name, pass: !!pass, detail });
+    // 1. Wounded fall back behind healthier teammates.
+    stage();
+    const line = [0, 1, 2, 3].map(i => Game.spawnUnit('rifle', 1, AX, MIDY + (i - 1.5) * 20)), foe = Game.spawnUnit('rifle', 2, AX + 110, MIDY);
+    line[1].hp = line[1].stats.hp * 0.3;
+    run(8, () => { foe.hp = foe.stats.hp; foe.stress = 0; for (const u of line) if (u !== line[1]) u.hp = u.stats.hp; if (line[1].hp < 5) line[1].hp = 5; });
+    const back = D(line[1].x, line[1].y, foe.x, foe.y) - [0, 2, 3].reduce((s, i) => s + D(line[i].x, line[i].y, foe.x, foe.y), 0) / 3;
+    check('Wounded fall back behind the healthy ones', back > 12, Math.round(back) + ' m further from the enemy than the others (want > 12)');
+    // 2. Wounded walk to a Medic 200 m away and come back healed.
+    stage();
+    const hurt = Game.spawnUnit('rifle', 1, AX, MIDY - 100), med = Game.spawnUnit('medic', 1, AX + 200, MIDY - 100);
+    hurt.hp = hurt.stats.hp * 0.25;
+    let reached = 0; run(60, () => { if (D(hurt.x, hurt.y, med.x, med.y) < 45) reached = 1; });
+    check('Wounded walk to a Medic within 300 m and return healed', reached && hurt.hp >= hurt.stats.hp * B.medic.healed && D(hurt.x, hurt.y, AX, MIDY - 100) < 40,
+      (reached ? 'reached the Medic' : 'never reached the Medic') + ', health ' + Math.round(hurt.hp / hurt.stats.hp * 100) + '%, ' + Math.round(D(hurt.x, hurt.y, AX, MIDY - 100)) + ' m from his post');
+    // 3. A clump spreads out to the personal gap.
+    stage();
+    const clump = []; for (let i = 0; i < 8; i++) clump.push(Game.spawnUnit('rifle', 1, AX + (i % 3) * 3, MIDY + Math.floor(i / 3) * 3));
+    run(10);
+    let gmin = Infinity; for (const a of clump) for (const b of clump) if (a !== b) gmin = Math.min(gmin, D(a.x, a.y, b.x, b.y));
+    check('Soldiers keep a personal gap (12 m outside a squadron)', gmin >= B.gap.alone * 0.85, 'closest pair ' + gmin.toFixed(1) + ' m');
+    // 4. After a shell lands nearby they spread wider.
+    for (const u of clump) u.spreadT = G.time + B.shellSpread.time;
+    run(8);
+    gmin = Infinity; for (const a of clump) for (const b of clump) if (a !== b) gmin = Math.min(gmin, D(a.x, a.y, b.x, b.y));
+    check('After a nearby shell the gap grows x1.5', gmin >= B.gap.alone * B.shellSpread.mult * 0.85, 'closest pair ' + gmin.toFixed(1) + ' m');
+    // 5. Help a buddy: the rear man moves up until the shooter is in his reach.
+    stage();
+    const front = Game.spawnUnit('rifle', 1, AX, MIDY), rear = Game.spawnUnit('rifle', 1, AX - 50, MIDY), shooter = Game.spawnUnit('rifle', 2, AX + 160, MIDY);
+    const d0 = D(rear.x, rear.y, shooter.x, shooter.y);
+    run(8, () => { shooter.hp = shooter.stats.hp; front.hp = front.stats.hp; rear.hp = rear.stats.hp; front.stress = 0; rear.stress = 0; });
+    const d1 = D(rear.x, rear.y, shooter.x, shooter.y);
+    check('A soldier moves up to help a teammate under fire', d1 <= rear.stats.weapon.range, Math.round(d0) + ' m → ' + Math.round(d1) + ' m from the shooter (his range ' + rear.stats.weapon.range + ' m)');
+    // 6. Take cover: a soldier under fire next to a forest steps into it.
+    stage('forest');
+    const exposed = Game.spawnUnit('rifle', 1, 272, MIDY);
+    run(5, () => { exposed.hitT = G.time; });
+    check('Under fire, a soldier steps into nearby cover', Terrain.typeAt(exposed.x, exposed.y) === Terrain.T_FOREST, 'now at x = ' + Math.round(exposed.x) + ' (forest from x = 290)');
+    // 7. Hold the post: drawn away, he walks back once it is quiet.
+    stage();
+    const guard = Game.spawnUnit('rifle', 1, AX, MIDY); guard.post = { x: AX, y: MIDY }; guard.x = AX + 80; guard.hitT = G.time - 30; guard.away = true;
+    run(6);
+    check('A soldier drawn away walks back to his post when it is quiet', D(guard.x, guard.y, AX, MIDY) < B.post.away, Math.round(D(guard.x, guard.y, AX, MIDY)) + ' m from his post');
+    // 8. A squadron's rows are staggered and the wounded take the rear.
+    stage();
+    const sq = []; for (let i = 0; i < 6; i++) sq.push(Game.spawnUnit('rifle', 1, AX, MIDY + (i - 2.5) * 20));
+    Game.setSquad(1, sq); sq[0].hp = sq[0].stats.hp * 0.3;
+    Game.orderMove(sq, AX + 200, MIDY);
+    const offs = sq.map(u => u.order ? u.order.offx : 0), rearMost = offs.indexOf(Math.min(...offs));
+    check('In a squadron the wounded take the rear rank', offs[0] <= Math.min(...offs.slice(1)), 'wounded offset ' + Math.round(offs[0]) + ' m, others from ' + Math.round(Math.min(...offs.slice(1))) + ' m' + (rearMost === 0 ? '' : ''));
+    G.envOverride = null;
+    return out;
+  }
+
+  return { buildArena, duel, duels, fort, forts, economy, aiMatch, metaDuels, metaTerrain, metaForts, metaEconomy, aiPressure, aiPressureRun, metaSnapshot, behaviourChecks };
 })();

@@ -13,6 +13,10 @@ class Unit {
     this.cooldown = G.rng() * 0.5; this.acquireT = G.rng() * 0.3;   // seeded simulation stream
     this.order = null; this.field = null; this.forced = null; this.target = null;
     this.micro = null;                  // short direct move (cover seeking)
+    // 0.7b living infantry: post = where the player left him; shift = a short behaviour walk that
+    // pauses his order's movement; hitT = when he was last shot at; spreadT = spread out until then.
+    this.post = null; this.shift = null; this.hitT = -99; this.spreadT = 0; this.coverT = 0; this.healTrip = false; this.away = false; this.resume = null;   // away: a behaviour drew him off his post; resume: the attack-move he paused while wounded
+    this.behT = (this.id % 15) / 30;    // staggered so checks spread over the ticks
     this.facing = G.vrng() * Math.PI * 2; this.moving = false; this.wasMoving = false;   // facing is looks only
     this.work = null; this.squad = 0; this.dead = false; this.queue = [];
     this.xp = 0; this.rank = 0; this.fireT = 0; this.workT = 0; this.suppXp = null;   // veterancy (DD H1)

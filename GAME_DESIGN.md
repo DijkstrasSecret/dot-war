@@ -479,6 +479,7 @@ the centre behind those, Mortar Crews 60 m back. Members travel along the path i
 | Movement | `>` everyone at the slowest member's pace · `>>` each at his own pace | `>` |
 | Spacing | tight 15 m · loose 25 m | loose |
 | Contact | react: members share the squadron's target when it is no farther than their own · keep moving: each fires at the closest enemy | react |
+| Fall back (0.7b) | off · auto: under fire, a fighting withdrawal (as G) by itself when the squadron has lost half the members it had at its biggest or 60% are pinned, at most once a minute | off |
 
 On react, Riflemen, Machine Gunners and Mortar Crews take the squadron's shared target when it is
 no farther than their own nearest enemy; Snipers pick their own. Each soldier stops
@@ -488,6 +489,42 @@ withdrawal: the rear ranks fall back at once while the front rank holds 4 s, the
 factory's rally point set on a squad member (right click it) sends new units into that squadron,
 up to 12. Squadrons are a utility more than an advantage: in the Balance Lab 6 Riflemen in a
 squadron beat 6 loose Riflemen 55–60% of the time (target).
+
+**Blobs (0.7b).** A see-through blob in the owner's colour joins each squadron's members: a clear
+outline for selected squadrons, a faint one for your others. A wounded man at the rear shows as the
+blob's tail.
+
+### Living infantry (patch 0.7b)
+
+Every soldier (Riflemen, Machine Gunners, Snipers, Mortar Crews; both sides; not Workers, Medics,
+Trucks or neutral guards) looks after himself whenever he isn't carrying out a player order: when
+idle, or on an attack-move and already fighting. A move, an Attack order, Defend (R), digging,
+boarding and garrisoning always come first. His **team** is his squadron, or, outside a squadron, the
+friendly soldiers outside squadrons within 60 m. Each soldier checks every 0.5 s, in this order:
+
+1. **Panic** works as before.
+2. **Wounded go to the Medic:** under 40% health with a friendly Medic or Field Hospital within
+   300 m, he walks to it, waits until he is above 80%, then returns to his post (or his squadron).
+3. **Wounded fall back:** under 40% health, with at least 2 teammates above 60%, he walks at 0.6×
+   speed to 25 m behind them, away from the enemy (or 15 or 8 m if that is as far as he can go and still see and reach
+   the enemy), and keeps firing. On an attack-move he stops advancing, and picks the attack-move up
+   again once falling back no longer applies. For 10 s afterwards he doesn't chase targets out of range.
+   In a squadron's formation the wounded take the rear rank.
+4. **Help a buddy:** if a teammate was shot at in the last 3 s and he has nothing to shoot, he
+   attack-moves to 85% of his range from the shooter, if that is at most 150 m away. Not Mortar
+   Crews, and not the wounded.
+5. **Take cover:** shot at in the last 5 s, with no order, he steps to the best cover within 3 cells
+   (36 m) at most every 8 s: his own trench, then forest, then higher ground.
+6. **Hold the post:** where he ends a player's move (or presses Stop, or Defend) is his post. When
+   return fire, helping a buddy or taking cover drew him away, he walks back once nothing has shot
+   at him for 15 s.
+
+**Personal gap.** Soldiers of one side keep apart: 10 m in a tight squadron, 18 m in a loose one,
+12 m outside a squadron, ×0.8 while marching on a move order. Their bodies already keep about 14 m
+between Riflemen, so the small gaps matter only after a shell: one landing within 40 m spreads the
+soldiers there to ×1.5 the gap for 20 s. A soldier who is firing is pushed only sideways along his
+line, never out of range, and never out of his own trench. Squadron rows are staggered like a
+checkerboard.
 
 **Veterancy.** Soldiers earn XP: 10 per kill, 1 per 10 damage, 5 when a target they are shooting
 becomes suppressed (once per target every 30 s), 1 per 10 s spent with stress above 0.3, and for

@@ -286,8 +286,9 @@ Built in two parts (Kaan): **0.5a** tech tree, buildings and supply (done); **0.
 
 ## Patch 0.7: Big maps, villages and AI
 
-Split into three steps (30 Sept): **0.7a** the engine and generator for 13 km maps, **0.7b** map
-detail and buff sites, **0.7c** the siege AI. Kaan's answers are in `DESIGN_DECISIONS.md`
+Split into steps (30 Sept): **0.7a** the engine and generator for 13 km maps, **0.7b** living
+infantry (added 1 Oct, Kaan: less micromanagement), **0.7c** map detail and buff sites, **0.7d** the
+siege AI. Kaan's answers are in `DESIGN_DECISIONS.md`
 ("Patch 0.7 plan answers"): no alternative win conditions (buff sites instead of victory points),
 generated maps only, Modern kit at an R&D Lab + 5 Tier III.
 
@@ -300,7 +301,16 @@ generated maps only, Modern kit at an R&D Lab + 5 Tier III.
 - [x] Wider roads (14 m).
 - [x] The hand-made maps leave the menu (kept for the Balance Lab).
 
-**0.7b (map detail and buff sites)**
+**0.7b (living infantry; DD "Patch 0.7b: living infantry")**
+- [x] Teams: squadron, or loose friendly soldiers within 60 m.
+- [x] Wounded fall back behind healthier teammates; rear rank in formation.
+- [x] Personal gap (10 / 18 / 12 m), staggered rows, spread out after a nearby shell.
+- [x] Help a buddy under fire; take cover under fire; hold the post.
+- [x] Wounded walk to a Medic or Field Hospital within 300 m.
+- [x] Squad toggle: auto fall-back (off by default).
+- [x] Squad blobs (selected clear, others faint).
+
+**0.7c (map detail and buff sites)**
 
 - [ ] Villages [J]: 3–5 hamlets and 1–2 central towns. Civilians get their own owner id, are
       never auto-targeted, and flee from fighting.
@@ -313,7 +323,7 @@ generated maps only, Modern kit at an R&D Lab + 5 Tier III.
       (big neutral fortresses, taken by clearing their garrison).
 - [ ] Modern kit at an R&D Lab + 5 Tier III.
 
-**0.7c (siege AI)**
+**0.7d (siege AI)**
 - [ ] AI raid logic [Q24]:
   1. [ ] Probe towers first.
   2. [ ] Move to the weakest outpost toward the HQ.
