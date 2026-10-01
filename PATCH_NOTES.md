@@ -5,6 +5,19 @@ each change live in `DESIGN_DECISIONS.md`.
 
 ---
 
+## 0.8: Field Gun, armoured car, AT Rifles (1 October 2026)
+
+- **Field Gun** (Artillery research, Ordnance Works): a slow, long-range gun, 900 m, for shelling
+  fixed positions. Needs a spotter, 4 sulfur a shell; tow it in a Truck. **Scout Tower level 4**
+  (also Artillery) can hold one.
+- **Armoured car** (Armoured Car research, Workshop): fast, light armour that shrugs off rifle and
+  machine-gun fire, and a machine gun that fires on the move. Burns fuel; carries nobody.
+- **AT Rifle team** (AP Rounds research, Barracks): two men with an anti-tank rifle, the answer to the
+  armoured car. They do full damage to it and keep their nerve under fire, but lose to Riflemen.
+- **Counter-battery** (research): an enemy Mortar Crew or Field Gun that fires is revealed for 10 s.
+- **The enemy brings Field Guns** later in the match (from 30 / 25 / 20 minutes on Easy / Normal / Hard).
+- **Balance Lab:** an "Artillery and vehicles" section with 6 checks.
+
 ## 0.7d.1: Citadels hold out longer (1 October 2026)
 
 - **A mortar shell now hurts only 1 or 2 of the men inside a citadel**, for less damage (20% instead

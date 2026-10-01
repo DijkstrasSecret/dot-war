@@ -339,10 +339,11 @@ generated maps only, Modern kit at an R&D Lab + 5 Tier III.
 
 ## Patch 0.8: Artillery and armoured car
 
-- [ ] Artillery research → Field Gun [J], Scout Tower level 4 [B], Counter-battery.
-- [ ] Armoured Car research → armoured car [J]. AP Rounds → ap damage type.
-- [ ] Modern kit trigger: needs a new rule now that the EMP part is gone (to ask Kaan) [K].
-- [ ] Balance Lab tests for the Field Gun and the armoured car.
+- [x] Artillery research → Field Gun [J], Scout Tower level 4 [B], Counter-battery.
+- [x] Armoured Car research → armoured car [J]. AP Rounds → the AT Rifle team (Kaan, 1 Oct; the designer's RPG part is gone).
+- [x] Modern kit trigger: R&D Lab + 5 Tier III (decided in 0.7, built in 0.7c) [K].
+- [x] Balance Lab tests for the Field Gun and the armoured car (vehicle checks; 8 fights in `fight-tests/0.8`).
+- [x] The enemy commander uses Field Guns (Kaan: Field Guns only).
 - ~~Blueprint designer~~: **dropped** (Kaan, 30 Sept: the game is complex enough). No chassis/weight
   system, no designer parts, no EMP or extras.
 

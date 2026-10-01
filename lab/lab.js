@@ -63,6 +63,12 @@ const condEnv = c => !c ? null : { night: { dark: 1 }, rain: { weather: 'rain' }
     for (const c of LabTests.behaviourChecks()) { const tr = document.createElement('tr'); tr.innerHTML = `<td>${c.name}</td><td class="${c.pass ? 'ok' : 'bad'}">${c.pass ? 'pass' : 'fail'}</td><td>${c.detail}</td>`; tb.appendChild(tr); }
   };
 
+  // ---- artillery and vehicles (0.8) ----
+  $('runVehicleChecks').onclick = () => {
+    const tb = $('vehicleOut'); tb.innerHTML = '<tr><th>Check</th><th>Result</th><th>Measured</th></tr>';
+    for (const c of LabTests.vehicleChecks()) { const tr = document.createElement('tr'); tr.innerHTML = `<td>${c.name}</td><td class="${c.pass ? 'ok' : 'bad'}">${c.pass ? 'pass' : 'fail'}</td><td>${c.detail}</td>`; tb.appendChild(tr); }
+  };
+
   // ---- map detail (0.7c) ----
   $('runMapChecks').onclick = () => {
     const tb = $('mapOut'); tb.innerHTML = '<tr><th>Check</th><th>Result</th><th>Measured</th></tr>';

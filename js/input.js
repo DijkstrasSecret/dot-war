@@ -153,7 +153,7 @@ const Input = (() => {
       } else if (canHold(ent)) {
         const n = cmd({ kind: 'garrison', units: ids(units), building: ent.id, queue: q }); if (n) Game.toast(n + ' heading into the ' + ent.def.name);
         marker(ent.x, ent.y, '#3c3'); if (!q) setMode('normal');
-      } else if (ent instanceof Unit && ent.owner === 1 && ent.cargo) {
+      } else if (ent instanceof Unit && ent.owner === 1 && Game.isTruck(ent)) {
         const n = cmd({ kind: 'board', units: ids(units.filter(u => u !== ent)), target: ent.id, queue: q }); if (n) Game.toast(n + ' boarding the Truck');
         marker(ent.x, ent.y, '#3c3'); if (!q) setMode('normal');
       } else Game.toast('Click one of your camps, mines, tappers, refineries, towers, Bunkers, Trucks or the HQ');
@@ -213,7 +213,7 @@ const Input = (() => {
     if (units.length) {
       if (ent && ent.owner !== 1 && !ent.dead) { cmd({ kind: 'attack', units: ids(units), target: ent.id, queue: q }); marker(ent.x, ent.y, '#c33'); return; }
       if (ent instanceof Building && ent.owner === 1 && ent.def.harvest && ent.built) { const n = cmd({ kind: 'work', units: ids(units), building: ent.id, queue: q }); if (n) Game.toast(n + ' sent to work at the ' + ent.def.name); marker(ent.x, ent.y, '#3c3'); return; }
-      if (ent instanceof Unit && ent.owner === 1 && ent.cargo && units.some(u => u !== ent && u.def.cls === 'infantry')) { const n = cmd({ kind: 'board', units: ids(units.filter(u => u !== ent)), target: ent.id, queue: q }); if (n) Game.toast(n + ' boarding the Truck'); marker(ent.x, ent.y, '#3c3'); return; }   // 0.5b: board
+      if (ent instanceof Unit && ent.owner === 1 && Game.isTruck(ent) && units.some(u => u !== ent && u.def.cls === 'infantry')) { const n = cmd({ kind: 'board', units: ids(units.filter(u => u !== ent)), target: ent.id, queue: q }); if (n) Game.toast(n + ' boarding the Truck'); marker(ent.x, ent.y, '#3c3'); return; }   // 0.5b: board
       if (canHold(ent)) { const n = cmd({ kind: 'garrison', units: ids(units), building: ent.id, queue: q }); if (n) Game.toast(n + ' heading into the ' + ent.def.name); marker(ent.x, ent.y, '#3c3'); return; }
       const sg = !ent && ownSegAt(wx, wy, false);   // right click on your unfinished line: dig on
       if (sg && !sg.done) { const n = cmd({ kind: 'dig', units: ids(units), seg: sg.id, queue: q }); if (n) Game.toast(n + ' digging'); marker(sg.x, sg.y, '#3c3'); return; }
@@ -258,7 +258,7 @@ const Input = (() => {
       if (k === 'g') { cmd({ kind: 'retreat', units: ids(units), queue: e.shiftKey }); return; }
       if (k === 'x') { cmd({ kind: 'stop', units: ids(units) }); return; }
       if (k === 'e') { setMode('work'); return; }
-      if (k === 'q' && units.some(u => u.cargo)) { for (const t of units.filter(u => u.cargo)) cmd({ kind: 'unload', building: t.id }); return; }   // 0.5b: unload Trucks
+      if (k === 'q' && units.some(Game.isTruck)) { for (const t of units.filter(Game.isTruck)) cmd({ kind: 'unload', building: t.id }); return; }   // 0.5b: unload Trucks
       if (k === 'k' && units.some(u => u.def.labour)) { setMode('fill'); return; }
       if (k === 'v' && units.some(u => Game.canThrow(u))) { setMode('grenade'); return; }
       if (k === 'm' && p.done.has('smoke') && units.some(u => u.stats.weapon && u.stats.weapon.indirect)) { setMode('smoke'); return; }

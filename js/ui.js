@@ -201,7 +201,7 @@ const UI = (() => {
     if (pl.done.has('smoke') && units.some(u => u.stats.weapon && u.stats.weapon.indirect)) items.push(['Smoke', 'M', () => Input.setMode('smoke'), mode === 'smoke', 'Mortars fire one smoke round: a cloud that blocks sight for 15 s.']);
     if (pl.done.has('flares') && units.some(u => u.stats.weapon && u.stats.weapon.indirect)) items.push(['Flare', 'L', () => Input.setMode('flare'), mode === 'flare', 'Mortars fire one flare (1 sulfur): a 150 m circle your side can see for 20 s. At night mortars fire only at what your side can see.']);
     if (pl.done.has('demolition') && units.some(u => u.stats.weapon)) items.push(['Demolish', 'C', () => Input.setMode('demolish'), mode === 'demolish', 'The nearest soldier blows up a barricade, wire or bridge segment: 3 s to set, 1 sulfur.']);
-    if (units.some(u => u.cargo)) items.push(['Unload', 'Q', () => { for (const t of units.filter(v => v.cargo)) Game.command({ kind: 'unload', building: t.id }); }, false, 'Let everyone out of the selected Trucks.']);
+    if (units.some(Game.isTruck)) items.push(['Unload', 'Q', () => { for (const t of units.filter(Game.isTruck)) Game.command({ kind: 'unload', building: t.id }); }, false, 'Let everyone out of the selected Trucks.']);
     if (units.some(u => u.def.labour)) items.push(['Fill', 'K', () => Input.setMode('fill'), mode === 'fill', 'Workers fill in one of your trenches, as slowly as it was dug.']);
     if (units.some(u => Game.canThrow(u))) items.push(['Grenade', 'V', () => Input.setMode('grenade'), mode === 'grenade', 'Riflemen walk within 25 m, stand still 1 s and throw a grenade (1 sulfur, 20 s cooldown). Friendly fire is on.']);
     for (const [label, key, fn, on, tip] of items) {
@@ -236,9 +236,9 @@ const UI = (() => {
     const hp = bar('#5ad65a'), fu = bar('#c9a227'), sp = bar('#8a6a2a');
     content.appendChild(el('div', 'small', 'Health')); content.appendChild(hp);
     content.appendChild(el('div', 'small', 'Fuel (a Depot refills it for oil; empty = 20% speed)')); content.appendChild(fu);
-    content.appendChild(el('div', 'small', 'Spare fuel (shared with vehicles running low nearby)')); content.appendChild(sp);
+    if (u.def.spare) { content.appendChild(el('div', 'small', 'Spare fuel (shared with vehicles running low nearby)')); content.appendChild(sp); }   // 0.8: the armoured car carries none
     const status = el('div', 'small'); status.style.margin = '6px 0'; content.appendChild(status);
-    if (own) {
+    if (own && Game.isTruck(u)) {   // 0.8: the armoured car has no seats
       content.appendChild(el('h3', null, 'Passengers'));
       const g = el('div', 'queue');
       for (const id of u.cargo) {
@@ -256,8 +256,8 @@ const UI = (() => {
       content.appendChild(row);
     }
     tick = () => {
-      hp.fill.style.width = (u.hp / u.stats.hp * 100) + '%'; fu.fill.style.width = (u.fuel / u.stats.fuel * 100) + '%'; sp.fill.style.width = (u.spare / u.def.spare * 100) + '%';
-      const o = u.order; status.textContent = 'Seats free ' + Game.seatsFree(u) + ' of ' + u.def.seats + '. Fuel ' + Math.floor(u.fuel) + '/' + Math.round(u.stats.fuel) + '. ' + (u.work != null ? (u.load ? 'Hauling ' + Math.floor(u.load.n) + ' ' + u.load.k + '.' : 'Collecting a load.') : o ? ({ move: 'Driving.', attackmove: 'Driving.', ferry: 'Waiting for riders.' })[o.type] || '' : 'Parked.');
+      hp.fill.style.width = (u.hp / u.stats.hp * 100) + '%'; fu.fill.style.width = (u.fuel / u.stats.fuel * 100) + '%'; sp.fill.style.width = (u.def.spare ? u.spare / u.def.spare * 100 : 0) + '%';
+      const o = u.order; status.textContent = (Game.isTruck(u) ? 'Seats free ' + Game.seatsFree(u) + ' of ' + u.def.seats + '. ' : '') + 'Fuel ' + Math.floor(u.fuel) + '/' + Math.round(u.stats.fuel) + '. ' + (u.work != null ? (u.load ? 'Hauling ' + Math.floor(u.load.n) + ' ' + u.load.k + '.' : 'Collecting a load.') : o ? ({ move: 'Driving.', attackmove: 'Driving.', ferry: 'Waiting for riders.' })[o.type] || '' : 'Parked.');
     };
   }
   function unitPanel(u) {
@@ -308,8 +308,8 @@ const UI = (() => {
     // One face per soldier with a class badge and a health bar; click a face to select only them.
     const faces = el('div', 'faces'), fills = [];
     for (const u of units.slice(0, 24)) {
-      const f = el('div', 'face'); f.title = (u.cargo ? 'Truck' : soldierName(u).short + ', ' + u.def.name) + ' (click to select only this one)';
-      if (u.cargo) f.appendChild(Icons.makeCanvas(u.def.icon, 64, '#fff', Data.PLAYER_COLORS[u.owner], 'rect')); else { f.appendChild(portraitEl(u, 64)); f.appendChild(badge(u, 34)); }
+      const f = el('div', 'face'); f.title = (u.cargo ? u.def.name : soldierName(u).short + ', ' + u.def.name) + ' (click to select only this one)';
+      if (u.cargo) f.appendChild(Icons.makeCanvas(u.def.icon, 64, '#fff', Data.PLAYER_COLORS[u.owner], u.def.shape === 'tri' ? 'tri' : 'rect')); else { f.appendChild(portraitEl(u, 64)); f.appendChild(badge(u, 34)); }
       const hb = el('div', 'hpbar'), hf = el('div'); hb.appendChild(hf); f.appendChild(hb); fills.push([u, hf]);
       f.onclick = () => Input.select([u], false);
       faces.appendChild(f);

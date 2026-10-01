@@ -2,7 +2,7 @@
 // Vector logos drawn inside unit shapes and reused as UI icons.
 // Each icon is drawn in a [-1,1] box; s is the half-size in pixels.
 // These logos are meant to become the saved blueprint icons of the designer (patch 0.5): keep them
-// legible at 4 px half-size and add 'rect'/'tri' background shapes to makeCanvas when vehicles arrive.
+// legible at 4 px half-size; makeCanvas draws circle, square, 'rect' (Truck) and 'tri' (armoured car) backgrounds.
 const Icons = (() => {
   function line(ctx, x0, y0, x1, y1, w) { ctx.lineWidth = w; ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x1, y1); ctx.stroke(); }
   function circ(ctx, x, y, r, fill) { ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); if (fill) ctx.fill(); else ctx.stroke(); }
@@ -161,6 +161,10 @@ const Icons = (() => {
     depot(ctx) { poly(ctx, [-0.95, -0.2, 0, -0.9, 0.95, -0.2], true); ctx.fillRect(-0.75, -0.2, 1.5, 1.05); ctx.save(); ctx.globalCompositeOperation = 'destination-out'; ctx.fillRect(-0.3, 0.25, 0.6, 0.6); ctx.restore(); },
     workshop(ctx) { ctx.lineWidth = 0.18; circ(ctx, 0, 0, 0.45, false); for (let i = 0; i < 8; i++) { const a = i * Math.PI / 4; line(ctx, Math.cos(a) * 0.55, Math.sin(a) * 0.55, Math.cos(a) * 0.85, Math.sin(a) * 0.85, 0.22); } },
     refinery(ctx) { ctx.fillRect(-0.8, -0.1, 0.6, 1.0); ctx.fillRect(0.1, -0.6, 0.35, 1.5); ctx.fillRect(0.55, 0.2, 0.35, 0.7); circ(ctx, 0.28, -0.85, 0.15, true); },
+    atrifle(ctx) {   // 0.8: a long anti-tank rifle on a bipod
+      line(ctx, -0.95, 0.35, 0.95, -0.35, 0.16); line(ctx, -0.95, 0.35, -0.55, 0.2, 0.36);
+      line(ctx, 0.35, -0.13, 0.15, 0.6, 0.08); line(ctx, 0.35, -0.13, 0.6, 0.55, 0.08); ctx.fillRect(0.7, -0.52, 0.28, 0.2);
+    },
     grenade(ctx) { circ(ctx, 0, 0.2, 0.62, true); ctx.fillRect(-0.22, -0.72, 0.44, 0.35); line(ctx, 0.2, -0.6, 0.6, -0.85, 0.12); },
   };
 
@@ -183,6 +187,7 @@ const Icons = (() => {
       ctx.fillStyle = bg;
       if (shape === 'square') ctx.fillRect(size * 0.08, size * 0.08, size * 0.84, size * 0.84);
       else if (shape === 'rect') ctx.fillRect(size * 0.04, size * 0.2, size * 0.92, size * 0.6);   // vehicles
+      else if (shape === 'tri') { ctx.beginPath(); ctx.moveTo(size * 0.96, size / 2); ctx.lineTo(size * 0.06, size * 0.1); ctx.lineTo(size * 0.06, size * 0.9); ctx.closePath(); ctx.fill(); }   // 0.8: the armoured car
       else { ctx.beginPath(); ctx.arc(size / 2, size / 2, size * 0.47, 0, Math.PI * 2); ctx.fill(); }
     }
     drawIcon(ctx, name, size / 2, size / 2, size * (bg ? 0.27 : 0.4), color);
