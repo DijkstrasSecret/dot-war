@@ -658,8 +658,14 @@ const Game = (() => {
     const ang = R() * Math.PI * 2, off = R() * scatter;
     const lx = tx + Math.cos(ang) * off, ly = ty + Math.sin(ang) * off;
     const smoke = !!(u.order && u.order.smoke), flare = !!(u.order && u.order.flare);
-    G.projectiles.push(new Projectile({ kind: 'shell', smoke, flare, x: u.x, y: u.y, tx: lx, ty: ly, dur: 0.9 + d / w.pspeed, arc: 25 + d * 0.12, dmg: w.dmg * dmgMult(u, lx, ly), splash: w.splash, dtype: w.dtype, shooter: u, owner: u.owner }));
+    G.projectiles.push(new Projectile({ kind: 'shell', smoke, flare, x: u.x, y: u.y, tx: lx, ty: ly, dur: 0.9 + d / w.pspeed, arc: 25 + d * 0.12, dmg: w.dmg * dmgMult(u, lx, ly), splash: w.splash, falloff: w.falloff || null, dtype: w.dtype, shooter: u, owner: u.owner }));
     if (smoke || flare) nextOrder(u);   // a smoke or flare order fires one round
+  }
+  // How much of a blast's damage a unit takes at a fraction f of the radius out. 0.7b.1 (Kaan): a mortar
+  // shell's centre hurts much more than its edge (weapon.falloff); grenades keep the old linear share.
+  function blastShare(pr, f) {
+    const fo = pr.falloff; if (!fo) return 0.35 + 0.65 * (1 - f);
+    return fo.edge + (fo.centre - fo.edge) * Math.pow(1 - f, fo.power);
   }
   function explode(pr) {
     const { tx: x, ty: y, splash, dmg, dtype, shooter } = pr;
@@ -670,7 +676,7 @@ const Game = (() => {
     for (const e of G.units) if (!e.dead && !e.inside && e.def.cls === 'infantry' && dist(e.x, e.y, x, y) <= SS.r) e.spreadT = G.time + SS.time;
     for (const e of G.units) {
       if (e.dead || e.inside) continue; const d = dist(e.x, e.y, x, y); if (d > splash) continue;
-      let m = (0.35 + 0.65 * (1 - d / splash)) * Data.ARMOR_MULT[dtype][e.armor];
+      let m = blastShare(pr, d / splash) * Data.ARMOR_MULT[dtype][e.armor];
       if (Terrain.ridgeCover(x, y, e.x, e.y)) m *= 0.35;
       if (Terrain.coverAt(e.x, e.y) < 1) m *= 0.85;
       const ls = lineAt(e.x, e.y); if (ls && LINES[ls.type].blast) m *= LINES[ls.type].blast;   // Kaan, 0.4.1: a trench halves blast damage

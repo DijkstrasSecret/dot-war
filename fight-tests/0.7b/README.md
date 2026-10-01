@@ -74,3 +74,18 @@
 ## Speed
 
 A 14-minute Hard AI match on a big map took 42.5 s of computing (38.9 s in 0.7a), about 9% more.
+
+## 0.7b.1: sharper mortar blast (Kaan's "mild" pick), 40 runs each
+
+| Fight | 0.7b | 0.7b.1 | Damage per shell |
+| --- | --- | --- | --- |
+| 6 Riflemen v 3 Mortars | 20 / 80 | 48 / 53 | 59 → 54 |
+| 6 Riflemen (spread 30 m) v 3 Mortars | 28 / 73 | 48 / 53 | 58 → 50 |
+| Equal-cost Riflemen v Mortars | 43 / 58 | 80 / 20 | 81 → 75 |
+| 3 v 3 Mortars | 53 / 48 | 50 / 50 | 47 → 39 |
+| Trench v mortars | 100 / 0 | 100 / 0 | 24 → 20 |
+| Mortar nest | 100 / 0 | 100 / 0 | 65 → 47 |
+| Mixed company v 8 Riflemen | 100 / 0 | 98 / 3 | 40 → 32 |
+| Riflemen v Mortars at night | 98 / 3 | 100 / 0 | 24 → 20 |
+
+Balance Lab targets: MG pin 4.9 s, hill 65%, squadron v loose 63% (target now 55–65%): all green.

@@ -106,6 +106,12 @@ Living infantry (wounded fall back, personal gaps, helping a buddy) leaves the B
 here: MG pin 4.9 s (green), hill 65% (green, was 74%), squadron v loose 63% (red, target 55–60%;
 59% in 0.5e). Over 300 runs they come to 68% and 59%. Details in `fight-tests/0.7b`.
 
+**0.7b.1:** Kaan widened the squadron target to 55–65% (all three targets green now), and the mortar
+blast got sharper (65 at the centre, 7.5 at the edge). Mortars stop being a hard counter to
+Riflemen: 6 Riflemen v 3 Mortar Crews 20% → 48% (section 1 above had Riflemen winning 63% from 110 m,
+where they get inside the minimum range; the recorded fights start farther out), equal-cost
+Riflemen v Mortars 43% → 80%. The mortar mirror stays even, and trenches still beat mortars.
+
 ## What 0.6 did to the things we watched
 
 - Night hurt Mortars most, as expected (Riflemen beat them 100% at night), but not Snipers: they still
