@@ -33,7 +33,7 @@ const Game = (() => {
     _nextId = 1;
     G.time = 0; G.tick = 0; G.cleanupT = 0; G.speed = 1; G.lastSpeed = 1; G.over = false; G.winner = 0;
     G.units = []; G.buildings = []; G.projectiles = []; G.effects = []; G.selection = []; G.squads = {}; G.toasts = []; G.orders = []; G.unitById = new Map();
-    G.stats = { 0: { kills: 0, lost: 0 }, 1: { kills: 0, lost: 0 }, 2: { kills: 0, lost: 0 } };
+    G.stats = { 0: { kills: 0, lost: 0 }, 1: { kills: 0, lost: 0 }, 2: { kills: 0, lost: 0 }, 3: { kills: 0, lost: 0 } };   // 3: civilians (0.7c)
     G.buildingById = new Map(); G.sandbox = false; G.difficulty = G.difficulty || 'hard';
     G.decals = [];   // blood, splats and corpses left on the ground
     G.segs = []; G.segById = new Map(); G.segGrid = new Map(); G.segNext = 1; G.lineNext = 1; G.healT = 0;   // line defences, healing (0.4)
@@ -41,7 +41,7 @@ const Game = (() => {
     G.planT = 1e9; G.cutT = 0;   // supply chains (0.5a.2): replan at once on the first tick
     G.alert = null;   // 0.5c: the latest "under attack" place, for the J key
     initEnv();        // 0.6: weather schedule and time of day
-    G.players = { 0: newPlayer(0, {}), 1: newPlayer(1, Data.START.res), 2: newPlayer(2, { wood: 3000, metal: 1500, sulfur: 600 }) };
+    G.players = { 0: newPlayer(0, {}), 1: newPlayer(1, Data.START.res), 2: newPlayer(2, { wood: 3000, metal: 1500, sulfur: 600 }), 3: newPlayer(3, {}) };   // 3: civilians (0.7c)
     for (const t of Object.keys(Data.UNITS)) G.players[0].unlocked.add(t);   // neutral guards; the AI unlocks over time (DD G7)
   }
   // ---- weather and night (patch 0.6: DD H2, H3, "Patch 0.6 details") ----
@@ -182,11 +182,13 @@ const Game = (() => {
     }
     checkKit(p);
   }
-  // DD K: Cold War kit for newly trained soldiers once the player owns an R&D Lab and has 2 Tier III items.
+  // DD K: Cold War kit for newly trained soldiers once the player owns an R&D Lab and has 2 Tier III items;
+  // 0.7c: Modern kit at 5.
   function checkKit(p) {
-    if (p.kitEra !== 'ww2' || !owns(p.id, 'lab')) return;
-    if ([...p.done].filter(id => Data.RESEARCH[id] && Data.RESEARCH[id].tier === 3).length < Data.KIT.coldTier3) return;
-    p.kitEra = 'cold'; if (p.id === 1) toast('New kit: soldiers trained from now on wear Cold War uniforms');
+    if (p.kitEra === 'modern' || !owns(p.id, 'lab')) return;
+    const n = [...p.done].filter(id => Data.RESEARCH[id] && Data.RESEARCH[id].tier === 3).length;
+    if (p.kitEra === 'ww2' && n >= Data.KIT.coldTier3) { p.kitEra = 'cold'; if (p.id === 1) toast('New kit: soldiers trained from now on wear Cold War uniforms'); }
+    if (p.kitEra === 'cold' && n >= Data.KIT.modernTier3) { p.kitEra = 'modern'; if (p.id === 1) toast('New kit: soldiers trained from now on wear Modern uniforms'); }
   }
   // ---- supply (DD Q18, G14) ----
   function supplyCap(pid) { const p = G.players[pid]; let n = 0; for (const b of G.buildings) if (b.owner === pid && !b.dead && b.built && b.def.supply) n++; return Data.SUPPLY.start + n * rule(pid, 'perDepot', Data.SUPPLY.perDepot); }
@@ -218,8 +220,8 @@ const Game = (() => {
   function addBuilding(type, owner, x, y, built) {
     const b = new Building(type, owner, x, y, built);
     const hm = G.players[owner].bhp[type] || 1; if (hm !== 1) { b.maxHp *= hm; b.hp *= hm; }   // Reinforced Concrete
-    if (b.def.harvest === 'deposit') { const d = Terrain.depositNear(x, y, 50); b.depositType = d ? d.type : null; }   // same reach as canPlace
-    G.buildings.push(b); G.buildingById.set(b.id, b); Terrain.setBlocked(x, y, b.w, b.h, true); Path.invalidate(); G.planT = 1e9;
+    if (b.def.harvest === 'deposit') { const d = Terrain.depositNear(x, y, 50); b.depositType = b.def.site === 'station' ? 'metal' : d ? d.type : null; }   // same reach as canPlace; 0.7c: the station's trains bring metal
+    G.buildings.push(b); G.buildingById.set(b.id, b); if (!b.def.flat) Terrain.setBlocked(x, y, b.w, b.h, true); Path.invalidate(); G.planT = 1e9;   // 0.7c: an Airdrop Zone has no footprint
     return b;
   }
 
@@ -227,7 +229,8 @@ const Game = (() => {
   const isHeavy = u => u.def.shape === 'square';
   function canEnter(u, b) {
     // Unarmed units (Workers, Medics) stay out: a slot is for firing from.
-    const lv = b.slots; if (!lv || b.dead || !b.built || b.owner !== u.owner || u.def.cls !== 'infantry' || !u.stats.weapon) return false;
+    const lv = b.slots; if (!lv || b.dead || !b.built || u.def.cls !== 'infantry' || !u.stats.weapon) return false;
+    if (b.owner !== u.owner && !(b.def.citadel && !b.garrison.some(id => { const g = G.unitById.get(id); return g && !g.dead; }))) return false;   // 0.7c: an empty citadel is anyone's
     let inf = 0, hv = 0, mg = 0;
     for (const id of b.garrison) { const g = G.unitById.get(id); if (!g || g.dead) continue; if (isHeavy(g)) hv++; else if (g.type === 'hmg') mg++; else inf++; }
     const mgSlots = lv.mg || 0; inf += Math.max(0, mg - mgSlots);   // DD B: a Bunker's MG slot; extra machine gunners take infantry slots
@@ -239,7 +242,8 @@ const Game = (() => {
   function enterBuilding(u, b) {
     releaseWork(u); u.queue = []; u.order = null; u.field = null; u.forced = null; u.target = null; u.micro = null; u.shift = null; u.flee = 0; u.windup = null;
     u.inside = b.id; u.hBonus = b.slots.height; u.x = b.x; u.y = b.y; u.stress = Math.min(u.stress, 0.3);
-    b.garrison.push(u.id);
+    b.garrison = b.garrison.filter(id => { const g = G.unitById.get(id); return g && !g.dead; }); b.garrison.push(u.id);
+    if (b.def.citadel && b.owner !== u.owner) { const was = b.owner; b.owner = u.owner; if (u.owner === 1) toast('Your soldiers hold the Citadel'); else if (was === 1) toast('The enemy took your Citadel'); }   // 0.7c
     G.selection = G.selection.filter(s => s !== u);
   }
   function placeOutside(u, b, n) {
@@ -314,6 +318,7 @@ const Game = (() => {
       }
       case 'attack': {
         const t = o.target; if (!t || t.dead) break;
+        if (t instanceof Building && t.def.invulnerable) { applyOrder(u, { kind: 'attackmove', x: t.x, y: t.y + t.h / 2 + 20, arrive: 20 }); break; }   // 0.7c: walk there instead
         if (u.suppressed && !u.def.obeysWhenSuppressed) { applyOrder(u, { kind: 'attackmove', x: t.x, y: t.y, arrive: 20 }); break; }
         u.forced = t; u.target = t; u.order = { type: 'attack', target: t }; u.acquireT = 0;
         break;
@@ -498,7 +503,7 @@ const Game = (() => {
       }
       if (b.queue.length) { const q = b.queue[0]; q.t += dt; if (q.t >= q.total) { b.queue.shift(); spawnFrom(b, q.type, q); } }
       if (b.repeat && !b.queue.length) enqueue(b, b.repeat, true);   // 0.5c: repeat production waits quietly for money and supply
-      if (b.def.harvest) {
+      if (b.def.harvest && !b.def.site) {   // 0.7c: a station's stock comes from its trains
         const rate = (b.def.rate + activeWorkers(b) * b.def.perWorker) * p.harvestMult * Data.ECONOMY.pace;
         const key = b.def.harvest === 'wood' ? 'wood' : b.depositType;
         // Kaan, 0.5a.2: output goes into the building's stock, and carriers take it to a drop-off. The
@@ -585,15 +590,16 @@ const Game = (() => {
     const maxR = w.range * 1.3;
     let best = null, bestS = Infinity;
     for (const e of G.units) {
-      if (e.dead || e.inside || e.owner === u.owner) continue;
-      const d = dist(u.x, u.y, e.x, e.y); if (d > maxR) continue;
+      if (e.dead || e.inside || e.owner === u.owner || e.def.civilian) continue;   // 0.7c: civilians are never targeted
+      const ex = e.x - u.x, ey = e.y - u.y; if (ex > maxR || ex < -maxR || ey > maxR || ey < -maxR) continue;   // cheap reject first (0.7c: many more units on the map)
+      const d = Math.sqrt(ex * ex + ey * ey); if (d > maxR) continue;
       const s = d + (inRange(u, e) ? 0 : 10000); if (s >= bestS) continue;
       if (!canSee(u, e)) continue;
       best = e; bestS = s;
     }
     if (!best || bestS >= 10000) {
       for (const e of G.buildings) {
-        if (e.dead || e.owner === u.owner || e.owner === 0) continue;
+        if (e.dead || e.owner === u.owner || e.owner === 0 || e.def.invulnerable) continue;   // 0.7c: nobody shoots at buff sites or citadels
         const d = dist(u.x, u.y, e.x, e.y) - e.size * 0.7; if (d > maxR) continue;
         const s = d + (inRange(u, e) ? 0 : 10000) + 50; if (s >= bestS) continue;
         if (!canSee(u, e)) continue;
@@ -626,7 +632,7 @@ const Game = (() => {
     }
     revealFire(u);
     u.cooldown = w.reload * (u.suppressed ? 1.4 : 1) * (u.rank >= 3 ? VET.rank3Reload : 1) * (0.9 + R() * 0.2);
-    u.facing = Math.atan2(ty - u.y, tx - u.x); u.muzzle = 0.08; u.recoil = w.indirect ? 0.2 : 0.12;
+    u.facing = Math.atan2(ty - u.y, tx - u.x); u.muzzle = 0.08; u.recoil = w.indirect ? 0.2 : 0.12; u.shotT = G.time;   // shotT: civilians hear it (0.7c)
     if (w.indirect) fireShell(u, tx, ty); else fireBullet(u, target);
   }
   function fireBullet(u, e) {
@@ -687,7 +693,7 @@ const Game = (() => {
     for (const b of G.buildings) {
       if (b.dead) continue; const d = Math.max(0, dist(b.x, b.y, x, y) - b.size * 0.7); if (d > splash) continue;
       // DD G13: a grenade reaches a Bunker's occupants for 30% damage and full stress.
-      if (pr.grenade && b.slots && b.slots.grenadeReach) for (const id of b.garrison.slice()) {
+      if ((pr.grenade || b.def.citadel) && b.slots && b.slots.grenadeReach) for (const id of b.garrison.slice()) {   // 0.7c: shells reach a citadel's occupants too
         const u = G.unitById.get(id); if (!u || u.dead) continue;
         addStress(u, 0.3 * (1 - d / splash) + 0.1, true); u.lastHitBy = shooter;
         applyDamage(u, dmg * (0.35 + 0.65 * (1 - d / splash)) * Data.ARMOR_MULT[dtype][u.armor] * NADE.bunkerDmg, shooter);
@@ -710,7 +716,7 @@ const Game = (() => {
     orderMove(group, by.x, by.y, 'attackmove', false, false, { auto: true });   // 0.7b: they go back to their posts afterwards
   }
   function applyDamage(e, dmg, by) {
-    if (e.dead || dmg <= 0) return;
+    if (e.dead || dmg <= 0 || (e instanceof Building && e.def.invulnerable)) return;   // 0.7c: buff sites and citadels can't be destroyed
     if (by instanceof Unit && !by.dead && by.owner !== e.owner) addXp(by, Math.min(dmg, e.hp) / VET.xp.damagePer);   // DD H1
     if (e.owner === 1 && by && by.owner && by.owner !== 1) underAttack(e);
     e.hp -= dmg; if (e.hp <= 0) kill(e, by);
@@ -729,7 +735,7 @@ const Game = (() => {
     G.selection = G.selection.filter(s => s !== e);
     if (e instanceof Unit) {   // kill and loss counters track units only
       const st = G.stats[e.owner]; if (st) st.lost++;
-      if (by && by.owner !== e.owner && G.stats[by.owner]) G.stats[by.owner].kills++;
+      if (by && by.owner !== e.owner && G.stats[by.owner] && !e.def.civilian) G.stats[by.owner].kills++;   // 0.7c: civilians don't count as kills
       if (by instanceof Unit && !by.dead && by.owner !== e.owner) addXp(by, VET.xp.kill);
     }
     if (e instanceof Unit) {
@@ -921,7 +927,7 @@ const Game = (() => {
   function autoGrenade(u) {
     let best = null, bd = Infinity;
     for (const e of G.units) {
-      if (e.dead || e.inside || e.owner === u.owner) continue; const d = dist(u.x, u.y, e.x, e.y); if (d > NADE.range || d >= bd) continue;
+      if (e.dead || e.inside || e.owner === u.owner || e.def.civilian) continue; const d = dist(u.x, u.y, e.x, e.y); if (d > NADE.range || d >= bd) continue;
       const ls = lineAt(e.x, e.y); if (ls && ls.type === 'trench') { best = e; bd = d; }
     }
     if (!best) for (const b of G.buildings) {
@@ -1094,7 +1100,7 @@ const Game = (() => {
   function updateVehicles(dt) {
     for (const v of G.units) {
       if (v.dead || !v.cargo) continue; const p = G.players[v.owner];
-      const near = type => G.buildings.find(b => b.owner === v.owner && b.type === type && b.built && !b.dead && dist(b.x, b.y, v.x, v.y) < (type === 'depot' ? FUEL.depotRange : Data.REPAIR.range) + b.size);
+      const near = type => G.buildings.find(b => b.owner === v.owner && b.type === type && b.built && !b.dead && dist(b.x, b.y, v.x, v.y) < (type === 'depot' || type === 'fueldump' ? FUEL.depotRange : Data.REPAIR.range) + b.size);
       const dep = FUEL.refuelAt.map(near).find(Boolean);   // Kaan, 0.5b.2: Depots and the HQ refuel
       if (dep) for (const k of ['fuel', 'spare']) {
         const cap = k === 'fuel' ? v.stats.fuel : v.def.spare, need = cap - v[k]; if (need <= 0) continue;
@@ -1272,13 +1278,14 @@ const Game = (() => {
   function seekCover(u, cells = 2) {
     const ci = Terrain.cellI(u.x), cj = Terrain.cellJ(u.y); const h0 = Terrain.hAt(u.x, u.y);
     const trench = (x, y) => { const sg = lineAt(x, y); return sg && sg.done && sg.type === 'trench' && sg.owner === u.owner ? 1.2 : 0; };
-    const here = cells > 2 ? (Terrain.type[Terrain.idx(ci, cj)] === Terrain.T_FOREST ? 1 : 0) + trench(u.x, u.y) : 0;
+    const propCover = k => Terrain.prop[k] ? (1 - Data.PROPS[Terrain.prop[k]].cover) * 2.5 : 0;   // 0.7c: houses, ruins, walls, wrecks
+    const here = cells > 2 ? (Terrain.type[Terrain.idx(ci, cj)] === Terrain.T_FOREST ? 1 : 0) + trench(u.x, u.y) + propCover(Terrain.idx(ci, cj)) : 0;
     let best = null, bestS = here + 0.3;
     for (let dj = -cells; dj <= cells; dj++) for (let di = -cells; di <= cells; di++) {
       if (!di && !dj) continue; const i = ci + di, j = cj + dj; if (!Terrain.inb(i, j)) continue;
       const k = Terrain.idx(i, j); if (!Terrain.cellPassable(k, u.cls)) continue;
       const x = Terrain.cx(i), y = Terrain.cy(j);
-      const s = (Terrain.type[k] === Terrain.T_FOREST ? 1 : 0) + clamp((Terrain.height[k] - h0) / 6, -1, 1) * 0.5 - Math.hypot(di, dj) * 0.12 + (cells > 2 ? trench(x, y) : 0);
+      const s = (Terrain.type[k] === Terrain.T_FOREST ? 1 : 0) + clamp((Terrain.height[k] - h0) / 6, -1, 1) * 0.5 - Math.hypot(di, dj) * 0.12 + (cells > 2 ? trench(x, y) : 0) + propCover(k);
       if (s > bestS && Terrain.straightPassable(u.x, u.y, x, y, u.cls)) { bestS = s; best = [x + (R() - 0.5) * 6, y + (R() - 0.5) * 6]; }
     }
     if (best) u.micro = { x: best[0], y: best[1] };
@@ -1390,6 +1397,7 @@ const Game = (() => {
   const keepsGap = u => isSoldier(u) && !u.inside && !u.windup && !(u.order && ['dig', 'demolish', 'board', 'garrison', 'grenade', 'work', 'haul'].includes(u.order.type));
 
   function updateUnit(u, dt) {
+    if (u.def.civilian && !u.order && !u.micro) { u.wasMoving = u.moving = false; return; }   // 0.7c: a villager standing about needs nothing each tick (updateNeutrals moves him)
     // wasMoving: whether the unit moved last tick. Firing happens before this tick's move, so it is
     // what the moving-fire penalty reads (DD Q11).
     u.wasMoving = u.moving; u.moving = false;
@@ -1440,6 +1448,7 @@ const Game = (() => {
     }
     // DD Q10: no suppression slowdown in retreat. DD E '>': a squad travels at its slowest member's pace.
     // DD B, G12: barricades and wire slow everyone, trenches slow only the enemy.
+    if (!u.order && !u.micro && !u.shift && !u.target && !(u.owner === 0 && u.guardPost)) return;   // standing idle: nothing below applies (0.7c: speed)
     const cap = o0 => o0 && o0.maxSpeed && o0.phase === 0 ? Math.min(1, o0.maxSpeed / u.stats.speed) : 1;
     const ls = lineAt(u.x, u.y);
     // DD B: trenches slow enemies and friendly vehicles to x0.4; wire doesn't slow vehicles (barricades block them).
@@ -1571,7 +1580,7 @@ const Game = (() => {
     } else if (u.target && !inRange(u, u.target) && !isIndirect(u) && !(G.time - (u.fellBack || -99) < 10)) {   // 0.7b: not straight after falling back wounded
       const t = u.target;
       if (dist(u.x, u.y, t.x, t.y) < u.stats.weapon.range * 1.3 && Terrain.straightPassable(u.x, u.y, t.x, t.y, u.cls)) moveToward(u, t.x, t.y, dt, spd);
-    } else if (u.owner === 0 && !u.target && dist(u.x, u.y, u.spawn.x, u.spawn.y) > 90) {
+    } else if (u.owner === 0 && u.guardPost && !u.target && dist(u.x, u.y, u.spawn.x, u.spawn.y) > 90) {   // 0.7c: guards of a site or citadel keep to it
       moveToward(u, u.spawn.x, u.spawn.y, dt, spd);
     }
   }
@@ -1589,11 +1598,11 @@ const Game = (() => {
   function separate(dt) {
     const cs = 28; const grid = new Map();
     for (const u of G.units) u.gap = !u.dead && keepsGap(u) ? gapOf(u) : 0;
-    for (const u of G.units) { if (u.dead || u.inside) continue; const k = ((u.x / cs) | 0) + ',' + ((u.y / cs) | 0); let a = grid.get(k); if (!a) grid.set(k, a = []); a.push(u); }
+    for (const u of G.units) { if (u.dead || u.inside) continue; const k = ((u.x / cs) | 0) * 65536 + ((u.y / cs) | 0); let a = grid.get(k); if (!a) grid.set(k, a = []); a.push(u); }   // number keys: much cheaper than strings
     for (const u of G.units) {
       if (u.dead || u.inside) continue; const gx = (u.x / cs) | 0, gy = (u.y / cs) | 0;
       for (let j = gy - 1; j <= gy + 1; j++) for (let i = gx - 1; i <= gx + 1; i++) {
-        const a = grid.get(i + ',' + j); if (!a) continue;
+        const a = grid.get(i * 65536 + j); if (!a) continue;
         for (const v of a) {
           if (v.id <= u.id) continue;
           const minD = u.size + v.size + 2; const dx = v.x - u.x, dy = v.y - u.y; const d2 = dx * dx + dy * dy;
@@ -1628,6 +1637,97 @@ const Game = (() => {
     for (const d of G.decals) d.t += dt;
     if (G.decals.length && G.decals[0].t > G.decals[0].life) G.decals = G.decals.filter(d => d.t < d.life);
   }
+  // ---- buff sites, neutral patrols, civilians (patch 0.7c, DD "Patch 0.7c") ----
+  const ST = Data.SITES, CIV = Data.CIVILIANS, NEU = Data.NEUTRAL;
+  const armedHere = u => !u.dead && !u.inside && u.stats.weapon && !u.def.labour && !u.def.civilian;
+  function siteName(b) { return 'the ' + b.def.name; }
+  function captureSite(b, side) {
+    const was = b.owner; b.owner = side; b.cap = { by: 0, p: 0 }; b.siteT = 0; G.planT = 1e9;
+    for (const id of b.workers.slice()) { const w = G.unitById.get(id); if (!w || w.owner !== side) { b.workers = b.workers.filter(x => x !== id); if (w && w.work === b.id) { w.work = null; w.order = null; } } }
+    b.stock = {};
+    if (side === 1) toast('You captured ' + siteName(b)); else if (was === 1) toast('The enemy captured ' + siteName(b));
+    G.effects.push({ kind: 'ping', x: b.x, y: b.y, t: 0, dur: 3 });
+  }
+  function updateSites(dt) {
+    G.siteT = (G.siteT || 0) + dt; if (G.siteT < 0.5) return; const step = G.siteT; G.siteT = 0;
+    const CP = ST.capture;
+    for (const b of G.buildings) {
+      if (b.dead || !b.def.site) continue;
+      // Capture: one side's armed soldiers alone within reach (neutral guards and the owner contest it).
+      const here = new Set(); for (const u of G.units) if (armedHere(u) && dist(u.x, u.y, b.x, b.y) <= CP.r + b.size * 0.5) here.add(u.owner);
+      const cap = b.cap || (b.cap = { by: 0, p: 0 }), side = here.size === 1 ? [...here][0] : -1;
+      if (side > 0 && side !== b.owner) {
+        if (cap.by !== side && cap.p > 0) cap.p = Math.max(0, cap.p - step / CP.time);   // the other side's progress empties first
+        else { cap.by = side; cap.p += step / CP.time; if (cap.p >= 1) captureSite(b, side); }
+      } else if (side > 0 && side === b.owner) cap.p = Math.max(0, cap.p - step / CP.time);
+      else if (!here.size) cap.p = Math.max(0, cap.p - step / CP.drain);
+      if (b.owner === 1 || b.owner === 2) siteEffect(b, step);
+    }
+  }
+  function siteEffect(b, step) {
+    const p = G.players[b.owner], k = b.def.site; b.siteT = (b.siteT || 0) + step;
+    if (k === 'airdrop' && b.siteT >= ST.airdrop.every) {
+      b.siteT -= ST.airdrop.every; const d = ST.airdrop.drop; for (const r in d) p.res[r] += d[r];
+      G.effects.push({ kind: 'drop', x: b.x, y: b.y, t: 0, dur: 4 });
+      if (b.owner === 1) toast('Supply drop: +' + Util.costStr(d));
+    } else if (k === 'station' && b.siteT >= ST.station.every) {
+      b.siteT -= ST.station.every; const n = ST.station.metal;
+      if (p.ai) p.res.metal += n; else b.stock.metal = Math.min(ST.station.cap, (b.stock.metal || 0) + n);   // the scripted enemy takes it directly (DD Q23)
+      G.effects.push({ kind: 'train', x: b.x, y: b.y, id: b.id, t: 0, dur: 6 });
+      if (b.owner === 1) toast('A freight train unloaded ' + n + ' metal at the station');
+    } else if (k === 'radio' && b.owner === 1 && b.siteT >= 2) {   // raid warnings for the player
+      b.siteT = 0; const hq = G.buildings.find(x => x.owner === 1 && x.type === 'hq' && !x.dead); if (!hq || G.time - (b.warnT || -1e9) < ST.radio.every) return;
+      const near = G.units.filter(u => u.owner === 2 && armedHere(u) && dist(u.x, u.y, hq.x, hq.y) <= ST.radio.warnR);
+      if (near.length >= ST.radio.min) {
+        b.warnT = G.time; let x = 0, y = 0; for (const u of near) { x += u.x; y += u.y; } x /= near.length; y /= near.length;
+        G.alert = { x, y, t: G.time }; G.effects.push({ kind: 'ping', x, y, t: 0, dur: 4, alert: true });
+        toast('Radio: ' + near.length + ' enemy soldiers within 1.5 km of your HQ (J to look)');
+      }
+    }
+  }
+  // Neutral guards: patrols near home, a 150 m leash, healing when left alone; civilians stroll and flee.
+  function updateNeutrals(dt) {
+    G.neuT = (G.neuT || 0) + dt; if (G.neuT < 1) return; const step = G.neuT; G.neuT = 0;
+    const groups = new Map();
+    for (const u of G.units) {
+      if (u.dead || u.inside) continue;
+      if (u.owner === 0) {
+        const h = u.home || u.spawn;
+        if (G.time - u.hitT > NEU.heal.quiet && u.hp < u.stats.hp) u.hp = Math.min(u.stats.hp, u.hp + NEU.heal.rate * step);
+        if (dist(u.x, u.y, h.x, h.y) > NEU.leash && !(u.order && u.order.leash)) { applyOrder(u, { kind: 'move', x: h.x, y: h.y, arrive: 20 }); if (u.order) u.order.leash = true; u.target = null; continue; }
+        if (!u.guardPost && u.group != null) { let g = groups.get(u.group); if (!g) groups.set(u.group, g = []); g.push(u); }
+      } else if (u.def.civilian) civilian(u);
+    }
+    for (const [id, g] of groups) {
+      G.patrolT = G.patrolT || {}; if (G.patrolT[id] == null) G.patrolT[id] = G.time + NEU.patrol.every[0] + R() * (NEU.patrol.every[1] - NEU.patrol.every[0]);
+      if (G.time < G.patrolT[id]) continue;
+      G.patrolT[id] = G.time + NEU.patrol.every[0] + R() * (NEU.patrol.every[1] - NEU.patrol.every[0]);
+      if (g.some(u => u.target || G.time - u.hitT < NEU.heal.quiet || u.order)) continue;
+      const h = g[0].home || g[0].spawn, a = R() * Math.PI * 2, d = R() * NEU.patrol.r, x = h.x + Math.cos(a) * d, y = h.y + Math.sin(a) * d;
+      if (!Terrain.passableAt(x, y, g[0].cls)) continue;
+      g.forEach((u, n) => { const a2 = n / g.length * Math.PI * 2, px = x + Math.cos(a2) * 20, py = y + Math.sin(a2) * 20; if (Terrain.passableAt(px, py, u.cls) && Terrain.straightPassable(u.x, u.y, px, py, u.cls)) u.micro = { x: px, y: py }; });   // a short straight walk, no route needed
+    }
+  }
+  function civilian(u) {
+    const h = u.spawn;
+    // Danger: someone fired or a shell burst within reach; run away from it.
+    let dx = 0, dy = 0, n = 0;
+    for (const e of G.units) if (!e.dead && G.time - (e.shotT || -99) < 1.5 && dist(e.x, e.y, u.x, u.y) < CIV.danger) { dx += e.x; dy += e.y; n++; }
+    for (const f of G.effects) if (f.kind === 'explosion' && dist(f.x, f.y, u.x, u.y) < CIV.danger) { dx += f.x; dy += f.y; n++; }
+    if (n) {
+      dx = u.x - dx / n; dy = u.y - dy / n; const l = Math.hypot(dx, dy) || 1;
+      u.civT = G.time + CIV.wait;
+      if (!(u.order && u.order.flee)) {
+        let x = u.x + dx / l * CIV.run, y = u.y + dy / l * CIV.run;
+        if (!Terrain.passableAt(x, y, u.cls)) { const q = Path.nearestPassable(Terrain.cellI(x), Terrain.cellJ(y), u.cls); if (q) { x = Terrain.cx(q[0]); y = Terrain.cy(q[1]); } }
+        applyOrder(u, { kind: 'move', x, y, arrive: 20 }); if (u.order) u.order.flee = true;
+      }
+      return;
+    }
+    if (u.order || G.time < (u.civT || 0)) return;
+    if (dist(u.x, u.y, h.x, h.y) > CIV.stroll * 2.5) applyOrder(u, { kind: 'move', x: h.x, y: h.y, arrive: CIV.stroll });   // home after the danger
+    else if (R() < 0.08) { const a = R() * Math.PI * 2, d = R() * CIV.stroll, x = h.x + Math.cos(a) * d, y = h.y + Math.sin(a) * d; if (Terrain.passableAt(x, y, u.cls) && Terrain.straightPassable(u.x, u.y, x, y, u.cls)) u.micro = { x, y }; }
+  }
   function checkWin() {
     if (G.over) return;
     const myHq = G.buildings.some(b => b.type === 'hq' && b.owner === 1 && !b.dead);
@@ -1645,7 +1745,7 @@ const Game = (() => {
   }
   function command(c) {
     G.orders.push(Object.assign({ tick: G.tick }, c));
-    const picked = (c.units || []).map(entById).filter(u => u instanceof Unit && !u.dead);
+    const picked = (c.units || []).map(entById).filter(u => u instanceof Unit && !u.dead && !u.def.civilian);   // 0.7c: civilians take no orders
     const us = c.kind === 'squadSet' ? picked : expandSquads(picked);
     const pid = c.player || 1, b0 = c.building != null ? entById(c.building) : null, q = !!c.queue;
     const b = b0 && b0.owner === pid ? b0 : null;   // only your own buildings (and Trucks) take commands
@@ -1711,7 +1811,7 @@ const Game = (() => {
     G.tick++;
     G.time += dt;
     updateEnv(dt); updateResearch(dt); updateBuildings(dt);
-    updateSquads(); updateLines(); updateHealing(dt); updateSmokes(dt); updateSignals(dt); updateLogistics(dt); updateVehicles(dt);
+    updateSquads(); updateLines(); updateHealing(dt); updateSites(dt); updateNeutrals(dt); updateSmokes(dt); updateSignals(dt); updateLogistics(dt); updateVehicles(dt);
     for (const u of G.units) if (!u.dead) updateUnit(u, dt);
     separate(dt);
     updateProjectiles(dt); updateEffects(dt);
@@ -1728,7 +1828,7 @@ const Game = (() => {
     spawnUnit, addBuilding, canPlace, placeBuilding,
     orderMove, orderAttack, orderBombard, orderStop, orderHold, orderWork, orderRetreat, orderGarrison,
     hiresFor, squadMarchers, setLink, researchLock, researchCost, slotOf, owns, seatsFree, retrofitCost, supplyCap, supplyUsed, costOf, maxWorkers, detected, raidLaunched, smokeBlocks,
-    canEnter, unloadBuilding, upgradeTower, slotCount, hasTech, canThrow, lineAt, segNear, orderDig, orderGrenade,
+    canEnter, enterBuilding, unloadBuilding, upgradeTower, slotCount, hasTech, canThrow, lineAt, segNear, orderDig, orderGrenade,
     envVision, envSpeed,       // 0.6: Fog and the Balance Lab read these
     applyResearch, planDig,   // 0.5d: the scripted enemy researches and digs without going through command()
     enqueue, cancelQueue, harvestRate, activeWorkers, effRange,

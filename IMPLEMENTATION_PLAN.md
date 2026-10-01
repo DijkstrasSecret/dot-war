@@ -312,16 +312,16 @@ generated maps only, Modern kit at an R&D Lab + 5 Tier III.
 
 **0.7c (map detail and buff sites)**
 
-- [ ] Villages [J]: 3–5 hamlets and 1–2 central towns. Civilians get their own owner id, are
+- [x] Villages [J]: 3–5 hamlets and 1–2 central towns. Civilians get their own owner id, are
       never auto-targeted, and flee from fighting.
-- [ ] Neutral guards patrol routes that avoid bases, with a 150 m leash; they return and heal.
-- [ ] Map detail (Kaan, 30 Sept): random **abandoned buildings, ruins, walls, wrecks and similar props**
+- [x] Neutral guards patrol routes that avoid bases, with a 150 m leash; they return and heal.
+- [x] Map detail (Kaan, 30 Sept): random **abandoned buildings, ruins, walls, wrecks and similar props**
       across the map, usable as cover (they give cover like forest or barricades) and as scenery.
-- [ ] **Trees drawn in forest cells**, mainly for decoration (forest rules unchanged).
-- [ ] **Buff sites** (Kaan, 30 Sept, replacing victory points): airdrop landing zones, train stations,
+- [x] **Trees drawn in forest cells**, mainly for decoration (forest rules unchanged).
+- [x] **Buff sites** (Kaan, 30 Sept, replacing victory points): airdrop landing zones, train stations,
       radio masts, fuel dumps, field hospital ruins, captured by standing there uncontested; citadels
       (big neutral fortresses, taken by clearing their garrison).
-- [ ] Modern kit at an R&D Lab + 5 Tier III.
+- [x] Modern kit at an R&D Lab + 5 Tier III.
 
 **0.7d (siege AI)**
 - [ ] AI raid logic [Q24]:

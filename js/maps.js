@@ -125,7 +125,7 @@ const MapGen = (() => {
     const inMap = p => p[0] > 500 && p[1] > 500 && p[0] < M - 500 && p[1] < M - 500;
     const pickSpot = (ok, tries = 400) => { for (let n = 0; n < tries; n++) { const p = [rnd(600, M - 600), rnd(600, M - 600)]; if (ok(p)) return p; } return null; };
     const spec = { id: 'random', name: 'Random map', generated: true, seed: (seed ^ 0x51ed) >>> 0, size: BIG, tilt: [rnd(-1, 1), rnd(-1, 1)], base,
-      mountain: { c: hq2, plateau: 175, foot: 820, height: 235, top: 262 }, hills: [], rivers: [], roads: [], deposits: [], creeps: [], sites: [], clear: [], forestBlobs: [], swamps: [] };
+      mountain: { c: hq2, plateau: 175, foot: 820, height: 235, top: 262 }, hills: [], rivers: [], roads: [], deposits: [], creeps: [], sites: [], clear: [], forestBlobs: [], swamps: [], villages: [], buffSites: [], citadels: [] };
     // hills, away from the bases; three carry sulfur on top
     for (let n = 0; n < 60 && spec.hills.length < 13; n++) {
       const c = pickSpot(p => far(p, [base, hq2], 1500) && far(p, spec.hills.map(h => h.c), 1100)); if (!c) break;
@@ -158,6 +158,41 @@ const MapGen = (() => {
       add(type, p); if (type === 'metal' || r() < 0.5) spec.creeps.push({ c: [p[0] + 25, p[1] - 30], r: 25, units: ['rifle', 'rifle', 'rifle'].concat(r() < 0.3 ? ['hmg'] : []) });
     }
     spec.deposits = dep;
+    // 0.7c (DD J, "Patch 0.7c"): villages, buff sites and citadels, kept off rivers, deposits and each other
+    const segD = (p, a, b) => { const dx = b[0] - a[0], dy = b[1] - a[1], t = Math.max(0, Math.min(1, ((p[0] - a[0]) * dx + (p[1] - a[1]) * dy) / (dx * dx + dy * dy || 1))); return Math.hypot(p[0] - a[0] - dx * t, p[1] - a[1] - dy * t); };
+    const riverD = p => { let m = Infinity; for (const rv of spec.rivers) for (let n = 0; n < rv.pts.length - 1; n++) m = Math.min(m, segD(p, rv.pts[n], rv.pts[n + 1])); return m; };
+    const placed = () => dep.map(e => [e.x, e.y]).concat(spec.villages.map(v => v.c), spec.buffSites.map(s => s.c), spec.citadels.map(c => c.c));
+    const offHills = p => spec.hills.every(h => Math.hypot(p[0] - h.c[0], p[1] - h.c[1]) > h.r * 0.75);
+    const VL = Data.VILLAGES, ri = (a) => Math.round(rnd(a[0], a[1] + 0.999) - 0.499);
+    const village = town => {
+      const c = pickSpot(p => far(p, [base, hq2], 1300) && far(p, placed(), town ? 1000 : 800) && riverD(p) > 200 && offHills(p) && (!town || Math.hypot(p[0] - mid[0], p[1] - mid[1]) < 2600)); if (!c) return;
+      const nH = ri(town ? VL.townHouses : VL.hamletHouses), houses = [], a0 = rnd(0, Math.PI);
+      for (let n = 0, tries = 0; houses.length < nH && tries < 200; tries++) {
+        // a town lines two crossing streets; a hamlet rings a small green
+        let x, y, a;
+        if (town) { const st = tries % 2, along = rnd(-120, 120), side = (r() < 0.5 ? -1 : 1) * rnd(20, 26); const ax = st ? a0 : a0 + Math.PI / 2; x = c[0] + Math.cos(ax) * along - Math.sin(ax) * side; y = c[1] + Math.sin(ax) * along + Math.cos(ax) * side; a = ax; }
+        else { const ang = rnd(0, Math.PI * 2), d = rnd(32, 75); x = c[0] + Math.cos(ang) * d; y = c[1] + Math.sin(ang) * d; a = ang + rnd(-0.3, 0.3); }
+        if (Math.hypot(x - c[0], y - c[1]) < 26 || houses.some(h => Math.hypot(h.x - x, h.y - y) < 24)) continue;
+        houses.push({ x, y, w: rnd(14, 20), h: rnd(10, 14), a }); n++;
+      }
+      spec.villages.push({ c, town, houses, people: ri(town ? VL.townPeople : VL.hamletPeople) });
+      spec.sites.push({ c, r: town ? 170 : 100 });
+    };
+    for (let n = ri(VL.towns); n > 0; n--) village(true);
+    for (let n = ri(VL.hamlets); n > 0; n--) village(false);
+    const ST = Data.SITES;
+    for (const [type, n] of Object.entries(ST.counts)) for (let k = 0; k < n; k++) {
+      const c = pickSpot(p => far(p, [base, hq2], ST.fromBase) && far(p, placed(), ST.apart) && riverD(p) > 150); if (!c) continue;
+      spec.buffSites.push({ type, c }); spec.sites.push({ c, r: 60 });
+      if (r() < 0.5) spec.creeps.push({ c: [c[0] + 30, c[1] + 40], r: 22, post: true, units: ['rifle', 'rifle', 'rifle'].concat(r() < 0.3 ? ['hmg'] : []) });
+    }
+    // citadels on the hills nearest the middle of the line between the bases (not the sulfur hills)
+    const half = [(base[0] + hq2[0]) / 2, (base[1] + hq2[1]) / 2], nCit = ri(ST.citadels);
+    for (const h of spec.hills.slice(3).filter(h => far(h.c, placed(), 400)).sort((a, b) => Math.hypot(a.c[0] - half[0], a.c[1] - half[1]) - Math.hypot(b.c[0] - half[0], b.c[1] - half[1])).slice(0, nCit)) {
+      spec.citadels.push({ c: h.c.slice(), garrison: ['rifle', 'rifle', 'rifle', 'rifle', 'rifle', 'rifle', 'hmg', 'hmg'] });
+      spec.creeps.push({ c: [h.c[0], h.c[1] + 60], r: 24, post: true, units: ['rifle', 'rifle', 'rifle', 'rifle'] });
+      spec.sites.push({ c: h.c, r: 75 });
+    }
     spec.clear.push({ c: base, r: 120 }, { c: hq2, r: 200 });
     for (const rv of spec.rivers) spec.swamps.push({ river: spec.rivers.indexOf(rv), tMin: rnd(0.3, 0.7), d: 90, hMax: 30 });
     spec.forestThr = rnd(0.57, 0.62);
@@ -204,6 +239,11 @@ const MapGen = (() => {
       if (d < M.plateau + 15) hgt[k] = lerp(M.top + (noise.fbm(x / 90, y / 90, 2) - 0.5) * 6, hgt[k], smoothstep(clamp((d - M.plateau + 25) / 40, 0, 1)));
     });
     { let sum = 0, n = 0; stamp(base, 230, k => { sum += hgt[k]; n++; }); const bh = sum / Math.max(1, n); stamp(base, 230, (k, d) => { hgt[k] = lerp(bh, hgt[k], smoothstep(clamp((d - 130) / 100, 0, 1))); }); }
+    // 0.7c: level the ground under villages, buff sites and citadels (a citadel keeps its hilltop height)
+    const level = (c, inner, outer, top) => { let sum = 0, n = 0, mx = -1e9; stamp(c, inner, k => { sum += hgt[k]; n++; mx = Math.max(mx, hgt[k]); }); const lv = top ? mx : sum / Math.max(1, n); stamp(c, outer, (k, d) => { hgt[k] = lerp(lv, hgt[k], smoothstep(clamp((d - inner) / (outer - inner), 0, 1))); }); };
+    for (const v of spec.villages || []) level(v.c, v.town ? 150 : 90, v.town ? 260 : 170);
+    for (const s of spec.buffSites || []) level(s.c, 55, 130);
+    for (const c of spec.citadels || []) level(c.c, 50, 120, true);
     // rivers: stamp the bed along the polyline, keeping for each cell its nearest distance and position along the river
     const rdist = new Float32Array(N * N).fill(1e9), rt = new Float32Array(N * N);
     spec.rivers.forEach(rv => {
@@ -237,12 +277,49 @@ const MapGen = (() => {
     const lay = (a, b) => { const pts = roadPath(a, b); if (pts) { net.push(pts); } return pts; };
     lay(base, spec.ai.hq);
     for (const d of spec.deposits) { const tgt = nearestRoadPoint(net, [d.x, d.y]); if (tgt && Math.hypot(tgt[0] - d.x, tgt[1] - d.y) > 150) lay([d.x, d.y], tgt); }
+    for (const p of (spec.villages || []).map(v => v.c).concat((spec.buffSites || []).map(s => s.c), (spec.citadels || []).map(c => [c.c[0], c.c[1] + 50]))) { const tgt = nearestRoadPoint(net, p); if (tgt && Math.hypot(tgt[0] - p[0], tgt[1] - p[1]) > 120) lay(p, tgt); }   // 0.7c
     for (const poly of net) Terrain.roads.push(poly.map(p => [p[0], p[1]]));
     Terrain.rasterizeRoads();
     for (const poly of net) cutRoad(poly);
     for (let k = 0; k < N * N; k++) if (Terrain.road[k] && type[k] === Terrain.T_FOREST) type[k] = Terrain.T_OPEN;
     Terrain.recomputeDerived();
+    placeProps(spec);
     Terrain.markDirty(0, 0, N, N);
+  }
+  // 0.7c: houses in the villages, then ruins, stone walls and wrecks across the map (DD "Patch 0.7c").
+  // Never on roads, water or steep ground; ruins and walls keep clear of bases, deposits and sites.
+  function placeProps(spec) {
+    const r = Util.mulberry32((spec.seed ^ 0x7c0de) >>> 0), rnd = (a, b) => a + (b - a) * r(), C = Terrain.CELL, M = BIGW;
+    const road = Terrain.road, type = Terrain.type, slope = Terrain.slope;
+    const fits = (x, y, w, h, a) => {
+      const ca = Math.cos(a), sa = Math.sin(a);
+      for (let u = -w / 2; u <= w / 2; u += C / 2) for (let v = -h / 2; v <= h / 2; v += C / 2) {
+        const px = x + u * ca - v * sa, py = y + u * sa + v * ca; if (px < 40 || py < 40 || px > M - 40 || py > M - 40) return false;
+        const k = Terrain.cellIdxAt(px, py); if (road[k] || type[k] === Terrain.T_WATER || slope[k] > 0.3 || Terrain.prop[k]) return false;
+      }
+      return true;
+    };
+    const keepOut = spec.sites.concat(spec.clear).filter(s => !(spec.villages || []).some(v => v.c === s.c));
+    const clearOf = (x, y, pad) => keepOut.every(s => Math.hypot(x - s.c[0], y - s.c[1]) > s.r + pad) && Terrain.deposits.every(d => Math.hypot(x - d.x, y - d.y) > 80);
+    const put = (code, x, y, w, h, a) => { if (!fits(x, y, w, h, a)) return false; Terrain.addProp(code, x, y, w, h, a); return true; };
+    for (const v of spec.villages || []) for (const h of v.houses) put(1, h.x, h.y, h.w, h.h, h.a);
+    const P = Data.PROPS.counts;
+    for (let n = 0, tries = 0; n < P.ruins && tries < 400; tries++) {   // ruin clusters: 2-4 broken buildings
+      const c = [rnd(500, M - 500), rnd(500, M - 500)]; if (!clearOf(c[0], c[1], 60)) continue;
+      let any = false; for (let m = Math.floor(rnd(2, 5)); m > 0; m--) any = put(2, c[0] + rnd(-40, 40), c[1] + rnd(-40, 40), rnd(14, 24), rnd(10, 18), rnd(0, Math.PI)) || any;
+      if (any) n++;
+    }
+    for (let n = 0, tries = 0; n < P.walls && tries < 400; tries++) {   // stone walls along fields
+      const x = rnd(500, M - 500), y = rnd(500, M - 500); if (!clearOf(x, y, 50)) continue;
+      if (put(3, x, y, rnd(30, 80), 2.5, rnd(0, Math.PI))) n++;
+    }
+    const polys = Terrain.roads.filter(p => p.length > 4);
+    for (let n = 0, tries = 0; n < P.wrecks && polys.length && tries < 400; tries++) {   // wrecks beside the roads
+      const p = polys[Math.floor(r() * polys.length)], i = 1 + Math.floor(r() * (p.length - 2)), a = Math.atan2(p[i + 1][1] - p[i - 1][1], p[i + 1][0] - p[i - 1][0]);
+      const off = (r() < 0.5 ? -1 : 1) * rnd(18, 26), x = p[i][0] - Math.sin(a) * off, y = p[i][1] + Math.cos(a) * off;
+      if (!clearOf(x, y, 30)) continue;
+      if (put(4, x, y, 9, 5, a + rnd(-0.5, 0.5))) n++;
+    }
   }
   const nearestRoadPoint = (net, p) => { let best = null, bd = Infinity; for (const poly of net) for (const q of poly) { const d = Math.hypot(q[0] - p[0], q[1] - p[1]); if (d < bd) { bd = d; best = q; } } return best; };
   // A road route on a coarse grid (every 4 cells): gentle grades are cheap, steep ones and water dear
@@ -295,7 +372,7 @@ const MapGen = (() => {
   // a road is laid to it (roads are always walkable) and the check runs again.
   function validate(spec) {
     Path.init();
-    const targets = spec.deposits.map(d => [d.x, d.y]).concat(spec.ai ? [spec.ai.hq] : []), from = [spec.base[0], spec.base[1] + 80];
+    const targets = spec.deposits.map(d => [d.x, d.y]).concat(spec.ai ? [spec.ai.hq] : [], (spec.buffSites || []).map(s => [s.c[0], s.c[1] + 40]), (spec.citadels || []).map(c => [c.c[0], c.c[1] + 50])), from = [spec.base[0], spec.base[1] + 80];   // 0.7c: sites and citadels too
     let fixed = 0, reach = Path.reachMap(from[0], from[1], 'infantry');
     for (const t of targets) {
       if (reach[Terrain.cellIdxAt(t[0], t[1])]) continue;
@@ -324,7 +401,20 @@ const MapGen = (() => {
         const u = Game.spawnUnit(t, 2, x, y); u.order = { type: 'hold', x: u.x, y: u.y };
       });
     }
-    for (const g of spec.creeps) g.units.forEach((t, n) => { const a = n / g.units.length * Math.PI * 2; Game.spawnUnit(t, 0, g.c[0] + Math.cos(a) * g.r, g.c[1] + Math.sin(a) * g.r); });
+    spec.creeps.forEach((g, gi) => g.units.forEach((t, n) => { const a = n / g.units.length * Math.PI * 2; const u = Game.spawnUnit(t, 0, g.c[0] + Math.cos(a) * g.r, g.c[1] + Math.sin(a) * g.r); u.guardPost = !!g.post; u.home = { x: g.c[0], y: g.c[1] }; u.group = gi; }));   // 0.7c: guards of a site or citadel don't patrol
+    // 0.7c: buff sites, citadels with their garrisons, and the villagers
+    for (const s of spec.buffSites || []) Game.addBuilding(s.type, 0, Math.round(s.c[0]), Math.round(s.c[1]), true);
+    for (const c of spec.citadels || []) {
+      const b = Game.addBuilding('citadel', 0, Math.round(c.c[0]), Math.round(c.c[1]), true);
+      for (const t of c.garrison) { const u = Game.spawnUnit(t, 0, b.x, b.y + b.h / 2 + 14); if (Game.canEnter(u, b)) Game.enterBuilding(u, b); }
+    }
+    const civ = Data.CIVILIANS.owner, cls = Data.MOVE_CLASSES.infantry, vr = Util.mulberry32((G.seed ^ 0xc171) >>> 0);
+    for (const v of spec.villages || []) for (let n = 0; n < v.people; n++) {
+      const h = v.houses[n % Math.max(1, v.houses.length)] || { x: v.c[0], y: v.c[1] };
+      let x = h.x + (vr() - 0.5) * 30, y = h.y + (vr() - 0.5) * 30;
+      if (!Terrain.passableAt(x, y, cls)) { const q = Path.nearestPassable(Terrain.cellI(x), Terrain.cellJ(y), cls); if (!q) continue; x = Terrain.cx(q[0]); y = Terrain.cy(q[1]); }
+      const u = Game.spawnUnit('civilian', civ, x, y); u.spawn = { x: v.c[0], y: v.c[1] };
+    }
   }
 
   function build(spec, diff) { if (spec.generated) { buildGenerated(spec); spec.fixedRoads = validate(spec); } else buildTerrain(spec); placeEntities(spec, diff || Data.DIFFICULTY.hard); }

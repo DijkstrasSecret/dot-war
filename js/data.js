@@ -6,8 +6,8 @@ const Data = {
   RES: ['wood', 'metal', 'rubber', 'oil', 'sulfur'],
   RES_COLORS: { wood: '#a86b32', metal: '#8fa2b5', rubber: '#555', oil: '#3a3a3a', sulfur: '#e0c020' },
 
-  PLAYER_COLORS: { 0: '#7a7a7a', 1: '#2458d6', 2: '#c8302e' },
-  PLAYER_NAMES: { 0: 'Neutral', 1: 'You', 2: 'Highland Army' },
+  PLAYER_COLORS: { 0: '#7a7a7a', 1: '#2458d6', 2: '#c8302e', 3: '#b39a6e' },   // 3: civilians (0.7c)
+  PLAYER_NAMES: { 0: 'Neutral', 1: 'You', 2: 'Highland Army', 3: 'Civilians' },
 
   // damage type -> armor class -> multiplier
   ARMOR_MULT: {
@@ -74,6 +74,13 @@ const Data = {
       weapon: null, heal: { rate: 4, range: 40 },
       desc: 'Unarmed. Heals one wounded soldier at a time within 40 m, 4 HP/s, squadmates first.',
     },
+    // 0.7c (DD J, "Patch 0.7c"): villagers, owner 3. Never trained, never auto-targeted.
+    civilian: {
+      name: 'Civilian', shape: 'circle', icon: 'civilian', cls: 'infantry', size: 4.5, role: 0, civilian: true,
+      hp: 25, armor: 'none', speed: 38, vision: 80, cost: {}, time: 0, supply: 0,
+      weapon: null,
+      desc: 'A villager. Runs from fighting; nobody shoots at civilians on purpose.',
+    },
   },
 
   BUILDINGS: {
@@ -105,6 +112,21 @@ const Data = {
     bunker: { name: 'Bunker', w: 32, h: 32, hp: 1200, icon: 'bunker', cost: { wood: 120, metal: 90 }, buildTime: 45, vision: 160, requires: 'fortification',
       garrison: { cap: 4, heavy: 0, mg: 1, height: 0, acc: 1.1, grenadeReach: true },
       desc: 'Holds 4 infantry and a Machine Gunner in its own slot. Occupants shoot 10% more accurately. Grenades still reach them.' },
+    // 0.7c buff sites (DD "Patch 0.7c"): neutral at the start, captured by standing there uncontested,
+    // never damaged or targeted. flat: no footprint to walk around.
+    airdrop: { name: 'Airdrop Zone', w: 36, h: 36, hp: 1000, icon: 'airdrop', site: 'airdrop', invulnerable: true, flat: true, cost: {}, buildTime: 0, vision: 120,
+      desc: 'Hold it for a supply drop every 3 minutes: 40 wood, 60 metal, 15 sulfur.' },
+    station: { name: 'Train Station', w: 56, h: 24, hp: 1000, icon: 'train', site: 'station', invulnerable: true, harvest: 'deposit', rate: 0, perWorker: 0, maxWorkers: 4, cost: {}, buildTime: 0, vision: 140,
+      desc: 'Hold it and a freight train brings 150 metal every 4 minutes. Workers or Trucks carry it home, like a mine\'s output.' },
+    radio: { name: 'Radio Mast', w: 14, h: 14, hp: 1000, icon: 'radio', site: 'radio', invulnerable: true, cost: {}, buildTime: 0, vision: 600,
+      desc: 'Hold it for 600 m of sight and warnings when enemy troops come within 1.5 km of your HQ.' },
+    fueldump: { name: 'Fuel Dump', w: 30, h: 22, hp: 1000, icon: 'oil', site: 'fueldump', invulnerable: true, trickle: { oil: 0.15 }, cost: {}, buildTime: 0, vision: 120,
+      desc: 'Hold it for 0.15 oil/s; it refuels your vehicles within 60 m like a Depot.' },
+    ruinhosp: { name: 'Field Hospital Ruins', w: 40, h: 32, hp: 1000, icon: 'hospital', site: 'ruinhosp', invulnerable: true, heal: { rate: 1, range: 120 }, cost: {}, buildTime: 0, vision: 120,
+      desc: 'Hold it and your infantry within 120 m heal 1 HP/s.' },
+    citadel: { name: 'Citadel', w: 64, h: 64, hp: 1000, icon: 'citadel', citadel: true, invulnerable: true, cost: {}, buildTime: 0, vision: 300,
+      garrison: { cap: 10, heavy: 2, mg: 2, height: 10, acc: 1.15, grenadeReach: true },
+      desc: 'A neutral fortress. Clear out its garrison and move in: it belongs to whoever is inside. Shells and grenades reach the occupants.' },
     hospital: { name: 'Field Hospital', w: 48, h: 40, hp: 500, icon: 'hospital', cost: { wood: 80, metal: 40 }, buildTime: 35, vision: 120, requires: 'hospital',
       heal: { rate: 1.5, range: 120 }, desc: 'Heals all your infantry within 120 m at 1.5 HP/s.' },
   },
@@ -236,13 +258,29 @@ const Data = {
   // Fuel (DD Q7, I, J): per 100 m driven; Depots refuel within range for 1 oil per fuel; Trucks share
   // their spare fuel with vehicles nearby. Kaan, 0.5b: an empty tank crawls at emptySpeed.
   // Kaan, 0.5b.2: the HQ refuels too (refuelAt).
-  FUEL: { refuelAt: ['depot', 'hq'], road: 1, offRoad: 1.5, emptySpeed: 0.2, refuelRate: 10, depotRange: 60, oilPerFuel: 1, shareRange: 30, shareBelow: 0.5 },
+  FUEL: { refuelAt: ['depot', 'hq', 'fueldump'], road: 1, offRoad: 1.5, emptySpeed: 0.2, refuelRate: 10, depotRange: 60, oilPerFuel: 1, shareRange: 30, shareBelow: 0.5 },
   // Workshop repair (DD J): vehicles within range, 5 HP/s, 1 metal per 10 HP.
   REPAIR: { rate: 5, metalPerHp: 0.1, range: 60 },
   // Squad auto-carry (DD E, G4): moves longer than this ride in the squadron's Truck; the rest march.
   FERRY: { minDist: 600, boardWait: 10 },
   // DD K: Cold War kit for newly trained soldiers once you own an R&D Lab and have 2 Tier III items (proposed).
-  KIT: { coldTier3: 2 },
+  KIT: { coldTier3: 2, modernTier3: 5 },   // 0.7c: Modern kit at an R&D Lab + 5 Tier III
+  // 0.7c (DD "Patch 0.7c"; values proposed). Buff sites, citadels, villages, props, neutral patrols.
+  SITES: {
+    capture: { r: 60, time: 20, drain: 40 },
+    airdrop: { every: 180, drop: { wood: 40, metal: 60, sulfur: 15 } },
+    station: { every: 240, metal: 150, cap: 450 },
+    radio: { warnR: 1500, min: 3, every: 60 },
+    counts: { airdrop: 1, station: 1, radio: 2, fueldump: 2, ruinhosp: 2 }, citadels: [1, 2],
+    fromBase: 1500, apart: 700,
+  },
+  VILLAGES: { hamlets: [3, 5], hamletHouses: [4, 6], hamletPeople: [6, 10], towns: [1, 2], townHouses: [8, 12], townPeople: [15, 25] },
+  CIVILIANS: { owner: 3, stroll: 50, danger: 150, run: 250, wait: 30 },
+  // Prop codes in Terrain.prop: 1 house, 2 ruin, 3 wall, 4 wreck. cover: hit chance; slow: infantry speed.
+  PROPS: { 1: { name: 'house', cover: 0.6, slow: 0.7 }, 2: { name: 'ruin', cover: 0.6, slow: 0.7 }, 3: { name: 'wall', cover: 0.7, slow: 0.8 }, 4: { name: 'wreck', cover: 0.7, slow: 0.8 },
+    counts: { ruins: 25, walls: 30, wrecks: 20 } },
+  NEUTRAL: { leash: 150, patrol: { r: 120, every: [60, 120] }, heal: { rate: 1, quiet: 20 } },
+  AI_SITES: { every: 300, minArmy: 10, size: 4, maxSize: 10, keepHome: 4, reach: 4000 },   // team: 2 per guard there plus 2, at least 4, at most 10
   // DD Q18, G14: supply cap. AI sides are exempt while the AI stays scripted (DD Q23).
   SUPPLY: { start: 30, perDepot: 10 },
 

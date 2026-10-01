@@ -297,5 +297,61 @@ const LabTests = (() => {
     return out;
   }
 
-  return { buildArena, duel, duels, fort, forts, economy, aiMatch, metaDuels, metaTerrain, metaForts, metaEconomy, aiPressure, aiPressureRun, metaSnapshot, behaviourChecks };
+  // ---- map detail checks (patch 0.7c) ----
+  // Buff sites, citadels, civilians, cover props, neutral guards and the Modern kit, each staged small.
+  function mapChecks(seed = 1) {
+    const out = [], D = Util.dist, S = Data.SITES;
+    const stage = () => { Game.init(seed); G.difficulty = 'normal'; G.envOverride = { weather: 'clear', dark: 0 }; buildArena('flat'); };
+    const run = (s, each) => { for (let i = 0, n = Math.round(s / STEP); i < n; i++) { if (each) each(); Game.update(STEP); } };
+    const check = (name, pass, detail) => out.push({ name, pass: !!pass, detail });
+    // 1. Capture: four Riflemen alone at a Radio Mast take it in about 20 s; with an enemy there they can't.
+    stage();
+    let site = Game.addBuilding('radio', 0, 360, MIDY, true);
+    for (let i = 0; i < 4; i++) Game.spawnUnit('rifle', 1, 330, MIDY - 30 + i * 20);
+    let t = null; run(30, () => { if (t == null && site.owner === 1) t = G.time; });
+    check('Soldiers alone at a buff site capture it in about 20 s', t != null && t >= 18 && t <= 24, t == null ? 'not captured in 30 s' : 'captured after ' + t.toFixed(1) + ' s');
+    stage();
+    site = Game.addBuilding('radio', 0, 360, MIDY, true);
+    for (let i = 0; i < 4; i++) Game.spawnUnit('rifle', 1, 330, MIDY - 30 + i * 20);
+    const foe = Game.spawnUnit('rifle', 2, 395, MIDY);
+    run(30, () => { foe.hp = foe.stats.hp; foe.stress = 0; });
+    check('With an enemy soldier there, nobody captures it', site.owner === 0, 'owner after 30 s: ' + Data.PLAYER_NAMES[site.owner]);
+    // 2. Site effects: an Airdrop Zone pays out, a station's train fills its stock, ruins heal.
+    stage();
+    const air = Game.addBuilding('airdrop', 1, 300, 150, true), st = Game.addBuilding('station', 1, 300, 330, true), p = G.players[1], m0 = p.res.metal;
+    run(S.station.every + 1);
+    check('An Airdrop Zone drops supplies every 3 minutes', p.res.metal - m0 >= S.airdrop.drop.metal, '+' + Math.round(p.res.metal - m0) + ' metal in ' + (S.station.every + 1) + ' s');
+    check('A freight train fills the station\'s stock every 4 minutes', (st.stock.metal || 0) >= S.station.metal, 'stock ' + Math.round(st.stock.metal || 0) + ' metal');
+    // 3. Citadel: when empty it belongs to whoever moves in.
+    stage();
+    const cit = Game.addBuilding('citadel', 0, 360, MIDY, true), r1 = Game.spawnUnit('rifle', 1, 360, MIDY + 60);
+    Game.orderGarrison([r1], cit); run(10);
+    check('An empty Citadel belongs to whoever moves in', cit.owner === 1 && r1.inside === cit.id, 'owner ' + Data.PLAYER_NAMES[cit.owner] + (r1.inside ? ', the Rifleman is inside' : ', the Rifleman is outside'));
+    // 4. Civilians: never shot at, and they run from a firefight.
+    stage();
+    const civ = Game.spawnUnit('civilian', Data.CIVILIANS.owner, 260, MIDY), shooter = Game.spawnUnit('rifle', 1, 200, MIDY), target = Game.spawnUnit('rifle', 2, 340, MIDY);
+    civ.spawn = { x: 260, y: MIDY }; let shotAtCiv = false;
+    run(8, () => { target.hp = target.stats.hp; shooter.hp = shooter.stats.hp; if (shooter.target === civ || target.target === civ) shotAtCiv = true; });
+    check('Nobody targets civilians', !shotAtCiv && civ.hp === civ.stats.hp, shotAtCiv ? 'a soldier aimed at the civilian' : 'health ' + Math.round(civ.hp) + '/' + civ.stats.hp);
+    check('Civilians run from a firefight', D(civ.x, civ.y, 260, MIDY) > 80, 'ran ' + Math.round(D(civ.x, civ.y, 260, MIDY)) + ' m');
+    // 5. Cover from props.
+    stage();
+    Terrain.addProp(2, 300, MIDY, 20, 16, 0); Terrain.addProp(3, 400, MIDY, 40, 2.5, 0);
+    check('Ruins and walls give cover', Terrain.coverAt(300, MIDY) === Data.PROPS[2].cover && Terrain.coverAt(400, MIDY) === Data.PROPS[3].cover, 'ruin ×' + Terrain.coverAt(300, MIDY) + ', wall ×' + Terrain.coverAt(400, MIDY));
+    // 6. Neutral guards: the leash brings them home.
+    stage();
+    const g = Game.spawnUnit('rifle', 0, 500, MIDY); g.home = { x: 250, y: MIDY }; g.group = 0;
+    run(15);
+    check('A neutral guard more than 150 m from home walks back', D(g.x, g.y, 250, MIDY) < 60, Math.round(D(g.x, g.y, 250, MIDY)) + ' m from home');
+    // 7. Modern kit at an R&D Lab and 5 Tier III researches.
+    stage();
+    Game.addBuilding('lab', 1, 150, 150, true);
+    const t3 = Object.keys(Data.RESEARCH).filter(id => Data.RESEARCH[id].tier === 3).slice(0, Data.KIT.modernTier3);
+    for (const id of t3) Game.applyResearch(G.players[1], id);
+    check('Modern kit after an R&D Lab and 5 Tier III researches', G.players[1].kitEra === 'modern', 'kit: ' + G.players[1].kitEra + ' (' + t3.length + ' Tier III)');
+    G.envOverride = null;
+    return out;
+  }
+
+  return { buildArena, duel, duels, fort, forts, economy, aiMatch, metaDuels, metaTerrain, metaForts, metaEconomy, aiPressure, aiPressureRun, metaSnapshot, behaviourChecks, mapChecks };
 })();

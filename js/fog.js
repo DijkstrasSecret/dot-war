@@ -136,7 +136,7 @@ const Fog = (() => {
   }
 
   function visible(owner, x, y) {
-    if (owner === 0) return true;
+    if (owner === 0 || !vis[owner]) return true;   // neutrals and civilians (0.7c) see everything they need
     return vis[owner][Terrain.cellIdxAt(x, y)] === 1;
   }
 
