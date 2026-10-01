@@ -1268,7 +1268,14 @@ by the Balance Lab):
 | Sideways push | A soldier who is firing is pushed apart only sideways along his line, never towards or away from the enemy, so the gap never takes him out of range. A straight push cost squadrons their edge (6 v 6 squadron win 64% → 50%). |
 | Body spacing | Riflemen's bodies already keep their centres about 14 m apart, so the 10 m and 12 m gaps only matter after a shell (×1.5 = 15 and 18 m). The loose 18 m gap works as agreed. |
 | Hold the post | He walks back only when a behaviour (return fire, helping a buddy, taking cover) drew him away, not when the gap pushed him a little. |
-| Effect on mortars | In the recorded fights a shell catches 2.2 soldiers on average instead of 2.3. Mortar shells are 32 m wide and attackers bunch as they walk in, so even 18 / 24 m gaps would only bring it to about 2.0. |
+| Effect on mortars (as built in 0.7b) | In the recorded fights a shell catches 2.2 soldiers on average instead of 2.3. Mortar shells are 32 m wide and attackers bunch as they walk in, so even 18 / 24 m gaps would only bring it to about 2.0. |
+
+### Patch 0.7b.1: sharper mortar blast, squadron target (Kaan, 1 October 2026)
+
+| Topic | Decision |
+| --- | --- |
+| Squadron v loose | Kaan: a squadron beating loose soldiers about 63% of the time "makes sense". The Balance Lab target widens from 55–60% to **55–65%**. |
+| Mortar blast | "The centre of the mortar's hit is hurt more compared to the blast effect." Damage share at a fraction f of the 32 m radius: **0.15 + 1.15 × (1 − f)^1.5** (was 0.35 + 0.65 × (1 − f)). A direct hit does 65 (was 50; a fresh Rifleman has 70), half-way out about 22 (was 34), the edge 7.5 (was 17.5). Kaan picked this "mild" shape out of three: in the test fights 6 Riflemen beat 3 Mortar Crews about 48% of the time instead of 20%, the mortar mirror stays even. Grenades keep the old linear share. |
 
 ---
 

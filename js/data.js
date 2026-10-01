@@ -55,7 +55,8 @@ const Data = {
       name: 'Mortar Crew', shape: 'square', icon: 'mortar', cls: 'infantry', size: 7, role: 3,
       hp: 70, armor: 'none', speed: 34, vision: 140, cost: { wood: 20, metal: 40 }, time: 16, supply: 2, requires: 'mortar',
       weapon: { dmg: 50, dtype: 'explosive', range: 380, minRange: 150,   // Kaan, 0.5c: minimum range 90 -> 150
-         acc: 0.5, reload: 5, pspeed: 200, indirect: true, splash: 32, suppress: 0.35, ammo: { sulfur: 2 } },
+         acc: 0.5, reload: 5, pspeed: 200, indirect: true, splash: 32, suppress: 0.35, ammo: { sulfur: 2 },
+         falloff: { centre: 1.3, edge: 0.15, power: 1.5 } },   // Kaan, 0.7b.1: share 0.15 + 1.15 (1 - f)^1.5 of the radius out: the centre kills, the edge stings
       desc: 'Indirect fire over ridges. Costs sulfur per shell. Needs a spotter to be accurate.',
     },
     // DD A, patch 0.5b. Seats: a circle takes 1, a square 2. Hauls `load` on a supply link (Kaan).

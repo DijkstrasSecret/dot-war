@@ -175,7 +175,8 @@ least x0.35 (`Util.stack`).
 - **Indirect fire** (mortar): shells arc over ridges, cannot fire inside the minimum range (a crew
   that sees an enemy inside it walks away until it can fire, unless on Defend or bombarding), the
   scatter grows when the target point is not seen by a friendly unit (the spotter rule), each shot
-  consumes ammo (2 sulfur), splash damage falls off linearly to the edge, reverse slopes take only
+  consumes ammo (2 sulfur), splash damage is sharpest at the centre (0.7b.1: share 0.15 + 1.15 × (1 − f)^1.5 at a fraction f of
+  the radius out: 65 on a direct hit, 7.5 at the edge; grenades fall off linearly), reverse slopes take only
   35% of it, and friendly fire is on.
 - **Grenades** (Riflemen, after the Grenades research): thrown automatically at the nearest enemy
   standing in a trench, or at an occupied enemy Bunker, within 25 m; or on order (V, then click a
@@ -488,7 +489,7 @@ member runs towards the squadron as well as away from the fire. Retreat (G) is a
 withdrawal: the rear ranks fall back at once while the front rank holds 4 s, then follows. A
 factory's rally point set on a squad member (right click it) sends new units into that squadron,
 up to 12. Squadrons are a utility more than an advantage: in the Balance Lab 6 Riflemen in a
-squadron beat 6 loose Riflemen 55–60% of the time (target).
+squadron beat 6 loose Riflemen 55–65% of the time (target; Kaan widened it from 55–60% in 0.7b.1).
 
 **Blobs (0.7b).** A see-through blob in the owner's colour joins each squadron's members: a clear
 outline for selected squadrons, a faint one for your others. A wounded man at the rear shows as the

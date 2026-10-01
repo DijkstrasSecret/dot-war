@@ -5,6 +5,13 @@ each change live in `DESIGN_DECISIONS.md`.
 
 ---
 
+## 0.7b.1: Sharper mortar blast (1 October 2026)
+
+- **A mortar's direct hit is deadlier, its edge much weaker:** 65 damage at the centre (was 50), about
+  22 half-way out (was 34) and 7.5 at the edge (was 17.5). Spreading out now pays off: in the test
+  fights Riflemen beat Mortar Crews about half the time instead of one time in five.
+- The Balance Lab's squadron target widens to 55–65%.
+
 ## 0.7b: Living infantry (1 October 2026)
 
 Soldiers now look after themselves, so you can give the big orders and leave the small ones to them.
